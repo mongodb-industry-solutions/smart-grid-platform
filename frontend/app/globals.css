@@ -1,2 +1,10 @@
 @import "tailwindcss";
 
+.demo-sidenav {
+  height: 100vh;
+}
+
+.demo-sidenav [data-testid="side-nav-collapse-toggle"] {
+  top: auto !important;
+  bottom: 16px !important;
+}
