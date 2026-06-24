@@ -4,53 +4,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi import APIRouter
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 from dotenv import load_dotenv
+from db.mdb import MongoDBConnector
+
 
 load_dotenv()
-
 app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 router = APIRouter()
+mdb = MongoDBConnector()
+
 
 @app.get("/")
 async def read_root(request: Request):
     return {"message":"Server is running"}
 
-############## ############## ############## ############## ##############
-
-from fastapi import FastAPI
-from db.mdb import MongoDBConnector
-
-app = FastAPI()
-mdb = MongoDBConnector()
 
 #  Retrieve recent logs from 'readings' collection
 @app.get("/api/readings/recent")
 def get_recent_readings(limit: int = 2):
-    collection = mdb.get_collection("readings")  # change if your collection name is different
-
+    collection = mdb.get_collection("readings")  
     docs = (
         collection.find(
             {},

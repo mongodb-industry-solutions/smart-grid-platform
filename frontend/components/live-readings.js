@@ -8,7 +8,7 @@ export default function RecentReadings() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/readings/recent?limit=10")
+    fetch("/api?limit=10")
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch readings");
         return res.json();
@@ -26,6 +26,8 @@ export default function RecentReadings() {
   if (loading) return <p>Loading recent readings...</p>;
   if (error) return <p>Error: {error}</p>;
 
+
+  // Renders the 'readings' logs in a table
   return (
     <div>
       <h2>Recent Readings</h2>
