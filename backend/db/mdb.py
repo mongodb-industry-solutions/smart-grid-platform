@@ -71,35 +71,4 @@ class MongoDBConnector:
         return result.deleted_count
     
 
-############################################################
 
-# from pymongo import DESCENDING
-# from datetime import datetime
-# from pymongo import MongoClient
-# import os
-
-# client = MongoClient(os.environ["MONGODB_URI"])
-# db = client["smart_meter"]
-
-# readings_collection = db["readings"]
-
-
-# def serialize_reading(doc):
-#     return {
-#         "id": str(doc.get("_id")),
-#         "timestamp": doc.get("timestamp").isoformat() if doc.get("timestamp") else None,
-#         "dataid": doc.get("dataid"),
-#         "avg_reading": doc.get("avg_reading"),
-#         "volt_leg_1": doc.get("volt_leg_1"),
-#         "volt_leg_2": doc.get("volt_leg_2"),
-#     }
-
-# # Retrieve recent logs from 'readings' collection
-
-# def get_recent_readings(collection, limit=10):
-#     docs = (
-#         collection.find({})
-#         .sort("timestamp", DESCENDING)
-#         .limit(limit)
-#     )
-#     return [serialize_reading(doc) for doc in docs]

@@ -1,6 +1,6 @@
 "use client";
 
-import RecentReadings from "@/components/live-readings";
+import RecentReadings from "@/components/MeterTable.jsx";
 
 export default function Home() {
   return (

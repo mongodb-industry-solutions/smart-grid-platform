@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { H2, Body } from "@leafygreen-ui/typography";
+import { H1, Body } from "@leafygreen-ui/typography";
 import {
   Table,
   TableHead,
@@ -30,6 +30,7 @@ const columns = [
   {
     accessorKey: "avg_reading",
     header: "Avg Reading (kW)",
+    enableSorting: true,
     cell: ({ getValue }) => {
       const val = getValue();
       return val != null ? val.toFixed(2) : "N/A";
@@ -53,48 +54,39 @@ const columns = [
   },
 ];
 
-const LIMIT = 10;
-
-export default function RecentReadings() {
-  const [readings, setReadings] = useState([]);
+export default function LiveMeterReading({ meterId }) {
+  const [reading, setReading] = useState(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let skip = 0;
-
-    const fetchReadings = async () => {
-      try {
-        const res = await fetch(`/api/readings/recent?skip=${skip}&limit=${LIMIT}`);
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (data.length) setReadings(data);
-        skip += LIMIT;
-      } catch (err) {
-        setError(err.message);
-      }
+    const fetchReading = () => {
+      fetch(`/api/meters/${meterId}/live`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`Meter "${meterId}" not found`);
+          return res.json();
+        })
+        .then((data) => setReading(data))
+        .catch((err) => setError(err.message));
     };
 
-    fetchReadings();
-    const intervalId = setInterval(fetchReadings, 10_000);
+    fetchReading();
+    const intervalId = setInterval(fetchReading, 5000);
     return () => clearInterval(intervalId);
-  }, []);
+  }, [meterId]);
 
   const table = useLeafyGreenTable({
-    data: readings,
+    data: reading ? [reading] : [],
     columns,
   });
 
   if (error) return <Body>Error: {error}</Body>;
-  if (!readings.length) return <Body>Loading...</Body>;
+  if (!reading) return <Body>Loading meter {meterId}...</Body>;
 
   return (
     <div>
-      <H2>Recent Readings</H2>
+      <H1>Smart Meter {meterId}</H1>
       <Table table={table}>
-        <TableHead isSticky>
+        <TableHead>
           {table.getHeaderGroups().map((headerGroup) => (
             <HeaderRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
