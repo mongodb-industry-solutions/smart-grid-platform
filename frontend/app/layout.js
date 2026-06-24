@@ -1,17 +1,23 @@
 import "./globals.css";
 import { Providers } from "./providers";
+import AppShell from "@/components/general/AppShell";
+import AppHeader from "@/components/general/AppHeader";
 
-// TODO: Update metadata with actual demo details
 export const metadata = {
-  title: "Demo Template",
-  description: "Industry Solutions Demo Template for NextJS",
+  title: "Smart Meter Demo",
+  description: "A demo application for smart meter data visualization and analysis.",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
+      <body className="h-screen overflow-hidden">
+        <Providers>
+          <div className="flex h-screen flex-col">
+            <AppHeader />
+            <AppShell>{children}</AppShell>
+          </div>
+        </Providers>
       </body>
     </html>
   );

@@ -16,6 +16,7 @@
     "@leafygreen-ui/modal": "^17.1.7",
     "@leafygreen-ui/palette": "^5.0.1",
     "@leafygreen-ui/table": "^15.2.3",
+    "@leafygreen-ui/side-nav": "^17.0.12",
     "@leafygreen-ui/tabs": "^14.2.5",
     "@leafygreen-ui/typography": "^20.1.9",
     "dotenv": "^17.2.2",
