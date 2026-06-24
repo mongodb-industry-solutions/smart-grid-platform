@@ -1,6 +1,7 @@
 import "./globals.css";
 import { Providers } from "./providers";
 import AppShell from "@/components/general/AppShell";
+import AppHeader from "@/components/general/AppHeader";
 
 export const metadata = {
   title: "Demo Template",
@@ -10,9 +11,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className="h-screen overflow-hidden">
         <Providers>
-          <AppShell>{children}</AppShell>
+          <div className="flex h-screen flex-col">
+            <AppHeader />
+            <AppShell>{children}</AppShell>
+          </div>
         </Providers>
       </body>
     </html>

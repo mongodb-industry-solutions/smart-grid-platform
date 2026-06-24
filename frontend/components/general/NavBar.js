@@ -11,12 +11,12 @@ export default function NavBar({ collapsed, setCollapsed }) {
   return (
     <SideNav
       aria-label="Demo navigation"
-      widthOverride={240}
+      widthOverride={collapsed ? 56 : 240}
       baseFontSize={14}
-      style={{ height: "100vh" }}
-      className="demo-sidenav"
       collapsed={collapsed}
       setCollapsed={setCollapsed}
+      className="h-full"
+      style={{ height: "100%" }}
     >
       <SideNavItem
         as={Link}
