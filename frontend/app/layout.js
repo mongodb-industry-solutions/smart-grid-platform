@@ -4,8 +4,8 @@ import AppShell from "@/components/general/AppShell";
 import AppHeader from "@/components/general/AppHeader";
 
 export const metadata = {
-  title: "Demo Template",
-  description: "Industry Solutions Demo Template for NextJS",
+  title: "Smart Meter Demo",
+  description: "A demo application for smart meter data visualization and analysis.",
 };
 
 export default function RootLayout({ children }) {
