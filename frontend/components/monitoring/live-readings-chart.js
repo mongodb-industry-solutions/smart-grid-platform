@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import styles from "./live-readings-chart.module.css";
+import styles from "../../style/monitoring/live-readings-chart.module.css";
 
 const TICK_MS = 5_000;
 const MAX_ROWS = 25;

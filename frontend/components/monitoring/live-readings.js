@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import { Select, Option } from "@leafygreen-ui/select";
-import styles from "./live-readings.module.css";
+import styles from "../../style/monitoring/live-readings.module.css";
 import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGreenTable, flexRender,} from "@leafygreen-ui/table";
 
 const TICK_MS = 5_000;
