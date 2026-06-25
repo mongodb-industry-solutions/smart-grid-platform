@@ -4,17 +4,7 @@ import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import { Select, Option } from "@leafygreen-ui/select";
 import styles from "./live-readings.module.css";
-import {
-  Table,
-  TableHead,
-  TableBody,
-  HeaderRow,
-  HeaderCell,
-  Row,
-  Cell,
-  useLeafyGreenTable,
-  flexRender,
-} from "@leafygreen-ui/table";
+import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGreenTable, flexRender,} from "@leafygreen-ui/table";
 
 const TICK_MS = 5_000;
 const MAX_ROWS = 25;
@@ -112,6 +102,7 @@ export default function RecentReadings() {
       <div className={styles.header}>
         <H2>Recent Readings</H2>
 
+        {/* Controls for selecting the number of rows to display */}
         <div className={styles.controls}>
           <Select
             label="Rows to show"
@@ -150,30 +141,32 @@ export default function RecentReadings() {
         </div>
       </div>
 
-      <Table table={table}>
-        <TableHead isSticky>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <HeaderRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <HeaderCell key={header.id} header={header}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
-                </HeaderCell>
-              ))}
-            </HeaderRow>
-          ))}
-        </TableHead>
-        <TableBody>
-          {table.getRowModel().rows.map((row) => (
-            <Row key={row.id} row={row}>
-              {row.getVisibleCells().map((cell) => (
-                <Cell key={cell.id} cell={cell}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Cell>
-              ))}
-            </Row>
-          ))}
-        </TableBody>
-      </Table>
+      <div className={styles.tableWrapper}>
+        <Table table={table}>
+          <TableHead isSticky>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <HeaderRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <HeaderCell key={header.id} header={header}>
+                    {flexRender(header.column.columnDef.header, header.getContext())}
+                  </HeaderCell>
+                ))}
+              </HeaderRow>
+            ))}
+          </TableHead>
+          <TableBody>
+            {table.getRowModel().rows.map((row) => (
+              <Row key={row.id} row={row}>
+                {row.getVisibleCells().map((cell) => (
+                  <Cell key={cell.id} cell={cell}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </Cell>
+                ))}
+              </Row>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }
