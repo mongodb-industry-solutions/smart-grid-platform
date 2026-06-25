@@ -1,3 +1,9 @@
+import RecentReadings from "@/components/live-readings";
+
 export default function MonitoringPage() {
-  return <div>Monitoring page</div>;
+  return (
+    <main>
+      <RecentReadings />
+    </main>
+  );
 }
