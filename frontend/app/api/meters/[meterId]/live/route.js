@@ -13,7 +13,19 @@ export async function GET(request, { params }) {
       { dataid: meterId },
       {
         sort: { timestamp: -1 },
-        projection: { _id: 0, timestamp: 1, dataid: 1, avg_reading: 1, volt_leg_1: 1, volt_leg_2: 1 },
+        projection: {
+          _id: 0,
+          dataid: 1,
+          timestamp: 1,
+          voltage: 1,
+          volt_leg_1: 1,
+          volt_leg_2: 1,
+          current: 1,
+          power: 1,
+          energy: 1,
+          power_factor: 1,
+          frequency: 1,
+        },
       }
     );
 
@@ -22,10 +34,15 @@ export async function GET(request, { params }) {
   }
 
   return NextResponse.json({
-    dataid: doc.dataid,
-    timestamp: doc.timestamp?.toISOString?.() ?? doc.timestamp,
-    avg_reading: doc.avg_reading,
-    volt_leg_1: doc.volt_leg_1,
-    volt_leg_2: doc.volt_leg_2,
+    dataid:       doc.dataid,
+    timestamp:    doc.timestamp?.toISOString?.() ?? doc.timestamp,
+    voltage:      doc.voltage,
+    volt_leg_1:   doc.volt_leg_1,
+    volt_leg_2:   doc.volt_leg_2,
+    current:      doc.current,
+    power:        doc.power,
+    energy:       doc.energy,
+    power_factor: doc.power_factor,
+    frequency:    doc.frequency,
   });
 }

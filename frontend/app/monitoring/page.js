@@ -3,10 +3,12 @@ import LiveReadingsChart from "@/components/readings/live-readings-chart";
 import UsageChangeCard from "@/components/readings/usage-change-card";
 import Outages from "@/components/outages/outages";
 import CustomerMap from "@/components/outages/customerMap";
+// import MeterPowerChart from "@/components/monitoring/meter-power-chart";
+import styles from "./monitoring.module.css";
 
 export default function MonitoringPage() {
   return (
-    <main style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
+    <main className={styles.page} style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
       {/* Row 1 — Energy usage */}
       <section>
         <UsageChangeCard />

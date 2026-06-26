@@ -14,7 +14,13 @@ import {
   flexRender,
 } from "@leafygreen-ui/table";
 
+const fmt = (val, decimals) => (val != null ? val.toFixed(decimals) : "N/A");
+
 const columns = [
+  {
+    accessorKey: "dataid",
+    header: "Meter ID",
+  },
   {
     accessorKey: "timestamp",
     header: "Timestamp",
@@ -24,33 +30,44 @@ const columns = [
     },
   },
   {
-    accessorKey: "dataid",
-    header: "Meter ID",
-  },
-  {
-    accessorKey: "avg_reading",
-    header: "Avg Reading (kW)",
-    enableSorting: true,
-    cell: ({ getValue }) => {
-      const val = getValue();
-      return val != null ? val.toFixed(2) : "N/A";
-    },
+    accessorKey: "voltage",
+    header: "Voltage (V)",
+    cell: ({ getValue }) => fmt(getValue(), 1),
   },
   {
     accessorKey: "volt_leg_1",
-    header: "Volt Leg 1 (V)",
-    cell: ({ getValue }) => {
-      const val = getValue();
-      return val != null ? val.toFixed(1) : "N/A";
-    },
+    header: "Leg 1 (V)",
+    cell: ({ getValue }) => fmt(getValue(), 1),
   },
   {
     accessorKey: "volt_leg_2",
-    header: "Volt Leg 2 (V)",
-    cell: ({ getValue }) => {
-      const val = getValue();
-      return val != null ? val.toFixed(1) : "N/A";
-    },
+    header: "Leg 2 (V)",
+    cell: ({ getValue }) => fmt(getValue(), 1),
+  },
+  {
+    accessorKey: "current",
+    header: "Current (A)",
+    cell: ({ getValue }) => fmt(getValue(), 2),
+  },
+  {
+    accessorKey: "power",
+    header: "Power (W)",
+    cell: ({ getValue }) => fmt(getValue(), 1),
+  },
+  {
+    accessorKey: "energy",
+    header: "Energy (kWh)",
+    cell: ({ getValue }) => fmt(getValue(), 3),
+  },
+  {
+    accessorKey: "power_factor",
+    header: "Power Factor",
+    cell: ({ getValue }) => fmt(getValue(), 3),
+  },
+  {
+    accessorKey: "frequency",
+    header: "Frequency (Hz)",
+    cell: ({ getValue }) => fmt(getValue(), 2),
   },
 ];
 

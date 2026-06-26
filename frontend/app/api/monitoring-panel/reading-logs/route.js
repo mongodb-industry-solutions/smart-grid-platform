@@ -38,9 +38,14 @@ export async function GET(request) {
         {
           projection: {
             _id: 0,
-            timestamp: 1,
             dataid: 1,
-            avg_reading: 1,
+            timestamp: 1,
+            voltage: 1,
+            current: 1,
+            power: 1,
+            energy: 1,
+            power_factor: 1,
+            frequency: 1,
             volt_leg_1: 1,
             volt_leg_2: 1,
           },
