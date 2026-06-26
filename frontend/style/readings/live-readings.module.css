@@ -1,0 +1,104 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.selectWrapper {
+  width: 160px;
+}
+
+.customInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.customInput {
+  width: 72px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #89979b;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.applyButton {
+  height: 36px;
+  padding: 0 12px;
+  background: #00684a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+/* ── Table wrapper ── */
+.tableWrapper {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+}
+
+/* Collapse borders so wrapper radius shows cleanly */
+.tableWrapper :global(table) {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+/* Header: MongoDB Evergreen (#023430) with white text */
+.tableWrapper :global(thead th) {
+  background-color: #023430 !important;
+  color: #ffffff !important;
+  border-bottom: 2px solid #00684a !important;
+  border-right: 1px solid #1a4a3a !important;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 12px 16px;
+}
+
+.tableWrapper :global(thead th:last-child) {
+  border-right: none !important;
+}
+
+/* Cell borders */
+.tableWrapper :global(tbody td) {
+  border-bottom: 1px solid #e8edeb !important;
+  border-right: 1px solid #e8edeb !important;
+  padding: 10px 16px;
+  transition: background-color 0.15s ease;
+}
+
+.tableWrapper :global(tbody td:last-child) {
+  border-right: none !important;
+}
+
+/* Remove bottom border on last row */
+.tableWrapper :global(tbody tr:last-child td) {
+  border-bottom: none !important;
+}
+
+/* Row hover: MongoDB light green tint */
+.tableWrapper :global(tbody tr:hover td) {
+  background-color: #eaf4f1 !important;
+  cursor: default;
+}
+
+/* Subtle alternating row background */
+.tableWrapper :global(tbody tr:nth-child(even) td) {
+  background-color: #f9fbfa;
+}
+
+.tableWrapper :global(tbody tr:nth-child(even):hover td) {
+  background-color: #eaf4f1 !important;
+}
