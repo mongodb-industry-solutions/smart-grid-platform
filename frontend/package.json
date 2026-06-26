@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev --turbopack --port 3000",
     "build": "next build --turbopack",
-    "start": "next start --port 3000",
+    "start": "next start --port 8080",
     "lint": "eslint"
   },
   "dependencies": {
@@ -38,6 +38,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "license-checker": "^25.0.1",
+    "lightningcss": "1.32.0",
     "tailwindcss": "^4"
   }
 }
