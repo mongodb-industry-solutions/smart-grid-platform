@@ -4,24 +4,24 @@ security:
   dataDesignation: ["MI"]
 
 ownership:
-  driEmail: owner.email@mongodb.com
+  driEmail: javier.guajardo@mongodb.com
 
 env:
   NODE_ENV: prod
   # AWS region for IRSA (no credentials needed)
   AWS_REGION: us-east-1
   # Backend API URL for frontend to connect to backend health check
-  BACKEND_URL: http://<service-name>:80 # or http://localhost:8000 if multicontainer pod is setup and backend is running on 8000
+  BACKEND_URL: http://smart-meter-backend-web-app:80
 
 ## Single Pod Containers
 envSecrets:
   # MongoDB Configuration
-  MONGODB_URI: <secret-group>
-  DATABASE_NAME: <secret-group>
-  VOYAGE_API_KEY: <secret-group>
+  MONGODB_URI: smart-meter
+  DATABASE_NAME: smart-meter
+  VOYAGE_API_KEY: smart-meter
   # Bedrock Inference Profiles (see cloud-cost-tracking.md)
-  CHATCOMPLETIONS_MODEL_ID: <secret-group>
-  EMBEDDINGS_MODEL_ID: <secret-group>
+  CHATCOMPLETIONS_MODEL_ID: smart-meter
+  EMBEDDINGS_MODEL_ID: smart-meter
 
 ## should be used in case of multi-pod container i.e: both frontend and backend in one pod
 # sidecarContainers:
