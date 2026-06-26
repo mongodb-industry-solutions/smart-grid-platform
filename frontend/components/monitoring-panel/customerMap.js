@@ -4,12 +4,11 @@ import { useMemo } from "react";
 import { geoAlbers, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import statesTopo from "us-atlas/states-10m.json";
-import Card from "@leafygreen-ui/card";
-import { H3, Body, Error as ErrorText } from "@leafygreen-ui/typography";
+import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
-import { spacing } from "@leafygreen-ui/tokens";
 import { useCustomerLocations } from "./useCustomerLocations";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
+import styles from "../../style/monitoring/panel.module.css";
 
 const WIDTH = 960;
 const HEIGHT = 600;
@@ -151,17 +150,9 @@ function GlowMarker({ cx, cy, radius, layerCount, coreColor, label, count }) {
 // Small swatch + label used in the legend.
 function LegendItem({ color, label }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "center", gap: spacing[1] }}>
-      <span
-        style={{
-          width: 12,
-          height: 12,
-          borderRadius: "50%",
-          backgroundColor: color,
-          display: "inline-block",
-        }}
-      />
-      <Body>{label}</Body>
+    <span className={styles.legendItem}>
+      <span className={styles.legendSwatch} style={{ backgroundColor: color }} />
+      {label}
     </span>
   );
 }
@@ -172,24 +163,25 @@ export default function CustomerMap() {
   const markers = useMemo(() => buildMarkers(locations), [locations]);
 
   return (
-    <Card style={{ padding: spacing[4] }}>
-      <H3 style={{ color: palette.green.dark2, marginBottom: spacing[3] }}>
-        Customers & Outages by Location
-      </H3>
-
-      <div style={{ display: "flex", gap: spacing[4], marginBottom: spacing[3] }}>
-        <LegendItem color={CUSTOMER_COLOR} label="Customers" />
-        <LegendItem color={OUTAGE_COLOR} label="Outages" />
+    <div className={styles.widget}>
+      <div className={styles.header}>
+        <H2>Customers & Outages by Location</H2>
       </div>
 
-      {isLoading && (
-        <Body style={{ color: palette.gray.dark1 }}>Loading map…</Body>
-      )}
+      <div className={styles.card}>
+        <div className={styles.legend}>
+          <LegendItem color={CUSTOMER_COLOR} label="Customers" />
+          <LegendItem color={OUTAGE_COLOR} label="Outages" />
+        </div>
 
-      {error && <ErrorText>Error: {error}</ErrorText>}
+        {isLoading && (
+          <Body style={{ color: palette.gray.dark1 }}>Loading map…</Body>
+        )}
 
-      {!isLoading && !error && (
-        <svg
+        {error && <ErrorText>Error: {error}</ErrorText>}
+
+        {!isLoading && !error && (
+          <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
           style={{ width: "100%", height: "auto" }}
           role="img"
@@ -239,8 +231,9 @@ export default function CustomerMap() {
               />
             </g>
           ))}
-        </svg>
-      )}
-    </Card>
+          </svg>
+        )}
+      </div>
+    </div>
   );
 }

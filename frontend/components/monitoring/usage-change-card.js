@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Body } from "@leafygreen-ui/typography";
+import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/monitoring/usage-change-card.module.css";
 
 const TICK_MS = 30_000;
@@ -50,10 +50,10 @@ export default function UsageChangeCard() {
     : styles.trendFlat;
 
   return (
-    <div className={styles.card}>
-      {/* Header */}
+    <div className={styles.widget}>
+      {/* Header (outside the card) */}
       <div className={styles.cardHeader}>
-        <span className={styles.cardTitle}>Energy Usage</span>
+        <H2>Energy Usage</H2>
         <select
           value={window}
           onChange={(e) => setWindow(e.target.value)}
@@ -67,41 +67,43 @@ export default function UsageChangeCard() {
         </select>
       </div>
 
-      {/* Body */}
-      {error ? (
-        <Body className={styles.errorText}>Error: {error}</Body>
-      ) : !data ? (
-        <div className={styles.skeleton} />
-      ) : (
-        <>
-          <div className={`${styles.mainStat} ${trendClass}`}>
-            <span className={styles.arrow}>
-              {isDecrease ? "↓" : isIncrease ? "↑" : "→"}
-            </span>
-            <span className={styles.pctValue}>{absPct}%</span>
-          </div>
-
-          <p className={styles.trendLabel}>
-            {isDecrease ? "less" : isIncrease ? "more" : "same"} than{" "}
-            {data.windowLabel}
-            {data.usedFallback && (
-              <span className={styles.fallbackNote}> (limited history)</span>
-            )}
-          </p>
-
-          <div className={styles.subStats}>
-            <div className={styles.subStat}>
-              <span className={styles.subLabel}>Now</span>
-              <span className={styles.subValue}>{data.current}</span>
+      {/* Card */}
+      <div className={styles.card}>
+        {error ? (
+          <Body className={styles.errorText}>Error: {error}</Body>
+        ) : !data ? (
+          <div className={styles.skeleton} />
+        ) : (
+          <>
+            <div className={`${styles.mainStat} ${trendClass}`}>
+              <span className={styles.arrow}>
+                {isDecrease ? "↓" : isIncrease ? "↑" : "→"}
+              </span>
+              <span className={styles.pctValue}>{absPct}%</span>
             </div>
-            <div className={styles.divider} />
-            <div className={styles.subStat}>
-              <span className={styles.subLabel}>Before</span>
-              <span className={styles.subValue}>{data.previous}</span>
+
+            <p className={styles.trendLabel}>
+              {isDecrease ? "less" : isIncrease ? "more" : "same"} than{" "}
+              {data.windowLabel}
+              {data.usedFallback && (
+                <span className={styles.fallbackNote}> (limited history)</span>
+              )}
+            </p>
+
+            <div className={styles.subStats}>
+              <div className={styles.subStat}>
+                <span className={styles.subLabel}>Now</span>
+                <span className={styles.subValue}>{data.current}</span>
+              </div>
+              <div className={styles.divider} />
+              <div className={styles.subStat}>
+                <span className={styles.subLabel}>Before</span>
+                <span className={styles.subValue}>{data.previous}</span>
+              </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

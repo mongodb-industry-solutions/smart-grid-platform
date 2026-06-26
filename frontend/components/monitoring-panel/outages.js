@@ -1,9 +1,7 @@
 "use client";
 
-import Card from "@leafygreen-ui/card";
-import { H3, Body, Error as ErrorText } from "@leafygreen-ui/typography";
+import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
-import { spacing } from "@leafygreen-ui/tokens";
 import {
   Table,
   TableBody,
@@ -14,6 +12,7 @@ import {
   Cell,
 } from "@leafygreen-ui/table";
 import { useOutages } from "./useOutages";
+import styles from "../../style/monitoring/panel.module.css";
 
 // Turns a millisecond duration into a short human-readable string (e.g. "2h 30m").
 function formatDuration(ms) {
@@ -23,7 +22,7 @@ function formatDuration(ms) {
   const minutes = totalMinutes % 60;
   if (hours && minutes) return `${hours}h ${minutes}m`;
   if (hours) return `${hours}h`;
-  return `${minutes}m`;
+  return `${minutes} minutes`;
 }
 
 // Builds the rows shown in the summary table from the API summary object.
@@ -53,45 +52,47 @@ export default function Outages() {
   const { summary, isLoading, error } = useOutages();
 
   return (
-    <Card style={{ padding: spacing[4], maxWidth: 520 }}>
-      <H3 style={{ color: palette.green.dark2, marginBottom: spacing[3] }}>
-        Outage Summary
-      </H3>
+    <div className={styles.widget}>
+      <div className={styles.header}>
+        <H2>Outage Summary</H2>
+      </div>
 
-      {isLoading && (
-        <Body style={{ color: palette.gray.dark1 }}>Loading outages…</Body>
-      )}
+      <div className={styles.card}>
+        {isLoading && (
+          <Body style={{ color: palette.gray.dark1 }}>Loading outages…</Body>
+        )}
 
-      {error && <ErrorText>Error: {error}</ErrorText>}
+        {error && <ErrorText>Error: {error}</ErrorText>}
 
-      {!isLoading && !error && !summary && (
-        <Body style={{ color: palette.gray.dark1 }}>
-          No outage data available.
-        </Body>
-      )}
+        {!isLoading && !error && !summary && (
+          <Body style={{ color: palette.gray.dark1 }}>
+            No outage data available.
+          </Body>
+        )}
 
-      {!isLoading && !error && summary && (
-        <Table>
-          <TableHead>
-            <HeaderRow>
-              <HeaderCell>Metric</HeaderCell>
-              <HeaderCell>Value</HeaderCell>
-            </HeaderRow>
-          </TableHead>
-          <TableBody>
-            {buildRows(summary).map((row) => (
-              <Row key={row.label}>
-                <Cell>
-                  <Body weight="medium">{row.label}</Body>
-                </Cell>
-                <Cell>
-                  <Body>{row.value}</Body>
-                </Cell>
-              </Row>
-            ))}
-          </TableBody>
-        </Table>
-      )}
-    </Card>
+        {!isLoading && !error && summary && (
+          <Table>
+            <TableHead>
+              <HeaderRow>
+                <HeaderCell>Metric</HeaderCell>
+                <HeaderCell>Value</HeaderCell>
+              </HeaderRow>
+            </TableHead>
+            <TableBody>
+              {buildRows(summary).map((row) => (
+                <Row key={row.label}>
+                  <Cell>
+                    <Body weight="medium">{row.label}</Body>
+                  </Cell>
+                  <Cell>
+                    <Body>{row.value}</Body>
+                  </Cell>
+                </Row>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </div>
+    </div>
   );
 }
