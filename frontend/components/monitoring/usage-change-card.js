@@ -91,12 +91,12 @@ export default function UsageChangeCard() {
 
           <div className={styles.subStats}>
             <div className={styles.subStat}>
-              <span className={styles.subLabel}>Now</span>
+              <span className={styles.subLabel}>Now (W)</span>
               <span className={styles.subValue}>{data.current}</span>
             </div>
             <div className={styles.divider} />
             <div className={styles.subStat}>
-              <span className={styles.subLabel}>Before</span>
+              <span className={styles.subLabel}>Before (W)</span>
               <span className={styles.subValue}>{data.previous}</span>
             </div>
           </div>

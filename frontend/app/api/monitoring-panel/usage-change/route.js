@@ -60,19 +60,19 @@ export async function GET(request) {
 
     const previousTs = previousDoc?._id ?? null;
 
-    // Average avg_reading for both periods in parallel
+    // Average power demand (W) for both periods in parallel
     const [currentAgg, previousAgg] = await Promise.all([
       collection
         .aggregate([
           { $match: { timestamp: latestTs } },
-          { $group: { _id: null, avg: { $avg: "$avg_reading" } } },
+          { $group: { _id: null, avg: { $avg: "$power" } } },
         ])
         .next(),
       previousTs
         ? collection
             .aggregate([
               { $match: { timestamp: previousTs } },
-              { $group: { _id: null, avg: { $avg: "$avg_reading" } } },
+              { $group: { _id: null, avg: { $avg: "$power" } } },
             ])
             .next()
         : Promise.resolve(null),

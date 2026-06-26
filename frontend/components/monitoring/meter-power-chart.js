@@ -28,20 +28,33 @@ const TICK_MS = 5_000;
 const MAX_ROWS = 25;
 const MAX_HISTORY = 20;
 
-const LINES = [
-  { key: "power", label: "Energy Consumption (kWh)", color: "#00684A" },
+const PALETTE = [
+  "#00684A",
+  "#016BF8",
+  "#9D6CCF",
+  "#DB3030",
+  "#FFC010",
+  "#00A35C",
+  "#1254B7",
+  "#F97216",
+  "#00BEF4",
+  "#B45AF2",
 ];
 
-export default function LiveReadingsChart() {
-  const [history, setHistory]         = useState([]);
-  const [limit, setLimit]             = useState(5);
-  const [selectValue, setSelectValue] = useState("5");
-  const [customInput, setCustomInput] = useState("");
-  const [error, setError]             = useState("");
+const colorFor = (index) => PALETTE[index % PALETTE.length];
+
+export default function MeterPowerChart() {
+  const [history, setHistory]           = useState([]);
+  const [meterIds, setMeterIds]         = useState([]);
+  const [limit, setLimit]               = useState(5);
+  const [selectValue, setSelectValue]   = useState("5");
+  const [customInput, setCustomInput]   = useState("");
+  const [error, setError]               = useState("");
 
   useEffect(() => {
     let periodIndex = 0;
     setHistory([]);
+    setMeterIds([]);
 
     const fetchReadings = async () => {
       try {
@@ -55,22 +68,30 @@ export default function LiveReadingsChart() {
         const data = await res.json();
 
         if (data.length) {
-          const avg = (key) =>
-            data.reduce((sum, r) => sum + (r[key] ?? 0), 0) / data.length;
-
           const point = {
             time: new Date(data[0].timestamp).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
               second: "2-digit",
             }),
-            power: parseFloat(avg("energy").toFixed(2)),
           };
+
+          const seenIds = [];
+          for (const r of data) {
+            point[r.dataid] = r.energy ?? 0;
+            seenIds.push(r.dataid);
+          }
+
+          setMeterIds((prev) => {
+            const merged = [...new Set([...prev, ...seenIds])];
+            return merged;
+          });
 
           setHistory((prev) => {
             const next = [...prev, point];
             return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
           });
+
           periodIndex += 1;
         }
       } catch (err) {
@@ -104,7 +125,7 @@ export default function LiveReadingsChart() {
     <div>
       <div className={styles.header}>
         <div className={styles.titleRow}>
-          <H2>Live Readings Chart</H2>
+          <H2>Power per Meter</H2>
           <span className={styles.liveBadge}>
             <span className={styles.liveDot} />
             LIVE
@@ -113,7 +134,7 @@ export default function LiveReadingsChart() {
 
         <div className={styles.controls}>
           <Select
-            label="Meters to average"
+            label="Meters to show"
             value={selectValue}
             onChange={handleSelectChange}
             className={styles.selectWrapper}
@@ -180,14 +201,15 @@ export default function LiveReadingsChart() {
                 iconType="circle"
                 iconSize={8}
                 wrapperStyle={LEGEND_WRAPPER}
+                formatter={(value) => `Meter ${value}`}
               />
-              {LINES.map(({ key, label, color }) => (
+              {meterIds.map((id, index) => (
                 <Line
-                  key={key}
+                  key={id}
                   type="monotone"
-                  dataKey={key}
-                  name={label}
-                  stroke={color}
+                  dataKey={id}
+                  name={id}
+                  stroke={colorFor(index)}
                   strokeWidth={2}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 0 }}
