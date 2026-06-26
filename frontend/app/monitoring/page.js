@@ -1,8 +1,8 @@
-import RecentReadings from "@/components/monitoring/live-readings";
-import LiveReadingsChart from "@/components/monitoring/live-readings-chart";
-import UsageChangeCard from "@/components/monitoring/usage-change-card";
-import Outages from "@/components/monitoring-panel/outages";
-import CustomerMap from "@/components/monitoring-panel/customerMap";
+import RecentReadings from "@/components/readings/live-readings";
+import LiveReadingsChart from "@/components/readings/live-readings-chart";
+import UsageChangeCard from "@/components/readings/usage-change-card";
+import Outages from "@/components/outages/outages";
+import CustomerMap from "@/components/outages/customerMap";
 
 export default function MonitoringPage() {
   return (

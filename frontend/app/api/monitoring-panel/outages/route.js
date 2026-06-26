@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import getMongoClientPromise from "@/lib/const/mongodb";
+import getMongoClientPromise from "@/lib/mongodb";
 import { getOutagesSummary } from "@/lib/db/outages";
 
 const dbName = process.env.DATABASE_NAME;

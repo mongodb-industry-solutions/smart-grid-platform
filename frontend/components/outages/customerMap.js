@@ -8,7 +8,7 @@ import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
 import { useCustomerLocations } from "./useCustomerLocations";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
-import styles from "../../style/monitoring/panel.module.css";
+import styles from "../../style/outages/panel.module.css";
 
 const WIDTH = 960;
 const HEIGHT = 600;

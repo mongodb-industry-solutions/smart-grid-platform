@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import getMongoClientPromise from "@/lib/const/mongodb";
+import getMongoClientPromise from "@/lib/mongodb";
 import { getCustomerLocations } from "@/lib/db/customerLocations";
 
 const dbName = process.env.DATABASE_NAME;

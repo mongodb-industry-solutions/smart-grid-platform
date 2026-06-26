@@ -12,7 +12,7 @@ import {
   Cell,
 } from "@leafygreen-ui/table";
 import { useOutages } from "./useOutages";
-import styles from "../../style/monitoring/panel.module.css";
+import styles from "../../style/outages/panel.module.css";
 
 // Turns a millisecond duration into a short human-readable string (e.g. "2h 30m").
 function formatDuration(ms) {

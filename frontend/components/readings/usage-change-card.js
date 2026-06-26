@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
-import styles from "../../style/monitoring/usage-change-card.module.css";
+import styles from "../../style/readings/usage-change-card.module.css";
 
 const TICK_MS = 30_000;
 
