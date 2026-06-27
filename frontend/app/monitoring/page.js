@@ -3,6 +3,7 @@ import LiveReadingsChart from "@/components/readings/live-readings-chart";
 import UsageChangeCard from "@/components/readings/usage-change-card";
 import Outages from "@/components/outages/outages";
 import CustomerMap from "@/components/outages/customerMap";
+import Anomalies from "@/components/anomalies/anomalies";
 // import MeterPowerChart from "@/components/monitoring/meter-power-chart";
 import styles from "./monitoring.module.css";
 
@@ -48,6 +49,10 @@ export default function MonitoringPage() {
         </div>
       </section>
 
+      {/* Row 4 — Anomalies */}
+      <section>
+        <Anomalies />
+      </section>
     </main>
   );
 }
