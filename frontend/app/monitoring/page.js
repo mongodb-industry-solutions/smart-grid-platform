@@ -4,53 +4,26 @@ import UsageChangeCard from "@/components/readings/usage-change-card";
 import Outages from "@/components/outages/outages";
 import CustomerMap from "@/components/outages/customerMap";
 import Anomalies from "@/components/anomalies/anomalies";
-// import MeterPowerChart from "@/components/monitoring/meter-power-chart";
 import styles from "./monitoring.module.css";
 
 export default function MonitoringPage() {
   return (
-    <main className={styles.page} style={{ display: "flex", flexDirection: "column", gap: "40px" }}>
-      {/* Row 1 — Energy usage */}
-      <section>
+    <main className={styles.page}>
+      {/* Row 1 — Energy usage and outage summary */}
+      <section className={`${styles.row} ${styles.rowSplit}`}>
         <UsageChangeCard />
+        <Outages />
       </section>
 
-      {/* Row 2 — Outage summary and customer map */}
-      <section
-        style={{
-          display: "flex",
-          gap: "24px",
-          alignItems: "stretch",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ flex: "1.5 1 420px", minWidth: 0 }}>
-          <CustomerMap />
-        </div>
-        <div style={{ flex: "1 1 280px", minWidth: 0 }}>
-          <Outages />
-        </div>
+      {/* Row 2 — Customer map and anomalies */}
+      <section className={`${styles.row} ${styles.rowSplit}`}>
+        <RecentReadings />
+        <CustomerMap />
       </section>
 
       {/* Row 3 — Recent readings and live readings chart */}
-      <section
-        style={{
-          display: "flex",
-          gap: "24px",
-          alignItems: "stretch",
-          flexWrap: "wrap",
-        }}
-      >
-        <div style={{ flex: "1 1 380px", minWidth: 0 }}>
-          <RecentReadings />
-        </div>
-        <div style={{ flex: "1 1 420px", minWidth: 0 }}>
-          <LiveReadingsChart />
-        </div>
-      </section>
-
-      {/* Row 4 — Anomalies */}
-      <section>
+      <section className={`${styles.row} ${styles.rowEqual}`}>
+        <LiveReadingsChart />
         <Anomalies />
       </section>
     </main>

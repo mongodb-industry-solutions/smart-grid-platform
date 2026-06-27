@@ -16,6 +16,8 @@ import {
   flexRender,
 } from "@leafygreen-ui/table";
 import { useAnomalies } from "./useAnomalies";
+import TablePagination from "@/components/general/TablePagination";
+import { useAutoPageSize } from "@/components/general/useAutoPageSize";
 import styles from "../../style/anomalies/anomalies.module.css";
 
 const THRESHOLDS = ["3", "2.5", "2", "1.5"];
@@ -51,11 +53,6 @@ const columns = [
     cell: ({ getValue }) => fmt(getValue(), 2),
   },
   {
-    accessorKey: "std",
-    header: "Std dev",
-    cell: ({ getValue }) => fmt(getValue(), 3),
-  },
-  {
     accessorKey: "sigma",
     header: "Deviation (σ)",
     cell: ({ getValue }) => {
@@ -64,30 +61,44 @@ const columns = [
       return <Badge variant={variant}>{fmt(sigma, 2)}σ</Badge>;
     },
   },
-  {
-    accessorKey: "timestamp",
-    header: "Timestamp",
-    cell: ({ getValue }) => {
-      const val = getValue();
-      return val ? new Date(val).toLocaleString() : "N/A";
-    },
-  },
 ];
+
+// The snapshot time = the most recent reading time among the anomalies (each
+// anomaly is a meter's latest reading). Shown once in the header.
+function getSnapshotTime(anomalies) {
+  if (!anomalies.length) return null;
+  const latest = Math.max(
+    ...anomalies.map((a) => new Date(a.timestamp).getTime())
+  );
+  return new Date(latest).toLocaleString();
+}
 
 export default function Anomalies() {
   const [threshold, setThreshold] = useState(3);
   const { anomalies, isLoading, error } = useAnomalies(threshold);
 
-  const table = useLeafyGreenTable({ data: anomalies, columns });
+  const table = useLeafyGreenTable({
+    data: anomalies,
+    columns,
+    withPagination: true,
+    autoResetPageIndex: false,
+    initialState: { pagination: { pageSize: 5 } },
+  });
+
+  const wrapperRef = useAutoPageSize(table);
 
   const handleThresholdChange = (val) => {
     setThreshold(Number(val));
   };
 
+  const snapshotTime = getSnapshotTime(anomalies);
+
   return (
-    <div>
+    <div className={styles.widget}>
       <div className={styles.header}>
-        <H2>Anomalies</H2>
+        <div>
+          <H2>Anomalies</H2>
+        </div>
 
         <div className={styles.controls}>
           <Select
@@ -121,36 +132,42 @@ export default function Anomalies() {
 
       {!error && !isLoading && anomalies.length > 0 && (
         <div className={styles.tableWrapper}>
-          <Table table={table}>
-            <TableHead isSticky>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <HeaderRow key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <HeaderCell key={header.id} header={header}>
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
-                      )}
-                    </HeaderCell>
-                  ))}
-                </HeaderRow>
-              ))}
-            </TableHead>
-            <TableBody>
-              {table.getRowModel().rows.map((row) => (
-                <Row key={row.id} row={row}>
-                  {row.getVisibleCells().map((cell) => (
-                    <Cell key={cell.id} cell={cell}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </Cell>
-                  ))}
-                </Row>
-              ))}
-            </TableBody>
-          </Table>
+          <div className={styles.tableScroll} ref={wrapperRef}>
+            <Table table={table}>
+              <TableHead isSticky>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <HeaderRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <HeaderCell key={header.id} header={header}>
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                      </HeaderCell>
+                    ))}
+                  </HeaderRow>
+                ))}
+              </TableHead>
+              <TableBody>
+                {table.getRowModel().rows.map((row) => (
+                  <Row key={row.id} row={row}>
+                    {row.getVisibleCells().map((cell) => (
+                      <Cell key={cell.id} cell={cell}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </Cell>
+                    ))}
+                  </Row>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className={styles.paginationBar}>
+            <TablePagination table={table} />
+          </div>
         </div>
       )}
     </div>

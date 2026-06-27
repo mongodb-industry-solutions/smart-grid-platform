@@ -1,8 +1,16 @@
+/* Fills the column height so cards/tables in a row line up. */
+.widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   margin-bottom: 16px;
+  min-height: 3.25rem;
 }
 
 .controls {
@@ -42,12 +50,28 @@
   font-size: 13px;
 }
 
-/* ── Table wrapper ── */
+/* ── Card: one bordered box that fills the column height ── */
 .tableWrapper {
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scroll area for the rows; grows to fill the card above the pagination. */
+.tableScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Pagination pinned at the bottom, inside the card. */
+.paginationBar {
+  border-top: 1px solid #e8edeb;
+  padding: 8px 12px;
 }
 
 /* Collapse borders so wrapper radius shows cleanly */

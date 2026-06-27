@@ -101,7 +101,7 @@ export default function LiveReadingsChart() {
   if (error) return <Body>Error: {error}</Body>;
 
   return (
-    <div>
+    <div className={styles.widget}>
       <div className={styles.header}>
         <div className={styles.titleRow}>
           <H2>Live Readings Chart</H2>

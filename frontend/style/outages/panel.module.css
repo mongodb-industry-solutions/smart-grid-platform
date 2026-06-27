@@ -8,12 +8,14 @@
   height: 100%;
 }
 
-/* Title row, sits outside (above) the card. */
+/* Title row, sits outside (above) the card. min-height keeps every widget's
+   header the same height across a row so the cards below them line up. */
 .header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 16px;
   margin-bottom: 16px;
+  min-height: 3.25rem;
 }
 
 /* The bordered/shadowed content box. */
