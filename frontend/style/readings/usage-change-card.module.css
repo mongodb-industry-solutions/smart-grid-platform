@@ -6,6 +6,11 @@
   height: 100%;
 }
 
+/* Keep the title on a single line next to the dropdown. */
+.title {
+  white-space: nowrap;
+}
+
 .card {
   border: 1px solid #c1c7c6;
   border-radius: 8px;
@@ -26,28 +31,8 @@
   min-height: 3.25rem;
 }
 
-.cardTitle {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: #5c6970;
-}
-
-.windowSelect {
-  font-size: 12px;
-  color: #001e2b;
-  background: #f9fbfa;
-  border: 1px solid #c1c7c6;
-  border-radius: 5px;
-  padding: 3px 6px;
-  cursor: pointer;
-  outline: none;
-}
-
-.windowSelect:focus {
-  border-color: #00684a;
-  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+.selectWrapper {
+  width: 124px;
 }
 
 /* ── Main stat ── */

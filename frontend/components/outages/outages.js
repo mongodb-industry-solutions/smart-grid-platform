@@ -2,15 +2,6 @@
 
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
-import {
-  Table,
-  TableBody,
-  TableHead,
-  HeaderRow,
-  HeaderCell,
-  Row,
-  Cell,
-} from "@leafygreen-ui/table";
 import { useOutages } from "./useOutages";
 import styles from "../../style/outages/panel.module.css";
 
@@ -71,26 +62,14 @@ export default function Outages() {
         )}
 
         {!isLoading && !error && summary && (
-          <Table>
-            <TableHead>
-              <HeaderRow>
-                <HeaderCell>Metric</HeaderCell>
-                <HeaderCell>Value</HeaderCell>
-              </HeaderRow>
-            </TableHead>
-            <TableBody>
-              {buildRows(summary).map((row) => (
-                <Row key={row.label}>
-                  <Cell>
-                    <Body weight="medium">{row.label}</Body>
-                  </Cell>
-                  <Cell>
-                    <Body>{row.value}</Body>
-                  </Cell>
-                </Row>
-              ))}
-            </TableBody>
-          </Table>
+          <div className={styles.statList}>
+            {buildRows(summary).map((row) => (
+              <div className={styles.statRow} key={row.label}>
+                <span className={styles.statLabel}>{row.label}</span>
+                <span className={styles.statValue}>{row.value}</span>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>

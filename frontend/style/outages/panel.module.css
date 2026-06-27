@@ -48,3 +48,34 @@
   border-radius: 50%;
   display: inline-block;
 }
+
+/* Label/value list with the subtle divider used in the Energy Usage card. */
+.statList {
+  display: flex;
+  flex-direction: column;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid #e8edeb;
+}
+
+.statRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: #5c6970;
+}
+
+.statValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #001e2b;
+}
