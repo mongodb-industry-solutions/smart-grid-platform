@@ -1,8 +1,16 @@
+/* Fills the column height so cards/tables in a row line up. */
+.widget {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 .header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 16px;
+  min-height: 3.25rem;
 }
 
 .titleRow {
@@ -93,6 +101,10 @@
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
   padding: 20px 8px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 .loadingRow {

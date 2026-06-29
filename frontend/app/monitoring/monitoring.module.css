@@ -1,5 +1,32 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 2.5rem;
+}
+
+/* Each row is a grid of equal-height cells using flexible fr units.
+   minmax(0, …) lets cells shrink below their content so wide tables/charts
+   don't force overflow. */
+.row {
+  display: grid;
+  gap: 1.5rem;
+  align-items: stretch;
+}
+
+/* Wider left cell (energy card / map) next to a narrower right cell. */
+.rowSplit {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+/* Two equal cells. */
+.rowEqual {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Stack into a single column on narrow viewports. */
+@media (max-width: 768px) {
+  .rowSplit,
+  .rowEqual {
+    grid-template-columns: 1fr;
+  }
 }
