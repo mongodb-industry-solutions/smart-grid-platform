@@ -1,0 +1,280 @@
+/* Page = the list/profile row stacked above the consumption chart. */
+.layout {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Three columns: customer list | detail | tariff.
+   Wider list so its rows don't crunch; narrower detail card. */
+.page {
+  display: grid;
+  grid-template-columns: minmax(0, 420px) minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 24px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Shared card box ── */
+.card {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  overflow: hidden;
+}
+
+.cardTitle {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8edeb;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+/* ── Customer list ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  border-bottom: 1px solid #e8edeb;
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  transition: background-color 0.15s ease;
+  text-align: left;
+  background: none;
+  width: 100%;
+}
+
+.row:last-child {
+  border-bottom: none;
+}
+
+.row:hover {
+  background-color: #f9fbfa;
+}
+
+.rowSelected {
+  background-color: #eaf4f1;
+  border-left-color: #00684a;
+}
+
+.rowSelected:hover {
+  background-color: #eaf4f1;
+}
+
+.avatar {
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #00684a;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rowMain {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rowName {
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.rowSub {
+  font-size: 13px;
+  color: #5c6970;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rowRight {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.rowUsage {
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.rowDate {
+  font-size: 12px;
+  color: #89979b;
+}
+
+/* ── Profile ── */
+.profile {
+  padding: 0;
+}
+
+.profileHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.profileAvatar {
+  width: 56px;
+  height: 56px;
+  font-size: 18px;
+}
+
+.profileName {
+  font-size: 20px;
+  font-weight: 700;
+  color: #001e2b;
+}
+
+.section {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.section:last-child {
+  border-bottom: none;
+}
+
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5c6970;
+  margin-bottom: 12px;
+}
+
+.fieldRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 7px 0;
+}
+
+.fieldLabel {
+  font-size: 14px;
+  color: #5c6970;
+}
+
+.fieldValue {
+  font-size: 14px;
+  font-weight: 600;
+  color: #001e2b;
+  text-align: right;
+}
+
+/* ── Metrics grid (latest reading) ── */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+}
+
+.metric {
+  background: #f9fbfa;
+  border: 1px solid #e8edeb;
+  border-radius: 6px;
+  padding: 10px 12px;
+}
+
+.metricLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #89979b;
+}
+
+.metricValue {
+  font-size: 16px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+/* ── Tier table ── */
+.tierTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.tierTable th {
+  text-align: left;
+  color: #5c6970;
+  font-weight: 600;
+  padding: 6px 8px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.tierTable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #f1f3f2;
+  color: #001e2b;
+}
+
+.tierTable tr:last-child td {
+  border-bottom: none;
+}
+
+.empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #5c6970;
+}
+
+/* ── Consumption trend chart ── */
+.chartCard {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 20px 24px;
+}
+
+.chartHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.regionSelect {
+  width: 200px;
+}
+
+.chartBody {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #5c6970;
+}
