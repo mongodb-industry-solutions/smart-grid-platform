@@ -12,7 +12,7 @@ export default function MonitoringPage() {
   return (
     <main className={styles.page}>
       {/* Row 1 — Energy usage and outage summary */}
-      <section className={`${styles.row} ${styles.rowSplit}`}>
+      <section className={`${styles.row} ${styles.rowThree}`}>
         <UsageChangeCard />
         <GridStabilityCard />
         <Outages />
