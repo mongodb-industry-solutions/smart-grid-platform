@@ -106,30 +106,6 @@ export default function GridStabilityCard() {
             </p>
             <p className={styles.description}>{status.description}</p>
 
-            {/* Live metrics */}
-            <div className={styles.metrics}>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Avg demand now</span>
-                <span className={styles.metricValue}>{data.current} W</span>
-              </div>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Avg demand before</span>
-                <span className={styles.metricValue}>{data.previous} W</span>
-              </div>
-              <div className={styles.metric}>
-                <span className={styles.metricLabel}>Change</span>
-                <span className={`${styles.metricValue} ${
-                  data.pctChange > 0 ? styles.valueUp :
-                  data.pctChange < 0 ? styles.valueDown : ""
-                }`}>
-                  {data.pctChange > 0 ? "+" : ""}{data.pctChange}%
-                  {data.usedFallback && (
-                    <span className={styles.fallback}> (limited history)</span>
-                  )}
-                </span>
-              </div>
-            </div>
-
             {/* Network model placeholders */}
             <div className={styles.divider} />
             <p className={styles.placeholderHeading}>Network model parameters</p>
