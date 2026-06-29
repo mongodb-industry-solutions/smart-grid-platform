@@ -3,3 +3,10 @@
   flex-direction: column;
   gap: 40px;
 }
+
+.cardRow {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  flex-wrap: wrap;
+}
