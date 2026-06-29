@@ -3,6 +3,8 @@ import LiveReadingsChart from "@/components/readings/live-readings-chart";
 import UsageChangeCard from "@/components/readings/usage-change-card";
 import Outages from "@/components/outages/outages";
 import CustomerMap from "@/components/outages/customerMap";
+import GridStabilityCard from "@/components/readings/grid-stability-card";
+// import MeterPowerChart from "@/components/monitoring/meter-power-chart";
 import Anomalies from "@/components/anomalies/anomalies";
 import styles from "./monitoring.module.css";
 
@@ -10,8 +12,9 @@ export default function MonitoringPage() {
   return (
     <main className={styles.page}>
       {/* Row 1 — Energy usage and outage summary */}
-      <section className={`${styles.row} ${styles.rowSplit}`}>
+      <section className={`${styles.row} ${styles.rowThree}`}>
         <UsageChangeCard />
+        <GridStabilityCard />
         <Outages />
       </section>
 

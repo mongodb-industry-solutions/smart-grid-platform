@@ -23,10 +23,23 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+/* Three equal cells. */
+.rowThree {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 /* Stack into a single column on narrow viewports. */
 @media (max-width: 768px) {
   .rowSplit,
-  .rowEqual {
+  .rowEqual,
+  .rowThree {
     grid-template-columns: 1fr;
   }
+}
+
+.cardRow {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  flex-wrap: wrap;
 }

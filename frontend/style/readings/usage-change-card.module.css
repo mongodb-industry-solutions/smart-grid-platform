@@ -1,8 +1,8 @@
-/* Outer wrapper constrains the widget width; title sits above the card. */
+/* Outer wrapper fills the grid cell; title sits above the card. */
 .widget {
   display: flex;
   flex-direction: column;
-  max-width: 340px;
+  width: 100%;
   height: 100%;
 }
 

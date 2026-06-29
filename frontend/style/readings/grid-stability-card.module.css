@@ -1,0 +1,137 @@
+.widget {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.gaugeWrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+  padding: 12px 16px 16px;
+}
+
+/* ── Header ── */
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.windowSelect {
+  font-size: 12px;
+  color: #001e2b;
+  background: #f9fbfa;
+  border: 1px solid #c1c7c6;
+  border-radius: 5px;
+  padding: 3px 6px;
+  cursor: pointer;
+  outline: none;
+}
+
+.windowSelect:focus {
+  border-color: #00684a;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+
+/* ── Status text ── */
+.statusLabel {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.statusLabel_normal   { color: #00684a; }
+.statusLabel_elevated { color: #d4730a; }
+.statusLabel_critical { color: #db3030; }
+
+.description {
+  text-align: center;
+  font-size: 11px;
+  color: #5c6970;
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+/* ── Metrics list ── */
+.metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.metricLabel {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.metricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.metricPlaceholder {
+  font-size: 12px;
+  color: #89979b;
+  font-style: italic;
+}
+
+.fallback {
+  font-size: 11px;
+  color: #89979b;
+  font-style: italic;
+}
+
+/* ── Divider + placeholder section ── */
+.divider {
+  height: 1px;
+  background: #e8edeb;
+  margin: 10px 0 8px;
+}
+
+.placeholderHeading {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #89979b;
+  margin: 0 0 5px;
+}
+
+/* ── Loading / error ── */
+.skeleton {
+  height: 88px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.errorText {
+  color: #db3030;
+  font-size: 13px;
+}
