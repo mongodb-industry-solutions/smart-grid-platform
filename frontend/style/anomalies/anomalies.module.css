@@ -8,9 +8,16 @@
 .header {
   display: flex;
   align-items: flex-start;
+  justify-content: space-between;
   gap: 16px;
   margin-bottom: 16px;
   min-height: 3.25rem;
+}
+
+.asOf {
+  margin-top: 2px;
+  font-size: 13px;
+  color: #5c6970;
 }
 
 .controls {
@@ -20,34 +27,21 @@
 }
 
 .selectWrapper {
-  width: 160px;
+  width: 150px;
 }
 
-.customInputRow {
+.emptyState {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 32px 24px;
+  text-align: center;
+  color: #5c6970;
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.customInput {
-  width: 72px;
-  height: 36px;
-  padding: 0 8px;
-  border: 1px solid #89979b;
-  border-radius: 6px;
-  font-size: 13px;
-  outline: none;
-}
-
-.applyButton {
-  height: 36px;
-  padding: 0 12px;
-  background: #00684a;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
+  justify-content: center;
 }
 
 /* ── Card: one bordered box that fills the column height ── */
@@ -55,7 +49,7 @@
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -74,13 +68,11 @@
   padding: 8px 12px;
 }
 
-/* Collapse borders so wrapper radius shows cleanly */
 .tableWrapper :global(table) {
   border-collapse: collapse;
   width: 100%;
 }
 
-/* Header: MongoDB Evergreen (#023430) with white text */
 .tableWrapper :global(thead th) {
   background-color: #023430 !important;
   color: #ffffff !important;
@@ -95,7 +87,6 @@
   border-right: none !important;
 }
 
-/* Cell borders */
 .tableWrapper :global(tbody td) {
   border-bottom: 1px solid #e8edeb !important;
   border-right: 1px solid #e8edeb !important;
@@ -107,18 +98,15 @@
   border-right: none !important;
 }
 
-/* Remove bottom border on last row */
 .tableWrapper :global(tbody tr:last-child td) {
   border-bottom: none !important;
 }
 
-/* Row hover: MongoDB light green tint */
 .tableWrapper :global(tbody tr:hover td) {
   background-color: #eaf4f1 !important;
   cursor: default;
 }
 
-/* Subtle alternating row background */
 .tableWrapper :global(tbody tr:nth-child(even) td) {
   background-color: #f9fbfa;
 }

@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
+import { Select, Option } from "@leafygreen-ui/select";
 import styles from "../../style/readings/usage-change-card.module.css";
 
 const TICK_MS = 30_000;
 
 const WINDOWS = [
-  { value: "1h",  label: "Last hour" },
-  { value: "6h",  label: "Last 6 hours" },
-  { value: "24h", label: "Last 24 hours" },
+  { value: "1h",  label: "1 hour" },
+  { value: "6h",  label: "6 hours" },
+  { value: "24h", label: "24 hours" },
 ];
 
 export default function UsageChangeCard() {
@@ -53,18 +54,20 @@ export default function UsageChangeCard() {
     <div className={styles.widget}>
       {/* Header (outside the card) */}
       <div className={styles.cardHeader}>
-        <H2>Energy Usage</H2>
-        <select
+        <H2 className={styles.title}>Energy Usage</H2>
+        <Select
+          label="Window"
+          aria-label="Time window"
           value={window}
-          onChange={(e) => setWindow(e.target.value)}
-          className={styles.windowSelect}
+          onChange={(value) => setWindow(value)}
+          className={styles.selectWrapper}
         >
           {WINDOWS.map((w) => (
-            <option key={w.value} value={w.value}>
+            <Option key={w.value} value={w.value}>
               {w.label}
-            </option>
+            </Option>
           ))}
-        </select>
+        </Select>
       </div>
 
       {/* Card */}
