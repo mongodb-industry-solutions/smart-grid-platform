@@ -89,17 +89,15 @@
   color: #001e2b;
 }
 
-.metricPlaceholder {
-  font-size: 12px;
-  color: #89979b;
-  font-style: italic;
+.metricSub {
+  font-size: 11px;
+  font-weight: 400;
+  color: #5c6970;
 }
 
-.fallback {
-  font-size: 11px;
-  color: #89979b;
-  font-style: italic;
-}
+.dot_normal   { color: #00684a; }
+.dot_elevated { color: #d4730a; }
+.dot_critical { color: #db3030; }
 
 /* ── Divider + placeholder section ── */
 .divider {

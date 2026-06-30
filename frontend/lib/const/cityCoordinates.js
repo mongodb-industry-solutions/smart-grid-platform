@@ -7,6 +7,8 @@ export const CITY_COORDINATES = {
   "San Antonio, Texas":   [-98.4936, 29.4241],
   "Kansas City, Missouri": [-94.5786, 39.0997],
   "Santa Fe, New Mexico":  [-105.9378, 35.6870],
+  "Memphis, Tennessee":     [-90.0489, 35.1495],
+  "Phoenix, Arizona":       [-112.0740, 33.4484],
 };
 
 /**
