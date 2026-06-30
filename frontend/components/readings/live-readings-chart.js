@@ -22,7 +22,7 @@ import {
   TOOLTIP_LABEL,
   TOOLTIP_CURSOR,
   LEGEND_WRAPPER,
-} from "../../style/readings/chart-styles";
+} from "@/lib/const/chartConfig";
 
 const TICK_MS = 5_000;
 const MAX_ROWS = 25;
