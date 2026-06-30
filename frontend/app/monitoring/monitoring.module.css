@@ -28,11 +28,26 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+/* Four cells; the 2nd (Power Factor) is narrower than the rest.
+   Cells stretch to equal height (.row default) and headers share a min-height
+   so the card boxes line up at the top. */
+.rowFour {
+  grid-template-columns: minmax(0, 0.7fr) minmax(0, 0.7fr) minmax(0, 1fr) minmax(0, 1fr);
+}
+
+/* Four cells become two on mid-size viewports. */
+@media (max-width: 1200px) {
+  .rowFour {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 /* Stack into a single column on narrow viewports. */
 @media (max-width: 768px) {
   .rowSplit,
   .rowEqual,
-  .rowThree {
+  .rowThree,
+  .rowFour {
     grid-template-columns: 1fr;
   }
 }
@@ -42,4 +57,11 @@
   flex-direction: row;
   gap: 24px;
   flex-wrap: wrap;
+}
+
+/* Stacks two cards vertically inside a single grid cell. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }

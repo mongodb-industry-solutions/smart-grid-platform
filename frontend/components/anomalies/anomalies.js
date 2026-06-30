@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { Select, Option } from "@leafygreen-ui/select";
-import Badge from "@leafygreen-ui/badge";
 import {
   Table,
   TableHead,
@@ -55,11 +54,9 @@ const columns = [
   {
     accessorKey: "sigma",
     header: "Deviation (σ)",
-    cell: ({ getValue }) => {
-      const sigma = getValue();
-      const variant = sigma >= 3 ? "red" : "yellow";
-      return <Badge variant={variant}>{fmt(sigma, 2)}σ</Badge>;
-    },
+    cell: ({ getValue }) => (
+      <span className={styles.chip}>{fmt(getValue(), 2)}σ</span>
+    ),
   },
 ];
 

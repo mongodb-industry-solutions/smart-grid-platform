@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { PieChart, Pie } from "recharts";
 import { H2, Body } from "@leafygreen-ui/typography";
+import { Select, Option } from "@leafygreen-ui/select";
 import styles from "../../style/readings/grid-stability-card.module.css";
 
 const TICK_MS = 30_000;
@@ -138,16 +139,20 @@ export default function GridStabilityCard() {
   return (
     <div className={styles.widget}>
       <div className={styles.cardHeader}>
-        <H2>Grid Stability</H2>
-        <select
+        <H2 className={styles.title}>Grid Stability</H2>
+        <Select
+          label="Window"
+          aria-label="Time window"
           value={window}
-          onChange={(e) => setWindow(e.target.value)}
-          className={styles.windowSelect}
+          onChange={(value) => setWindow(value)}
+          className={styles.selectWrapper}
         >
           {WINDOWS.map((w) => (
-            <option key={w.value} value={w.value}>{w.label}</option>
+            <Option key={w.value} value={w.value}>
+              {w.label}
+            </Option>
           ))}
-        </select>
+        </Select>
       </div>
 
       <div className={styles.card}>

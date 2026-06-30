@@ -48,7 +48,7 @@ export default function Outages() {
         <H2>Outage Summary</H2>
       </div>
 
-      <div className={styles.card}>
+      <div className={`${styles.card} ${styles.cardCentered}`}>
         {isLoading && (
           <Body style={{ color: palette.gray.dark1 }}>Loading outages…</Body>
         )}

@@ -13,7 +13,7 @@ import {
   Tooltip,
   Legend,
 } from "recharts";
-import styles from "../../style/monitoring/live-readings-chart.module.css";
+import styles from "../../style/readings/live-readings-chart.module.css";
 import {
   CHART_MARGIN,
   AXIS_TICK,
@@ -22,7 +22,7 @@ import {
   TOOLTIP_LABEL,
   TOOLTIP_CURSOR,
   LEGEND_WRAPPER,
-} from "../../style/monitoring/chart-styles";
+} from "@/lib/const/chartConfig";
 
 const TICK_MS = 5_000;
 const MAX_ROWS = 25;
