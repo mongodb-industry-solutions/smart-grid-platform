@@ -6,10 +6,12 @@ const READINGS_COLLECTION_NAME =
 /**
  * Aggregates customers and outages by location for the map.
  *
- * Returns one entry per distinct city/state with two counts:
- *  - customers: how many customers live there.
- *  - outages: how many outage readings (avg_reading <= 0) belong to customers
- *    there, joined from the readings collection via dataid.
+ * Each customer is counted once. Returns one entry per distinct city/state:
+ *  - outages: customers with at least one outage reading (power <= 0), joined
+ *    from the readings collection via dataid (a customer is counted once even
+ *    with several outage readings).
+ *  - customers: the remaining customers there (without any outage).
+ *  So customers + outages = total customers in that city (no double counting).
  *
  * @param {import("mongodb").Db} db connected MongoDB database handle
  * @returns {Promise<Array<{ city: string, state: string, customers: number, outages: number }>>}
@@ -30,7 +32,8 @@ export async function getCustomerLocations(db) {
     ])
     .toArray();
 
-  // Outage readings per city, joined to the customer that owns each meter.
+  // Distinct customers with an outage per city, joined to the customer that
+  // owns each meter. A customer with several outage readings is counted once.
   const outagesByCity = await readings
     .aggregate([
       { $match: { power: { $lte: 0 } } },
@@ -53,20 +56,22 @@ export async function getCustomerLocations(db) {
       {
         $group: {
           _id: { city: "$city", state: "$state" },
-          outages: { $sum: 1 },
+          meters: { $addToSet: "$dataid" },
         },
       },
+      { $set: { outages: { $size: "$meters" } } },
     ])
     .toArray();
 
-  // Merge the two result sets by city/state into a single list.
+  // Merge by city/state. Each customer is counted once: those with an outage
+  // go to `outages` (red), the rest to `customers` (green) — no double counting.
   const byKey = new Map();
   for (const entry of customersByCity) {
     const { city, state } = entry._id;
     byKey.set(`${city}, ${state}`, {
       city,
       state,
-      customers: entry.customers,
+      total: entry.customers,
       outages: 0,
     });
   }
@@ -77,9 +82,16 @@ export async function getCustomerLocations(db) {
     if (existing) {
       existing.outages = entry.outages;
     } else {
-      byKey.set(key, { city, state, customers: 0, outages: entry.outages });
+      byKey.set(key, { city, state, total: entry.outages, outages: entry.outages });
     }
   }
 
-  return [...byKey.values()].sort((a, b) => b.customers - a.customers);
+  return [...byKey.values()]
+    .map(({ city, state, total, outages }) => ({
+      city,
+      state,
+      customers: Math.max(0, total - outages),
+      outages,
+    }))
+    .sort((a, b) => b.customers + b.outages - (a.customers + a.outages));
 }
