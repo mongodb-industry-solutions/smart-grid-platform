@@ -20,10 +20,16 @@
 /* ── Header ── */
 .cardHeader {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 16px;
+  min-height: 3.25rem;
+}
+
+/* Keep the title on one line so the header height stays consistent. */
+.title {
+  white-space: nowrap;
 }
 
 .selectWrapper {

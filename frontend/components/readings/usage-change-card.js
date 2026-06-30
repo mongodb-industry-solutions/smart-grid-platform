@@ -2,27 +2,20 @@
 
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
-import { Select, Option } from "@leafygreen-ui/select";
 import styles from "../../style/readings/usage-change-card.module.css";
 
 const TICK_MS = 30_000;
-
-const WINDOWS = [
-  { value: "1h",  label: "1 hour" },
-  { value: "6h",  label: "6 hours" },
-  { value: "24h", label: "24 hours" },
-];
+const WINDOW = "1h";
 
 export default function UsageChangeCard() {
   const [data, setData]           = useState(null);
-  const [window, setWindow]       = useState("1h");
   const [error, setError]         = useState("");
 
   useEffect(() => {
     const fetchChange = async () => {
       try {
         const res = await fetch(
-          `/api/monitoring-panel/usage-change?window=${window}`
+          `/api/monitoring-panel/usage-change?window=${WINDOW}`
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
@@ -38,7 +31,7 @@ export default function UsageChangeCard() {
     fetchChange();
     const intervalId = setInterval(fetchChange, TICK_MS);
     return () => clearInterval(intervalId);
-  }, [window]);
+  }, []);
 
   const isDecrease = data ? data.pctChange < 0 : false;
   const isIncrease = data ? data.pctChange > 0 : false;
@@ -55,19 +48,6 @@ export default function UsageChangeCard() {
       {/* Header (outside the card) */}
       <div className={styles.cardHeader}>
         <H2 className={styles.title}>Energy Usage</H2>
-        <Select
-          label="Window"
-          aria-label="Time window"
-          value={window}
-          onChange={(value) => setWindow(value)}
-          className={styles.selectWrapper}
-        >
-          {WINDOWS.map((w) => (
-            <Option key={w.value} value={w.value}>
-              {w.label}
-            </Option>
-          ))}
-        </Select>
       </div>
 
       {/* Card */}

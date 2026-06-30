@@ -28,6 +28,14 @@
   flex: 1;
 }
 
+/* Vertically centers the card content (used where the card stretches taller
+   than its content, e.g. the Outage Summary). */
+.cardCentered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
 .legend {
   display: flex;
   gap: 24px;

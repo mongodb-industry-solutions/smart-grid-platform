@@ -139,7 +139,7 @@ export default function GridStabilityCard() {
   return (
     <div className={styles.widget}>
       <div className={styles.cardHeader}>
-        <H2>Grid Stability</H2>
+        <H2 className={styles.title}>Grid Stability</H2>
         <Select
           label="Window"
           aria-label="Time window"
