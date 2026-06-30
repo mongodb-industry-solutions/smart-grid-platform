@@ -55,7 +55,7 @@ const columns = [
     accessorKey: "sigma",
     header: "Deviation (σ)",
     cell: ({ getValue }) => (
-      <span className={styles.badge}>{fmt(getValue(), 2)}σ</span>
+      <span className={styles.chip}>{fmt(getValue(), 2)}σ</span>
     ),
   },
 ];

@@ -20,8 +20,8 @@
   color: #5c6970;
 }
 
-/* Deviation pill — neutral gray, outlined like the other badges. */
-.badge {
+/* Deviation chip — neutral gray, outlined like the other chips. */
+.chip {
   display: inline-flex;
   align-items: center;
   padding: 2px 10px;

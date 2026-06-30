@@ -76,7 +76,7 @@ export default function PowerFactorCard() {
               <span className={styles.value}>{data.powerFactor.toFixed(2)}</span>
               {status && (
                 <span
-                  className={`${styles.statusPill} ${styles[status.className]}`}
+                  className={`${styles.statusChip} ${styles[status.className]}`}
                 >
                   {status.label}
                 </span>
