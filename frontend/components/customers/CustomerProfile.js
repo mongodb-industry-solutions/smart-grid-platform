@@ -7,6 +7,13 @@ import styles from "../../style/customers/customers.module.css";
 const fmt = (value, decimals) =>
   value != null ? value.toFixed(decimals) : "N/A";
 
+// Human-readable label for a tier's usage range.
+function tierRange(tier, previousMax) {
+  const from = previousMax != null ? previousMax : 0;
+  if (tier.max == null) return `Over ${from} ${tier.unit}`;
+  return `${from}–${tier.max} ${tier.unit}`;
+}
+
 // One label/value row.
 function Field({ label, value }) {
   return (
@@ -31,7 +38,7 @@ export default function CustomerProfile({ customer, isLoading, error }) {
   if (error) return <StateCard><ErrorText>Error: {error}</ErrorText></StateCard>;
   if (!customer) return <StateCard>Select a customer to see details.</StateCard>;
 
-  const { tariff, latestReading } = customer;
+  const { tariff } = customer;
 
   return (
     <div className={`${styles.card} ${styles.profile}`}>
@@ -52,45 +59,48 @@ export default function CustomerProfile({ customer, isLoading, error }) {
         <Field label="Location" value={customer.locationLabel} />
       </div>
 
-      {latestReading && (
+      {tariff && (
         <div className={styles.section}>
-          <div className={styles.sectionTitle}>
-            Latest reading
-            {latestReading.timestamp &&
-              ` · ${new Date(latestReading.timestamp).toLocaleDateString()}`}
-          </div>
-          <div className={styles.metrics}>
-            <div className={styles.metric}>
-              <div className={styles.metricLabel}>Energy</div>
-              <div className={styles.metricValue}>
-                {fmt(latestReading.energy, 2)} kWh
-              </div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricLabel}>Power</div>
-              <div className={styles.metricValue}>
-                {fmt(latestReading.power, 1)} W
-              </div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricLabel}>Voltage</div>
-              <div className={styles.metricValue}>
-                {fmt(latestReading.voltage, 1)} V
-              </div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricLabel}>Current</div>
-              <div className={styles.metricValue}>
-                {fmt(latestReading.current, 2)} A
-              </div>
-            </div>
-            <div className={styles.metric}>
-              <div className={styles.metricLabel}>Power factor</div>
-              <div className={styles.metricValue}>
-                {fmt(latestReading.powerFactor, 3)}
-              </div>
-            </div>
-          </div>
+          <div className={styles.sectionTitle}>Tariff</div>
+          <Field label="Utility" value={tariff.utilityName} />
+          <Field label="Rate plan" value={tariff.rateName} />
+          <Field label="Rate type" value={tariff.rateType} />
+          <Field
+            label="Fixed charge"
+            value={`$${tariff.fixedCharge} ${tariff.fixedChargeUnits}`}
+          />
+          <Field
+            label="Effective date"
+            value={
+              tariff.effectiveDate
+                ? new Date(tariff.effectiveDate).toLocaleDateString()
+                : "—"
+            }
+          />
+        </div>
+      )}
+
+      {tariff?.tiers?.length > 0 && (
+        <div className={styles.section}>
+          <div className={styles.sectionTitle}>Energy rate tiers</div>
+          <table className={styles.tierTable}>
+            <thead>
+              <tr>
+                <th>Usage</th>
+                <th>Rate ($/kWh)</th>
+                <th>Adj ($/kWh)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tariff.tiers.map((tier, index) => (
+                <tr key={index}>
+                  <td>{tierRange(tier, tariff.tiers[index - 1]?.max)}</td>
+                  <td>{fmt(tier.rate, 5)}</td>
+                  <td>{fmt(tier.adj, 5)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

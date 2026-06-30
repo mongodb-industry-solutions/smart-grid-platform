@@ -3,9 +3,9 @@ const CUSTOMERS_COLLECTION_NAME =
 const READINGS_COLLECTION_NAME =
   process.env.READINGS_COLLECTION_NAME || "readings";
 const TARIFFS_COLLECTION_NAME =
-  process.env.TARIFFS_COLLECTION_NAME || "tarrif_catalog";
+  process.env.TARIFFS_COLLECTION_NAME || "tariff_catalog";
 
-// customer_db stores full state names ("Texas") while tarrif_catalog uses
+// customer_db stores full state names ("Texas") while tariff_catalog uses
 // abbreviations / "City, ST" labels — map them so the two can be joined.
 const STATE_ABBREVIATIONS = {
   Texas: "TX",
@@ -14,9 +14,11 @@ const STATE_ABBREVIATIONS = {
   Missouri: "MO",
   "New Mexico": "NM",
   California: "CA",
+  Tennessee: "TN",
+  Arizona: "AZ",
 };
 
-// Builds the "City, ST" label used as tarrif_catalog.location_label.
+// Builds the "City, ST" label used as tariff_catalog.location_label.
 function toLocationLabel(city, state) {
   const abbreviation = STATE_ABBREVIATIONS[state] || state;
   return `${city}, ${abbreviation}`;
@@ -145,7 +147,12 @@ export async function getCustomerDetail(db, dataid) {
     ),
   ]);
 
-  const tiers = tariff?.energyRateStrux?.[0]?.energyRateTiers ?? [];
+  // Tier bands only apply to tiered tariffs; TOU tariffs store period rates in
+  // energyRateStrux that aren't usage tiers, so don't surface them as tiers.
+  const tiers =
+    tariff?.rate_type === "tiered"
+      ? tariff.energyRateStrux?.[0]?.energyRateTiers ?? []
+      : [];
 
   return {
     dataid: customer.dataid,
@@ -179,6 +186,231 @@ export async function getCustomerDetail(db, dataid) {
           powerFactor: latest.power_factor,
         }
       : null,
+  };
+}
+
+// 15-minute readings → number of intervals in a ~30-day month.
+const INTERVALS_PER_MONTH = 4 * 24 * 30;
+
+// Friendly headline for a rate type.
+function planTypeLabel(rateType) {
+  return rateType === "tou" ? "Time-of-Use Plan" : "Tiered Plan";
+}
+
+// Estimates monthly kWh from a meter's cumulative `energy` readings: average
+// per-interval consumption extrapolated to a month.
+function estimateMonthlyKwh(rows) {
+  if (rows.length < 2) return null;
+  let total = 0;
+  let count = 0;
+  for (let i = 1; i < rows.length; i += 1) {
+    const delta = rows[i].energy - rows[i - 1].energy;
+    if (delta > 0) {
+      total += delta;
+      count += 1;
+    }
+  }
+  if (!count) return 0;
+  return (total / count) * INTERVALS_PER_MONTH;
+}
+
+// Cost of `kwh` under a set of tiered bands ({ max, rate, adj }).
+function tieredEnergyCost(kwh, tiers) {
+  let cost = 0;
+  let prevMax = 0;
+  for (const tier of tiers) {
+    const cap = tier.max ?? Infinity;
+    const band = Math.max(0, Math.min(kwh, cap) - prevMax);
+    cost += band * (tier.rate + (tier.adj ?? 0));
+    prevMax = cap;
+    if (kwh <= cap) break;
+  }
+  return cost;
+}
+
+// Blended $/kWh for a TOU tariff: each strux is a rate period; weight its rate
+// by how much of the schedule (month × hour) falls in that period.
+function touBlendedRate(strux, schedule) {
+  const counts = {};
+  let total = 0;
+  for (const row of schedule || []) {
+    for (const idx of row) {
+      counts[idx] = (counts[idx] ?? 0) + 1;
+      total += 1;
+    }
+  }
+  if (!total) {
+    // No schedule — fall back to the average of the period rates.
+    const rates = strux.map((s) => s.energyRateTiers[0].rate);
+    return rates.reduce((a, b) => a + b, 0) / rates.length;
+  }
+  let rate = 0;
+  for (const [idx, c] of Object.entries(counts)) {
+    const period = strux[Number(idx)];
+    if (!period) continue;
+    const tier = period.energyRateTiers[0];
+    rate += (c / total) * (tier.rate + (tier.adj ?? 0));
+  }
+  return rate;
+}
+
+// ── DEMO assumptions (not in the data) — tweak freely ──
+// Demand charge $/kW: tariff_catalog has no demand rate, so this is a placeholder.
+const DEMO_DEMAND_RATE = 8;
+// Pattern adjustment heuristics (applied as % of the fixed+energy+demand subtotal).
+const DEMO_PATTERN = {
+  goodPowerFactor: 0.95, // PF at/above this → discount
+  poorPowerFactor: 0.9, //  PF below this → surcharge
+  powerFactorAdj: 0.03, //  ±3%
+  steadyLoadFactor: 0.5, // load factor at/above this → discount
+  spikyLoadFactor: 0.3, //  load factor below this → surcharge
+  loadFactorAdj: 0.02, //   ±2%
+};
+
+// Pattern adjustment as a signed fraction (negative = discount).
+function patternAdjustmentPct(avgPowerFactor, loadFactor) {
+  let pct = 0;
+  if (avgPowerFactor != null) {
+    if (avgPowerFactor >= DEMO_PATTERN.goodPowerFactor)
+      pct -= DEMO_PATTERN.powerFactorAdj;
+    else if (avgPowerFactor < DEMO_PATTERN.poorPowerFactor)
+      pct += DEMO_PATTERN.powerFactorAdj;
+  }
+  if (loadFactor != null) {
+    if (loadFactor >= DEMO_PATTERN.steadyLoadFactor)
+      pct -= DEMO_PATTERN.loadFactorAdj;
+    else if (loadFactor < DEMO_PATTERN.spikyLoadFactor)
+      pct += DEMO_PATTERN.loadFactorAdj;
+  }
+  return pct;
+}
+
+// Monthly energy charge that reflects WHEN the customer uses energy: splits the
+// customer's own consumption across TOU periods (via energyWeekdaySched) for
+// TOU tariffs, or applies tier bands for tiered tariffs.
+function personalizedEnergyCharge(tariff, intervals, monthlyKwh) {
+  if (tariff.rate_type === "tiered") {
+    const tiers = tariff.energyRateStrux?.[0]?.energyRateTiers ?? [];
+    return tieredEnergyCost(monthlyKwh, tiers);
+  }
+
+  const strux = tariff.energyRateStrux ?? [];
+  const sched = tariff.energyWeekdaySched;
+  const byPeriod = {};
+  let total = 0;
+  for (const iv of intervals) {
+    const period = sched?.[iv.month]?.[iv.hour] ?? 0;
+    byPeriod[period] = (byPeriod[period] ?? 0) + iv.consumption;
+    total += iv.consumption;
+  }
+  if (!total) return monthlyKwh * touBlendedRate(strux, sched);
+
+  let effectiveRate = 0;
+  for (const [idx, consumption] of Object.entries(byPeriod)) {
+    const period = strux[Number(idx)];
+    if (!period) continue;
+    const tier = period.energyRateTiers[0];
+    effectiveRate += (consumption / total) * (tier.rate + (tier.adj ?? 0));
+  }
+  return monthlyKwh * effectiveRate;
+}
+
+/**
+ * Estimates a customer's personalized monthly tariff and its breakdown, from
+ * their meter readings and (clearly marked) demo assumptions/heuristics:
+ *
+ *   total = fixed charge
+ *         + energy charge   (tier bands, or TOU split by the customer's own hours)
+ *         + demand charge   (peak kW × DEMO_DEMAND_RATE — not in the catalog)
+ *         + pattern adj.    (± % from power-factor & load-factor heuristics)
+ *
+ * @param {import("mongodb").Db} db connected MongoDB database handle
+ * @param {number} dataid the meter/customer id
+ * @returns {Promise<object|null>} the estimate + breakdown, or null
+ */
+export async function getTariffRecommendation(db, dataid) {
+  const customers = db.collection(CUSTOMERS_COLLECTION_NAME);
+  const readings = db.collection(READINGS_COLLECTION_NAME);
+  const tariffs = db.collection(TARIFFS_COLLECTION_NAME);
+
+  const customer = await customers.findOne(
+    { dataid },
+    { projection: { _id: 0, city: 1, state: 1 } }
+  );
+  if (!customer) return null;
+  const locationLabel = toLocationLabel(customer.city, customer.state);
+
+  const rows = await readings
+    .find(
+      { dataid },
+      {
+        projection: {
+          _id: 0,
+          timestamp: 1,
+          energy: 1,
+          power: 1,
+          power_factor: 1,
+        },
+      }
+    )
+    .sort({ timestamp: 1 })
+    .toArray();
+
+  const monthlyKwh = estimateMonthlyKwh(rows);
+  if (monthlyKwh == null) return null;
+
+  const tariff = await tariffs.findOne({ location_label: locationLabel });
+  if (!tariff) return null;
+
+  // Per-interval consumption tagged with hour/month, for the TOU split.
+  const intervals = [];
+  for (let i = 1; i < rows.length; i += 1) {
+    const consumption = rows[i].energy - rows[i - 1].energy;
+    if (consumption <= 0) continue;
+    const ts = new Date(rows[i].timestamp);
+    intervals.push({
+      month: ts.getUTCMonth(),
+      hour: ts.getUTCHours(),
+      consumption,
+    });
+  }
+
+  // Usage characteristics from the power readings.
+  const powers = rows.map((r) => r.power).filter((p) => p != null);
+  const peakKw = powers.length ? Math.max(...powers) / 1000 : 0;
+  const avgKw = powers.length
+    ? powers.reduce((a, b) => a + b, 0) / powers.length / 1000
+    : 0;
+  const loadFactor = peakKw > 0 ? avgKw / peakKw : null;
+  const pfs = rows.map((r) => r.power_factor).filter((p) => p != null);
+  const avgPowerFactor = pfs.length
+    ? pfs.reduce((a, b) => a + b, 0) / pfs.length
+    : null;
+
+  // Breakdown: fixed + energy + demand + pattern adjustment.
+  const fixed = tariff.fixedChargeFirstMeter ?? 0;
+  const energy = personalizedEnergyCharge(tariff, intervals, monthlyKwh);
+  const demand = peakKw * DEMO_DEMAND_RATE;
+  const subtotal = fixed + energy + demand;
+  const patternPct = patternAdjustmentPct(avgPowerFactor, loadFactor);
+  const pattern = subtotal * patternPct;
+  const total = subtotal + pattern;
+
+  return {
+    monthlyKwh: Math.round(monthlyKwh),
+    peakKw: Math.round(peakKw * 100) / 100,
+    loadFactor: loadFactor != null ? Math.round(loadFactor * 100) / 100 : null,
+    powerFactor:
+      avgPowerFactor != null ? Math.round(avgPowerFactor * 1000) / 1000 : null,
+    plan: {
+      name: planTypeLabel(tariff.rate_type),
+      rateName: tariff.rateName,
+      utilityName: tariff.utilityName,
+      rateType: tariff.rate_type,
+    },
+    components: { fixed, energy, demand, pattern },
+    total,
+    assumptions: { demandRate: DEMO_DEMAND_RATE },
   };
 }
 
