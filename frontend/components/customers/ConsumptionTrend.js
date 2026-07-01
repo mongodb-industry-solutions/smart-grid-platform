@@ -22,7 +22,7 @@ import {
   TOOLTIP_LABEL,
   TOOLTIP_CURSOR,
   LEGEND_WRAPPER,
-} from "../../style/readings/chart-styles";
+} from "@/lib/const/chartConfig";
 import styles from "../../style/customers/customers.module.css";
 
 const ACTUAL_COLOR = "#00684A";
