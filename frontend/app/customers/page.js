@@ -6,6 +6,8 @@ import CustomerLatestReading from "@/components/customers/CustomerLatestReading"
 import CustomerProfile from "@/components/customers/CustomerProfile";
 import ConsumptionTrend from "@/components/customers/ConsumptionTrend";
 import TariffRecommendation from "@/components/customers/TariffRecommendation";
+import ApplianceUsage from "@/components/customers/ApplianceUsage";
+import UsageSegment from "@/components/customers/UsageSegment";
 import { useCustomerDetail } from "@/components/customers/useCustomerDetail";
 import styles from "@/style/customers/customers.module.css";
 
@@ -25,6 +27,7 @@ export default function CustomersPage() {
             isLoading={isLoading}
             error={error}
           />
+          <UsageSegment dataid={selectedId} />
         </div>
         <div className={styles.areaDetail}>
           <CustomerProfile
@@ -35,6 +38,7 @@ export default function CustomersPage() {
         </div>
         <div className={styles.areaRec}>
           <TariffRecommendation dataid={selectedId} />
+          <ApplianceUsage dataid={selectedId} />
         </div>
         <div className={styles.areaTrend}>
           <ConsumptionTrend dataid={selectedId} />

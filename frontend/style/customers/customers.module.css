@@ -14,9 +14,9 @@
   grid-template-areas:
     "list latest latest"
     "list detail rec"
-    "trend trend .";
+    "trend trend trend";
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .areaList {
@@ -42,12 +42,24 @@
 }
 .areaLatest {
   grid-area: latest;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .areaDetail {
   grid-area: detail;
+  display: flex;
+  flex-direction: column;
+}
+.areaDetail > * {
+  flex: 1;
+  min-height: 0;
 }
 .areaRec {
   grid-area: rec;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .areaTrend {
   grid-area: trend;
@@ -333,4 +345,165 @@
   align-items: center;
   justify-content: center;
   color: #5c6970;
+}
+
+/* ── Usage Segment ── */
+.segmentSkeleton {
+  height: 120px;
+  margin: 16px 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.segmentBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px 20px;
+}
+
+.segmentCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.segmentPctNum {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.segmentPctSuffix {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.segmentPctLabel {
+  font-size: 11px;
+  color: #5c6970;
+  margin-top: 2px;
+}
+
+.segmentInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.segmentHeadline {
+  font-size: 14px;
+  color: #001e2b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.segmentMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.segmentMetric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.segmentMetricLabel {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.segmentMetricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+/* ── Appliance Usage ── */
+.applianceSkeleton {
+  height: 200px;
+  margin: 16px 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.applianceBody {
+  padding: 12px 20px 16px;
+}
+
+.applianceSub {
+  font-size: 12px;
+  color: #89979b;
+  margin: 0 0 12px;
+}
+
+.applianceList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.applianceRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  align-items: center;
+  gap: 10px;
+}
+
+.applianceLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #001e2b;
+  white-space: nowrap;
+}
+
+.applianceBar {
+  height: 6px;
+  background: #e8edeb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.applianceFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.applianceStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.applianceWatts {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.appliancePct {
+  font-size: 11px;
+  color: #89979b;
 }
