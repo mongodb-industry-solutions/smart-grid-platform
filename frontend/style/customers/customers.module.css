@@ -42,6 +42,9 @@
 }
 .areaLatest {
   grid-area: latest;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .areaDetail {
   grid-area: detail;
@@ -336,6 +339,89 @@
   align-items: center;
   justify-content: center;
   color: #5c6970;
+}
+
+/* ── Usage Segment ── */
+.segmentSkeleton {
+  height: 120px;
+  margin: 16px 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+.segmentBody {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 16px 20px 20px;
+}
+
+.segmentCenter {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.segmentPctNum {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.segmentPctSuffix {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.segmentPctLabel {
+  font-size: 11px;
+  color: #5c6970;
+  margin-top: 2px;
+}
+
+.segmentInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.segmentHeadline {
+  font-size: 14px;
+  color: #001e2b;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.segmentMetrics {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.segmentMetric {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.segmentMetricLabel {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.segmentMetricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
 }
 
 /* ── Appliance Usage ── */

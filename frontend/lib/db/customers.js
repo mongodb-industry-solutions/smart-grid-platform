@@ -423,6 +423,72 @@ export async function getTariffRecommendation(db, dataid) {
   };
 }
 
+/**
+ * Compares a customer's average power draw against all customers on the same
+ * rate plan type (TOU vs tiered), returning their percentile rank.
+ *
+ * @param {import("mongodb").Db} db connected MongoDB database handle
+ * @param {number} dataid the meter/customer id
+ * @returns {Promise<object|null>}
+ */
+export async function getUsageSegment(db, dataid) {
+  const customers = db.collection(CUSTOMERS_COLLECTION_NAME);
+  const readings  = db.collection(READINGS_COLLECTION_NAME);
+  const tariffs   = db.collection(TARIFFS_COLLECTION_NAME);
+
+  const customer = await customers.findOne(
+    { dataid },
+    { projection: { _id: 0, city: 1, state: 1 } }
+  );
+  if (!customer) return null;
+
+  const locationLabel = toLocationLabel(customer.city, customer.state);
+  const tariff = await tariffs.findOne(
+    { location_label: locationLabel },
+    { projection: { _id: 0, rate_type: 1, rateName: 1 } }
+  );
+  if (!tariff) return null;
+
+  // All customers on the same rate_type form the segment.
+  const [matchingTariffs, allCustomers] = await Promise.all([
+    tariffs
+      .find({ rate_type: tariff.rate_type }, { projection: { _id: 0, location_label: 1 } })
+      .toArray(),
+    customers
+      .find({}, { projection: { _id: 0, dataid: 1, city: 1, state: 1 } })
+      .toArray(),
+  ]);
+
+  const segmentLabels = new Set(matchingTariffs.map((t) => t.location_label));
+  const segmentDataids = allCustomers
+    .filter((c) => segmentLabels.has(toLocationLabel(c.city, c.state)))
+    .map((c) => c.dataid);
+
+  // Average power per customer across all their readings.
+  const usageRows = await readings
+    .aggregate([
+      { $match: { dataid: { $in: segmentDataids } } },
+      { $group: { _id: "$dataid", avgPower: { $avg: "$avg_reading" } } },
+    ])
+    .toArray();
+
+  const thisCustomer = usageRows.find((u) => u._id === dataid);
+  if (!thisCustomer) return null;
+
+  const below = usageRows.filter((u) => u.avgPower < thisCustomer.avgPower).length;
+  const percentile = Math.round((below / usageRows.length) * 100);
+  const segmentAvg = usageRows.reduce((s, u) => s + u.avgPower, 0) / usageRows.length;
+
+  return {
+    dataid,
+    percentile,
+    segmentName: tariff.rateName ?? (tariff.rate_type === "tou" ? "Time-of-Use" : "Tiered Rate"),
+    segmentSize: usageRows.length,
+    customerAvgW: Math.round(thisCustomer.avgPower),
+    segmentAvgW:  Math.round(segmentAvg),
+  };
+}
+
 const APPLIANCE_KEYS = [
   { key: "hvac_power",     label: "HVAC" },
   { key: "heating_power",  label: "Heating" },
