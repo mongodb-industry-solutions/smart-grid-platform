@@ -14,9 +14,9 @@
   grid-template-areas:
     "list latest latest"
     "list detail rec"
-    "trend trend .";
+    "trend trend trend";
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
 .areaList {
@@ -48,6 +48,12 @@
 }
 .areaDetail {
   grid-area: detail;
+  display: flex;
+  flex-direction: column;
+}
+.areaDetail > * {
+  flex: 1;
+  min-height: 0;
 }
 .areaRec {
   grid-area: rec;
