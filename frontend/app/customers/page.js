@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import CustomersList from "@/components/customers/CustomersList";
+import CustomerLatestReading from "@/components/customers/CustomerLatestReading";
 import CustomerProfile from "@/components/customers/CustomerProfile";
-import CustomerTariff from "@/components/customers/CustomerTariff";
 import ConsumptionTrend from "@/components/customers/ConsumptionTrend";
+import TariffRecommendation from "@/components/customers/TariffRecommendation";
 import { useCustomerDetail } from "@/components/customers/useCustomerDetail";
 import styles from "@/style/customers/customers.module.css";
 
@@ -15,11 +16,30 @@ export default function CustomersPage() {
   return (
     <div className={styles.layout}>
       <div className={styles.page}>
-        <CustomersList selectedId={selectedId} onSelect={setSelectedId} />
-        <CustomerProfile customer={customer} isLoading={isLoading} error={error} />
-        <CustomerTariff customer={customer} isLoading={isLoading} error={error} />
+        <div className={styles.areaList}>
+          <CustomersList selectedId={selectedId} onSelect={setSelectedId} />
+        </div>
+        <div className={styles.areaLatest}>
+          <CustomerLatestReading
+            customer={customer}
+            isLoading={isLoading}
+            error={error}
+          />
+        </div>
+        <div className={styles.areaDetail}>
+          <CustomerProfile
+            customer={customer}
+            isLoading={isLoading}
+            error={error}
+          />
+        </div>
+        <div className={styles.areaRec}>
+          <TariffRecommendation dataid={selectedId} />
+        </div>
+        <div className={styles.areaTrend}>
+          <ConsumptionTrend dataid={selectedId} />
+        </div>
       </div>
-      <ConsumptionTrend dataid={selectedId} />
     </div>
   );
 }

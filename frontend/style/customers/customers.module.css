@@ -1,22 +1,78 @@
-/* Page = the list/profile row stacked above the consumption chart. */
+/* Page = the list/profile row stacked above the chart + recommendation row. */
 .layout {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
-/* Three columns: customer list | detail | tariff.
-   Wider list so its rows don't crunch; narrower detail card. */
+
+/* Customer list on the left; on the right the latest-reading card spans the
+   top, with the detail and tariff recommendation below it. */
 .page {
   display: grid;
-  grid-template-columns: minmax(0, 420px) minmax(0, 0.85fr) minmax(0, 1.15fr);
+  grid-template-columns: minmax(0, 460px) minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-areas:
+    "list latest latest"
+    "list detail rec"
+    "trend trend .";
   gap: 24px;
   align-items: start;
+}
+
+.areaList {
+  grid-area: list;
+  /* Stretch the list cell to the full height of the right column (latest +
+     detail + recommendation). The card is absolutely positioned inside so its
+     content never dictates the height — it just follows the right column and
+     scrolls internally. */
+  align-self: stretch;
+  position: relative;
+}
+
+.areaList .card {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+}
+.areaList .list {
+  flex: 1;
+  min-height: 0;
+  max-height: none;
+}
+.areaLatest {
+  grid-area: latest;
+}
+.areaDetail {
+  grid-area: detail;
+}
+.areaRec {
+  grid-area: rec;
+}
+.areaTrend {
+  grid-area: trend;
 }
 
 @media (max-width: 1024px) {
   .page {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "list"
+      "latest"
+      "detail"
+      "rec"
+      "trend";
+  }
+  /* Single column: list returns to normal flow with a viewport-based cap. */
+  .areaList {
+    position: static;
+    align-self: auto;
+  }
+  .areaList .card {
+    position: static;
+  }
+  .areaList .list {
+    max-height: 70vh;
   }
 }
 
