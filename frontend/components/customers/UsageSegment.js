@@ -51,6 +51,36 @@ function fmtW(watts) {
   return `${watts} W`;
 }
 
+function SegmentMessage({ percentile, segmentName }) {
+  const color = percentileColor(percentile);
+  if (percentile < 33) {
+    return (
+      <p className={styles.segmentHeadline}>
+        Lower than{" "}
+        <strong style={{ color }}>{100 - percentile}%</strong>{" "}
+        of customers in the <strong>{segmentName}</strong> plan
+      </p>
+    );
+  }
+  if (percentile <= 66) {
+    return (
+      <p className={styles.segmentHeadline}>
+        <strong style={{ color }}>Within average</strong>{" "}
+        for the <strong>{segmentName}</strong> plan
+        {" — "}at the{" "}
+        <strong style={{ color }}>{percentile}th</strong> percentile
+      </p>
+    );
+  }
+  return (
+    <p className={styles.segmentHeadline}>
+      Higher than{" "}
+      <strong style={{ color }}>{percentile}%</strong>{" "}
+      of customers in the <strong>{segmentName}</strong> plan
+    </p>
+  );
+}
+
 export default function UsageSegment({ dataid }) {
   const { data, isLoading, error } = useUsageSegment(dataid);
 
@@ -74,14 +104,7 @@ export default function UsageSegment({ dataid }) {
         <div className={styles.segmentBody}>
           <DonutGauge percentile={data.percentile} />
           <div className={styles.segmentInfo}>
-            <p className={styles.segmentHeadline}>
-              Higher than{" "}
-              <strong style={{ color: percentileColor(data.percentile) }}>
-                {data.percentile}%
-              </strong>{" "}
-              of customers in the{" "}
-              <strong>{data.segmentName}</strong> plan
-            </p>
+            <SegmentMessage percentile={data.percentile} segmentName={data.segmentName} />
             <div className={styles.segmentMetrics}>
               <div className={styles.segmentMetric}>
                 <span className={styles.segmentMetricLabel}>Avg draw</span>
