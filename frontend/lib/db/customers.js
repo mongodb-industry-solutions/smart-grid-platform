@@ -192,9 +192,19 @@ export async function getCustomerDetail(db, dataid) {
 // 15-minute readings → number of intervals in a ~30-day month.
 const INTERVALS_PER_MONTH = 4 * 24 * 30;
 
-// Friendly headline for a rate type.
+// Friendly headline for a rate type (neutral label for unknown types).
 function planTypeLabel(rateType) {
-  return rateType === "tou" ? "Time-of-Use Plan" : "Tiered Plan";
+  if (rateType === "tou") return "Time-of-Use Plan";
+  if (rateType === "tiered") return "Tiered Plan";
+  return "Tariff Plan";
+}
+
+// Safe $/kWh for a TOU period (first tier rate + adj), or null if the period
+// is missing its rate data.
+function periodRate(period) {
+  const tier = period?.energyRateTiers?.[0];
+  if (!tier || tier.rate == null) return null;
+  return tier.rate + (tier.adj ?? 0);
 }
 
 // Estimates monthly kWh from a meter's cumulative `energy` readings: average
@@ -240,16 +250,15 @@ function touBlendedRate(strux, schedule) {
     }
   }
   if (!total) {
-    // No schedule — fall back to the average of the period rates.
-    const rates = strux.map((s) => s.energyRateTiers[0].rate);
-    return rates.reduce((a, b) => a + b, 0) / rates.length;
+    // No schedule — fall back to the average of the (valid) period rates.
+    const rates = (strux || []).map(periodRate).filter((r) => r != null);
+    return rates.length ? rates.reduce((a, b) => a + b, 0) / rates.length : 0;
   }
   let rate = 0;
   for (const [idx, c] of Object.entries(counts)) {
-    const period = strux[Number(idx)];
-    if (!period) continue;
-    const tier = period.energyRateTiers[0];
-    rate += (c / total) * (tier.rate + (tier.adj ?? 0));
+    const r = periodRate(strux[Number(idx)]);
+    if (r == null) continue;
+    rate += (c / total) * r;
   }
   return rate;
 }
@@ -307,10 +316,9 @@ function personalizedEnergyCharge(tariff, intervals, monthlyKwh) {
 
   let effectiveRate = 0;
   for (const [idx, consumption] of Object.entries(byPeriod)) {
-    const period = strux[Number(idx)];
-    if (!period) continue;
-    const tier = period.energyRateTiers[0];
-    effectiveRate += (consumption / total) * (tier.rate + (tier.adj ?? 0));
+    const r = periodRate(strux[Number(idx)]);
+    if (r == null) continue;
+    effectiveRate += (consumption / total) * r;
   }
   return monthlyKwh * effectiveRate;
 }
@@ -375,9 +383,10 @@ export async function getTariffRecommendation(db, dataid) {
     });
   }
 
-  // Usage characteristics from the power readings.
+  // Usage characteristics from the power readings. reduce() (not Math.max(...))
+  // so a customer with many readings can't overflow the call stack.
   const powers = rows.map((r) => r.power).filter((p) => p != null);
-  const peakKw = powers.length ? Math.max(...powers) / 1000 : 0;
+  const peakKw = powers.reduce((max, p) => (p > max ? p : max), 0) / 1000;
   const avgKw = powers.length
     ? powers.reduce((a, b) => a + b, 0) / powers.length / 1000
     : 0;
