@@ -22,7 +22,7 @@ export default function NavBar({ collapsed, setCollapsed }) {
         as={Link}
         href="/monitoring"
         active={pathname === "/monitoring"}
-        glyph={<Icon glyph="MagnifyingGlass" />}
+        glyph={<Icon glyph="LightningBolt" />}
       >
         Monitoring Panel
       </SideNavItem>

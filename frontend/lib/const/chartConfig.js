@@ -1,3 +1,8 @@
+// Recharts presentation config shared across the readings charts. These are
+// JS objects passed as recharts props (margin, tick, axisLine, contentStyle,
+// cursor, wrapperStyle) — not CSS, since recharts styles its internal SVG via
+// props rather than class names.
+
 export const CHART_MARGIN = { top: 8, right: 24, left: 0, bottom: 8 };
 
 export const AXIS_TICK = { fontSize: 11, fill: "#5C6970" };

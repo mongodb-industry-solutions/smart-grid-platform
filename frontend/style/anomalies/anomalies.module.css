@@ -20,6 +20,19 @@
   color: #5c6970;
 }
 
+/* Deviation chip — neutral gray, outlined like the other chips. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  background: #f1f5f4;
+  color: #1c2d38;
+  border: 1px solid #c1c7c6;
+}
+
 .controls {
   display: flex;
   align-items: flex-end;
