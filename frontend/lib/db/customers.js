@@ -423,6 +423,100 @@ export async function getTariffRecommendation(db, dataid) {
   };
 }
 
+const APPLIANCE_KEYS = [
+  { key: "hvac_power",     label: "HVAC" },
+  { key: "heating_power",  label: "Heating" },
+  { key: "kitchen_power",  label: "Kitchen" },
+  { key: "laundry_power",  label: "Laundry" },
+  { key: "env_power",      label: "Environmental" },
+  { key: "ev_power",       label: "Electric Vehicle" },
+];
+
+/**
+ * Average power draw per appliance category for a single customer, computed
+ * across all their readings. Includes the latest snapshot values and an "other"
+ * slice representing unmetered load (total power − sum of named appliances).
+ *
+ * @param {import("mongodb").Db} db connected MongoDB database handle
+ * @param {number} dataid the meter/customer id
+ * @returns {Promise<object|null>}
+ */
+export async function getApplianceUsage(db, dataid) {
+  const readings = db.collection(READINGS_COLLECTION_NAME);
+
+  const [agg, latest] = await Promise.all([
+    readings
+      .aggregate([
+        { $match: { dataid } },
+        {
+          $group: {
+            _id: null,
+            hvac_power:     { $avg: "$hvac_power" },
+            heating_power:  { $avg: "$heating_power" },
+            kitchen_power:  { $avg: "$kitchen_power" },
+            laundry_power:  { $avg: "$laundry_power" },
+            env_power:      { $avg: "$env_power" },
+            ev_power:       { $avg: "$ev_power" },
+            avg_total:      { $avg: "$power" },
+            has_ev:         { $max: { $cond: ["$has_ev", 1, 0] } },
+            count:          { $sum: 1 },
+          },
+        },
+      ])
+      .next(),
+    readings.findOne(
+      { dataid },
+      {
+        sort: { timestamp: -1 },
+        projection: {
+          _id: 0, timestamp: 1,
+          hvac_power: 1, heating_power: 1, kitchen_power: 1,
+          laundry_power: 1, env_power: 1, ev_power: 1, power: 1,
+        },
+      }
+    ),
+  ]);
+
+  if (!agg) return null;
+
+  const hasEv = agg.has_ev === 1;
+  const activeKeys = hasEv ? APPLIANCE_KEYS : APPLIANCE_KEYS.filter((a) => a.key !== "ev_power");
+
+  const applianceSum = activeKeys.reduce((s, a) => s + (agg[a.key] ?? 0), 0);
+  const totalAvg = agg.avg_total ?? applianceSum;
+  const other = Math.max(0, totalAvg - applianceSum);
+
+  const rows = [
+    ...activeKeys.map((a) => ({ key: a.key, label: a.label, avgWatts: Math.round(agg[a.key] ?? 0) })),
+    ...(other > 0.5 ? [{ key: "other", label: "Other", avgWatts: Math.round(other) }] : []),
+  ].sort((a, b) => b.avgWatts - a.avgWatts);
+
+  const totalAvgWatts = Math.round(totalAvg);
+
+  return {
+    dataid,
+    hasEv,
+    readingCount: agg.count,
+    totalAvgWatts,
+    appliances: rows.map((a) => ({
+      ...a,
+      pct: totalAvgWatts > 0 ? Math.round((a.avgWatts / totalAvgWatts) * 1000) / 10 : 0,
+    })),
+    latest: latest
+      ? {
+          timestamp: latest.timestamp,
+          hvac_power:    latest.hvac_power,
+          heating_power: latest.heating_power,
+          kitchen_power: latest.kitchen_power,
+          laundry_power: latest.laundry_power,
+          env_power:     latest.env_power,
+          ev_power:      latest.ev_power,
+          power:         latest.power,
+        }
+      : null,
+  };
+}
+
 // Rounds a kWh value to 4 decimals (per-interval consumption is small).
 function roundKwh(value) {
   return Math.round(value * 10000) / 10000;

@@ -48,6 +48,9 @@
 }
 .areaRec {
   grid-area: rec;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 .areaTrend {
   grid-area: trend;
@@ -333,4 +336,82 @@
   align-items: center;
   justify-content: center;
   color: #5c6970;
+}
+
+/* ── Appliance Usage ── */
+.applianceSkeleton {
+  height: 200px;
+  margin: 16px 20px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.applianceBody {
+  padding: 12px 20px 16px;
+}
+
+.applianceSub {
+  font-size: 12px;
+  color: #89979b;
+  margin: 0 0 12px;
+}
+
+.applianceList {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.applianceRow {
+  display: grid;
+  grid-template-columns: 140px 1fr 80px;
+  align-items: center;
+  gap: 10px;
+}
+
+.applianceLabel {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: #001e2b;
+  white-space: nowrap;
+}
+
+.applianceBar {
+  height: 6px;
+  background: #e8edeb;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.applianceFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.applianceStat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+}
+
+.applianceWatts {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.appliancePct {
+  font-size: 11px;
+  color: #89979b;
 }
