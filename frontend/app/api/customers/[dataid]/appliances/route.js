@@ -11,7 +11,7 @@ export async function GET(request, { params }) {
     const db = client.db(dbName);
     const data = await getApplianceUsage(db, Number(dataid));
     if (!data) {
-      return NextResponse.json({ error: "Customer not found" }, { status: 404 });
+      return NextResponse.json({ error: "No appliance usage available" }, { status: 404 });
     }
     return NextResponse.json(data);
   } catch (error) {
