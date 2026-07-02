@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from "react";
 import { Error as ErrorText } from "@leafygreen-ui/typography";
-import { Badge } from "@leafygreen-ui/badge";
+import Badge from "@leafygreen-ui/badge";
 import { useCustomers } from "./useCustomers";
 import CustomerFilters from "./CustomerFilters";
 import styles from "../../style/customers/customers.module.css";
