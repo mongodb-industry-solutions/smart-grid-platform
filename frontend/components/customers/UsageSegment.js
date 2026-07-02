@@ -38,7 +38,17 @@ function DonutGauge({ percentile }) {
       <div className={styles.segmentCenter}>
         <span className={styles.segmentPctNum} style={{ color }}>
           {percentile}
-          <span className={styles.segmentPctSuffix}>th</span>
+          <span className={styles.segmentPctSuffix}>
+            {percentile % 100 >= 11 && percentile % 100 <= 13
+              ? "th"
+              : percentile % 10 === 1
+                ? "st"
+                : percentile % 10 === 2
+                  ? "nd"
+                  : percentile % 10 === 3
+                    ? "rd"
+                    : "th"}
+          </span>
         </span>
         <span className={styles.segmentPctLabel}>percentile</span>
       </div>
