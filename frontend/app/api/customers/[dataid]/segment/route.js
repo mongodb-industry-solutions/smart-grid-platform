@@ -4,7 +4,7 @@ import { getUsageSegment } from "@/lib/db/customers";
 
 const dbName = process.env.DATABASE_NAME;
 
-export async function GET(request, { params }) {
+export async function GET(_, { params }) {
   try {
     const { dataid } = await params;
     const client = await getMongoClientPromise();
