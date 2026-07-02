@@ -78,7 +78,19 @@ function SegmentMessage({ percentile, segmentName }) {
         <strong style={{ color }}>Within average</strong>{" "}
         for the <strong>{segmentName}</strong> plan
         {" — "}at the{" "}
-        <strong style={{ color }}>{percentile}th</strong> percentile
+        <strong style={{ color }}>
+          {percentile}
+          {percentile % 100 >= 11 && percentile % 100 <= 13
+            ? "th"
+            : percentile % 10 === 1
+              ? "st"
+              : percentile % 10 === 2
+                ? "nd"
+                : percentile % 10 === 3
+                  ? "rd"
+                  : "th"}
+        </strong>{" "}
+        percentile
       </p>
     );
   }
