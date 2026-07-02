@@ -6,6 +6,43 @@
 }
 
 
+/* ── Filter panel (inside the customers card) ── */
+.filterPanel {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e8edeb;
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filterSelectFull {
+  flex: 1;
+  min-width: 0;
+}
+
+.filterReset {
+  font-size: 12px;
+  color: #016bf8;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+}
+
+.filterReset:hover {
+  text-decoration: underline;
+}
+
+.customerCount {
+  margin-left: 6px;
+  font-size: 13px;
+  font-weight: 400;
+  color: #5c6970;
+}
+
 /* Customer list on the left; on the right the latest-reading card spans the
    top, with the detail and tariff recommendation below it. */
 .page {
