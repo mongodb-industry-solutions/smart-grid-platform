@@ -50,6 +50,7 @@ export default function CustomerFilters({ allCustomers, filters, setFilters }) {
 
       {hasActive && (
         <button
+          type="button"
           className={styles.filterReset}
           onClick={() => setFilters({ location: "", rateType: "" })}
         >
