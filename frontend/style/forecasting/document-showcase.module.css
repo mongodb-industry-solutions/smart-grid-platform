@@ -1,0 +1,243 @@
+/* Forecasting page: filters card + live MongoDB document showcase. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.grid {
+  display: grid;
+  /* Narrower panel on the left, more room for the chart on the right. */
+  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  gap: 24px;
+  align-items: start;
+}
+
+/* Left panel: one card holding intro text, horizontal filters, and pipeline. */
+.panelCard {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panelText {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.chartCol {
+  min-width: 0;
+}
+
+/* ── Chart ── */
+.chartHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.chartCard {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 20px 20px 12px;
+}
+
+.peakNote {
+  margin: 10px 2px 0;
+  font-size: 12px;
+  color: #89979b;
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Filters (horizontal row inside the panel) ── */
+.showcaseTitle {
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.filters {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.filtersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filterSelect {
+  flex: 1 1 0;
+  min-width: 150px;
+}
+
+.filtersHint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #89979b;
+  line-height: 1.5;
+}
+
+.count {
+  color: #5c6970;
+  font-weight: 500;
+}
+
+/* ── Pipeline section (inside the panel) ── */
+.pipelineSection {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.pipelineHeader,
+.showcaseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.headerRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #00684a;
+  border: 1px solid #00a35c;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.updating {
+  font-size: 11px;
+  color: #89979b;
+  font-style: italic;
+}
+
+/* Dim the document while a new one loads in the background. */
+.refreshing {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8edeb;
+  background: #f9fbfa;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #5c6970;
+  cursor: default;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.jsonWrap {
+  padding: 8px 0;
+  max-height: 560px;
+  overflow: auto;
+  background: #ffffff;
+}
+
+/* ── JSON rendering ── */
+.json {
+  margin: 0;
+  font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #001e2b;
+}
+
+.jsonLine {
+  display: block;
+  padding: 0 20px;
+  white-space: pre;
+}
+
+.jsonKey {
+  color: #016bf8;
+}
+
+.jsonString {
+  color: #12824d;
+}
+
+.jsonNumber {
+  color: #b45af2;
+}
+
+.jsonLiteral {
+  color: #c82b0d;
+}
+
+.jsonPunct {
+  color: #5c6970;
+}
+
+/* ── Explainer ── */
+.explainer {
+  margin: 0;
+  padding: 16px 20px 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #3d4f58;
+  border-top: 1px solid #e8edeb;
+}
+
+.inlineAccent {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #d97706;
+  background: #fff4e5;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.assumption {
+  margin: 0;
+  padding: 0 20px 16px;
+  font-size: 12px;
+  font-style: italic;
+  color: #89979b;
+}
+
+.errorText {
+  padding: 20px;
+}
