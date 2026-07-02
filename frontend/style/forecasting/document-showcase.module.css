@@ -186,6 +186,7 @@
 }
 
 .jsonLine {
+  display: block;
   padding: 0 20px;
   white-space: pre;
 }

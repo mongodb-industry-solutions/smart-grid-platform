@@ -62,11 +62,13 @@ export default function JsonDocument({ document }) {
 
   return (
     <pre className={styles.json}>
-      {lines.map((line, i) => (
-        <div key={i} className={styles.jsonLine}>
-          {highlight(line)}
-        </div>
-      ))}
+      <code>
+        {lines.map((line, i) => (
+          <span key={i} className={styles.jsonLine}>
+            {highlight(line)}
+          </span>
+        ))}
+      </code>
     </pre>
   );
 }

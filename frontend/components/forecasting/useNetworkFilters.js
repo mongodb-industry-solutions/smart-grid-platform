@@ -20,6 +20,8 @@ export function useNetworkFilters(states, feeders) {
 
   useEffect(() => {
     let isActive = true;
+    setIsLoading(true);
+    setError(null);
 
     const params = new URLSearchParams();
     if (statesKey) params.set("states", statesKey);

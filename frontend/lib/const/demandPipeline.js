@@ -1,8 +1,12 @@
 // Shared, side-effect-free builder for the demand aggregation pipeline. Used on
 // the server to run the query and on the client to render it instantly in the
 // card (it's a pure function of the filter selection, so no round-trip needed).
+// Also reads the NEXT_PUBLIC_* var so the client-rendered pipeline matches the
+// server's $lookup target when the collection name is overridden via env.
 const READINGS_COLLECTION =
-  process.env.READINGS_COLLECTION_NAME || "readings";
+  process.env.NEXT_PUBLIC_READINGS_COLLECTION_NAME ||
+  process.env.READINGS_COLLECTION_NAME ||
+  "readings";
 
 // dataid is stored as a number; selections arrive as text.
 function toDataidNumbers(ids) {
