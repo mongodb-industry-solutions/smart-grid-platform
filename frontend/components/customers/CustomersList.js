@@ -39,7 +39,7 @@ export default function CustomersList({ selectedId, onSelect }) {
     if (selectedId == null || !filteredCustomers.some((c) => c.dataid === selectedId)) {
       onSelect(filteredCustomers[0].dataid);
     }
-  }, [filteredCustomers]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filteredCustomers, selectedId, onSelect]);
 
   const showCount = filteredCustomers.length !== customers.length;
 
