@@ -4,18 +4,34 @@ import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { H3, Body } from "@leafygreen-ui/typography";
 import JsonDocument from "@/components/forecasting/JsonDocument";
-import { useCustomersModel } from "./useCustomersModel";
+import { useModelData } from "./useModelData";
 import styles from "../../style/customers/customers.module.css";
 
-/**
- * Lightweight modal (portal + overlay) — avoids LeafyGreen's Modal, which trips
- * the React 19 `element.ref` change. Shows the sample documents and aggregation
- * pipelines behind the customers view.
- */
-export default function DataModelModal({ open, setOpen, dataid }) {
-  const { data, isLoading, error } = useCustomersModel(dataid, open);
+function operationLabel(op) {
+  const suffix =
+    op.type === "aggregate"
+      ? "aggregate()"
+      : op.type === "findOne"
+      ? "findOne()"
+      : "find()";
+  return `db.${op.collection}.${suffix}`;
+}
 
-  // Close on Escape and lock background scroll while open.
+function operationBody(op) {
+  if (op.type === "aggregate") return op.pipeline;
+  const body = { filter: op.filter };
+  if (op.sort) body.sort = op.sort;
+  if (op.projection) body.projection = op.projection;
+  return body;
+}
+
+/**
+ * Lightweight modal (portal + overlay) showing the sample documents and
+ * queries/pipelines behind ONE component of the customers view.
+ */
+export default function DataModelModal({ open, setOpen, scope = "customers", component, dataid }) {
+  const { data, isLoading, error } = useModelData(scope, component, dataid, open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -49,11 +65,10 @@ export default function DataModelModal({ open, setOpen, dataid }) {
           ×
         </button>
 
-        <H3>MongoDB behind this view</H3>
+        <H3>{data?.title ? `${data.title} — MongoDB` : "MongoDB"}</H3>
         <Body className={styles.modelIntro}>
-          The customer view is powered by flexible documents joined on demand.
-          Below is a representative document from each collection it reads, plus
-          the exact aggregation pipelines it runs for this customer.
+          The documents and queries this component uses. MongoDB&apos;s document
+          model keeps related data together and joins the rest on demand.
         </Body>
 
         {isLoading && <Body>Loading…</Body>}
@@ -66,9 +81,7 @@ export default function DataModelModal({ open, setOpen, dataid }) {
         {data && (
           <>
             <section className={styles.modelSection}>
-              <p className={styles.modelSectionTitle}>
-                Data model — sample documents
-              </p>
+              <p className={styles.modelSectionTitle}>Documents</p>
               {data.collections.map((c) => (
                 <div key={c.name} className={styles.modelBlock}>
                   <div className={styles.modelBlockLabel}>
@@ -81,16 +94,14 @@ export default function DataModelModal({ open, setOpen, dataid }) {
             </section>
 
             <section className={styles.modelSection}>
-              <p className={styles.modelSectionTitle}>Aggregation pipelines</p>
-              {data.pipelines.map((p) => (
-                <div key={p.title} className={styles.modelBlock}>
+              <p className={styles.modelSectionTitle}>Queries &amp; pipelines</p>
+              {data.operations.map((op) => (
+                <div key={op.title} className={styles.modelBlock}>
                   <div className={styles.modelBlockLabel}>
-                    <span>{p.title}</span>
-                    <span className={styles.modelBadge}>
-                      db.{p.collection}.aggregate()
-                    </span>
+                    <span>{op.title}</span>
+                    <span className={styles.modelBadge}>{operationLabel(op)}</span>
                   </div>
-                  <JsonDocument document={p.stages} />
+                  <JsonDocument document={operationBody(op)} />
                 </div>
               ))}
             </section>

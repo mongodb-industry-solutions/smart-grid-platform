@@ -1,6 +1,7 @@
 "use client";
 
 import { useCustomerInsights } from "./useCustomerInsights";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 // 0–23 hour → "6:00 PM" style label.
@@ -29,6 +30,7 @@ export default function Insights({ dataid }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="insights" dataid={dataid} />
       <div className={styles.cardTitle}>Insights</div>
 
       {isLoading && !data ? (

@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/usage-change-card.module.css";
@@ -52,6 +54,7 @@ export default function UsageChangeCard() {
 
       {/* Card */}
       <div className={styles.card}>
+        <ShowDocButton scope="monitoring" component="usage" />
         {error ? (
           <Body className={styles.errorText}>Error: {error}</Body>
         ) : !data ? (

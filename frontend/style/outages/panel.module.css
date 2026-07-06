@@ -3,6 +3,7 @@
 
 /* Outer wrapper: lets the card stretch to equal height beside its siblings. */
 .widget {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -20,6 +21,7 @@
 
 /* The bordered/shadowed content box. */
 .card {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;

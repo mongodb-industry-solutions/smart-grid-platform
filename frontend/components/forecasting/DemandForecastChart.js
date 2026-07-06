@@ -19,6 +19,7 @@ import {
   TOOLTIP_CONTENT,
   TOOLTIP_LABEL,
 } from "@/lib/const/chartConfig";
+import ShowDocButton from "@/components/customers/ShowDocButton";
 import styles from "../../style/forecasting/document-showcase.module.css";
 
 // Stable colors for the known regions, with a fallback palette for any others.
@@ -134,7 +135,10 @@ export default function DemandForecastChart({
           <span className={styles.updating}>updating…</span>
         )}
       </div>
-      <div className={styles.chartCard}>{body}</div>
+      <div className={styles.chartCard}>
+        <ShowDocButton scope="forecasting" component="demand" />
+        {body}
+      </div>
       <p className={styles.peakNote}>
         Each bar is a region&apos;s expected peak demand (highest hourly average)
         with a 95% prediction interval (Student-t on the hour&apos;s spread).

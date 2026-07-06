@@ -2,6 +2,7 @@
 
 import Icon from "@leafygreen-ui/icon";
 import { useApplianceUsage } from "./useApplianceUsage";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 const APPLIANCE_ICONS = {
@@ -43,6 +44,7 @@ export default function ApplianceUsage({ dataid }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="appliance" dataid={dataid} />
       <div className={styles.cardTitle}>Appliance Usage</div>
 
       {isLoading && !data ? (

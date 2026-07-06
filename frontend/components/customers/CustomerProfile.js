@@ -2,6 +2,7 @@
 
 import { Error as ErrorText } from "@leafygreen-ui/typography";
 import Badge from "@leafygreen-ui/badge";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 const fmt = (value, decimals) =>
@@ -42,6 +43,7 @@ export default function CustomerProfile({ customer, isLoading, error }) {
 
   return (
     <div className={`${styles.card} ${styles.profile}`}>
+      <ShowDocButton component="profile" dataid={customer.dataid} />
       <div className={styles.profileHeader}>
         <span className={`${styles.avatar} ${styles.profileAvatar}`}>
           {customer.city?.[0]?.toUpperCase() ?? "?"}

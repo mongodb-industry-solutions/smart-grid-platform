@@ -7,8 +7,9 @@ const dbName = process.env.DATABASE_NAME;
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
+    // threshold 0 (or less) means "show all deviations, regardless of σ".
     const parsed = parseFloat(searchParams.get("threshold"));
-    const threshold = Number.isFinite(parsed) && parsed > 0 ? parsed : 3;
+    const threshold = Number.isFinite(parsed) && parsed >= 0 ? parsed : 3;
 
     const client = await getMongoClientPromise();
     const db = client.db(dbName);

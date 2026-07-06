@@ -3,10 +3,9 @@
 import { useState, useMemo, useEffect } from "react";
 import { Error as ErrorText } from "@leafygreen-ui/typography";
 import Badge from "@leafygreen-ui/badge";
-import Icon from "@leafygreen-ui/icon";
 import { useCustomers } from "./useCustomers";
 import CustomerFilters from "./CustomerFilters";
-import DataModelModal from "./DataModelModal";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 function formatEnergy(energy) {
@@ -24,7 +23,6 @@ function formatMonth(timestamp) {
 export default function CustomersList({ selectedId, onSelect }) {
   const { customers, isLoading, error } = useCustomers();
   const [filters, setFilters] = useState({ location: "", rateType: "" });
-  const [modelOpen, setModelOpen] = useState(false);
 
   const filteredCustomers = useMemo(() => {
     let list = customers;
@@ -48,6 +46,7 @@ export default function CustomersList({ selectedId, onSelect }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="list" dataid={selectedId} />
       <div className={styles.cardTitle}>
         <span>
           Customers
@@ -55,23 +54,7 @@ export default function CustomersList({ selectedId, onSelect }) {
             {showCount ? `${filteredCustomers.length} / ${customers.length}` : customers.length}
           </span>
         </span>
-        <button
-          type="button"
-          className={styles.modelButton}
-          onClick={() => setModelOpen(true)}
-          disabled={selectedId == null}
-          title="Show MongoDB document & pipelines"
-          aria-label="Show MongoDB document & pipelines"
-        >
-          <Icon glyph="CurlyBraces" />
-        </button>
       </div>
-
-      <DataModelModal
-        open={modelOpen}
-        setOpen={setModelOpen}
-        dataid={selectedId}
-      />
 
       <CustomerFilters
         allCustomers={customers}

@@ -127,6 +127,7 @@
 
 /* ── Shared card box ── */
 .card {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;
@@ -145,27 +146,38 @@
   color: #001e2b;
 }
 
-/* Icon button in the card header (opens the data-model modal). */
-.modelButton {
-  flex: 0 0 auto;
+/* Reusable "show document" icon button. */
+.docButtonBase {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  width: 28px;
+  height: 28px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: none;
   color: #5c6970;
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
-.modelButton:hover:not(:disabled) {
+.docButtonBase:hover:not(:disabled) {
   background: #f1f3f2;
   color: #00684a;
 }
-.modelButton:disabled {
+.docButtonBase:disabled {
   opacity: 0.4;
   cursor: default;
+}
+.docButton {
+  composes: docButtonBase;
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+}
+.docButtonInline {
+  composes: docButtonBase;
+  flex: 0 0 auto;
 }
 
 /* ── Customer list ── */
@@ -384,6 +396,7 @@
 
 /* ── Consumption trend chart ── */
 .chartCard {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;
@@ -718,4 +731,10 @@
 .modalClose:hover {
   background: #f1f3f2;
   color: #001e2b;
+}
+
+.chartHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
