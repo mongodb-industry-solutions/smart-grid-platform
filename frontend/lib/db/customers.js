@@ -489,6 +489,45 @@ export async function getUsageSegment(db, dataid) {
   };
 }
 
+/**
+ * Quick insights for one customer: their estimated monthly consumption and the
+ * hour of day when they typically draw the most power (their peak time).
+ *
+ * @param {import("mongodb").Db} db connected MongoDB database handle
+ * @param {number} dataid the meter/customer id
+ * @returns {Promise<{ monthlyKwh: number|null, peakHour: number|null, peakKw: number|null }|null>}
+ */
+export async function getCustomerInsights(db, dataid) {
+  const readings = db.collection(READINGS_COLLECTION_NAME);
+
+  const rows = await readings
+    .find({ dataid }, { projection: { _id: 0, timestamp: 1, energy: 1 } })
+    .sort({ timestamp: 1 })
+    .toArray();
+  if (!rows.length) return null;
+
+  const monthlyKwh = estimateMonthlyKwh(rows);
+
+  // Peak time = hour of day with the highest average power draw.
+  const [peak] = await readings
+    .aggregate([
+      { $match: { dataid } },
+      { $group: { _id: { $hour: "$timestamp" }, avgPower: { $avg: "$power" } } },
+      { $sort: { avgPower: -1 } },
+      { $limit: 1 },
+    ])
+    .toArray();
+
+  return {
+    monthlyKwh: monthlyKwh != null ? Math.round(monthlyKwh) : null,
+    peakHour: peak ? peak._id : null,
+    peakKw:
+      peak && peak.avgPower != null
+        ? Math.round((peak.avgPower / 1000) * 100) / 100
+        : null,
+  };
+}
+
 const APPLIANCE_KEYS = [
   { key: "hvac_power",     label: "HVAC" },
   { key: "heating_power",  label: "Heating" },
