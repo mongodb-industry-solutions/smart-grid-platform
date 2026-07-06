@@ -1,5 +1,6 @@
 /* Fills the column height so cards/tables in a row line up. */
 .widget {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -59,6 +60,7 @@
 
 /* ── Card: one bordered box that fills the column height ── */
 .tableWrapper {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   overflow: hidden;

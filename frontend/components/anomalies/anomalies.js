@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
-import { Select, Option } from "@leafygreen-ui/select";
 import {
   Table,
   TableHead,
@@ -18,8 +18,6 @@ import { useAnomalies } from "./useAnomalies";
 import TablePagination from "@/components/general/TablePagination";
 import { useAutoPageSize } from "@/components/general/useAutoPageSize";
 import styles from "../../style/anomalies/anomalies.module.css";
-
-const THRESHOLDS = ["3", "2.5", "2", "1.5"];
 
 const METRIC_LABELS = {
   voltage: "Voltage",
@@ -71,7 +69,8 @@ function getSnapshotTime(anomalies) {
 }
 
 export default function Anomalies() {
-  const [threshold, setThreshold] = useState(3);
+  // Show every meter's deviation, regardless of how large σ is.
+  const threshold = 0;
   const { anomalies, isLoading, error } = useAnomalies(threshold);
 
   const table = useLeafyGreenTable({
@@ -84,10 +83,6 @@ export default function Anomalies() {
 
   const wrapperRef = useAutoPageSize(table);
 
-  const handleThresholdChange = (val) => {
-    setThreshold(Number(val));
-  };
-
   const snapshotTime = getSnapshotTime(anomalies);
 
   return (
@@ -98,18 +93,7 @@ export default function Anomalies() {
         </div>
 
         <div className={styles.controls}>
-          <Select
-            label="Threshold"
-            value={String(threshold)}
-            onChange={handleThresholdChange}
-            className={styles.selectWrapper}
-          >
-            {THRESHOLDS.map((t) => (
-              <Option key={t} value={t}>
-                {t}σ
-              </Option>
-            ))}
-          </Select>
+          <ShowDocButton scope="monitoring" component="anomalies" inline />
         </div>
       </div>
 
@@ -123,7 +107,7 @@ export default function Anomalies() {
 
       {!error && !isLoading && anomalies.length === 0 && (
         <div className={styles.emptyState}>
-          <Body>No anomalies above {threshold}σ.</Body>
+          <Body>No readings to display.</Body>
         </div>
       )}
 

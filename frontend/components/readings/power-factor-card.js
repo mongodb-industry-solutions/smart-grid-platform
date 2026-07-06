@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/power-factor-card.module.css";
@@ -66,6 +68,7 @@ export default function PowerFactorCard() {
       </div>
 
       <div className={styles.card}>
+        <ShowDocButton scope="monitoring" component="power-factor" />
         {error ? (
           <Body className={styles.errorText}>Error: {error}</Body>
         ) : !data || data.powerFactor == null ? (

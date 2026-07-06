@@ -1,5 +1,6 @@
 /* Fills the column height so cards/tables in a row line up. */
 .widget {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;

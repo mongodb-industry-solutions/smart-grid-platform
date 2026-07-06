@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
 import { useOutages } from "./useOutages";
@@ -49,6 +51,7 @@ export default function Outages() {
       </div>
 
       <div className={`${styles.card} ${styles.cardCentered}`}>
+        <ShowDocButton scope="monitoring" component="outages" />
         {isLoading && (
           <Body style={{ color: palette.gray.dark1 }}>Loading outages…</Body>
         )}

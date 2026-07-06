@@ -1,6 +1,7 @@
 "use client";
 
 import { Error as ErrorText } from "@leafygreen-ui/typography";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 const fmt = (value, decimals) =>
@@ -33,6 +34,7 @@ export default function CustomerLatestReading({ customer, isLoading, error }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="latest" dataid={customer.dataid} />
       <div className={styles.section}>
         <div className={styles.sectionTitle}>
           Latest reading
