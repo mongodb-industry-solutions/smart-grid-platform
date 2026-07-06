@@ -135,10 +135,37 @@
 }
 
 .cardTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 16px 20px;
   border-bottom: 1px solid #e8edeb;
   font-weight: 600;
   color: #001e2b;
+}
+
+/* Icon button in the card header (opens the data-model modal). */
+.modelButton {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: #5c6970;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.modelButton:hover:not(:disabled) {
+  background: #f1f3f2;
+  color: #00684a;
+}
+.modelButton:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* ── Customer list ── */
@@ -603,4 +630,92 @@
 .insightDivider {
   height: 1px;
   background: #e8edeb;
+}
+
+/* ── Data-model modal ── */
+.modelIntro {
+  margin: 8px 0 24px;
+  color: #3d4f58;
+  line-height: 1.5;
+}
+.modelSection {
+  margin-bottom: 28px;
+}
+.modelSectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5c6970;
+  margin: 0 0 12px;
+}
+.modelBlock {
+  border: 1px solid #c1c7c6;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.modelBlockLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #e8edeb;
+  background: #f9fbfa;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #001e2b;
+}
+.modelBadge {
+  color: #00684a;
+  font-size: 11px;
+}
+.modelBlock pre {
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px 0;
+}
+
+/* ── Custom modal (portal + overlay) ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 30, 43, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modalDialog {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 8px 40px rgba(0, 30, 43, 0.25);
+}
+.modalClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #5c6970;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.modalClose:hover {
+  background: #f1f3f2;
+  color: #001e2b;
 }

@@ -19,7 +19,7 @@ const STATE_ABBREVIATIONS = {
 };
 
 // Builds the "City, ST" label used as tariff_catalog.location_label.
-function toLocationLabel(city, state) {
+export function toLocationLabel(city, state) {
   const abbreviation = STATE_ABBREVIATIONS[state] || state;
   return `${city}, ${abbreviation}`;
 }
