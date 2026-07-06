@@ -5,6 +5,7 @@ import { Error as ErrorText } from "@leafygreen-ui/typography";
 import Badge from "@leafygreen-ui/badge";
 import { useCustomers } from "./useCustomers";
 import CustomerFilters from "./CustomerFilters";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 function formatEnergy(energy) {
@@ -45,10 +46,13 @@ export default function CustomersList({ selectedId, onSelect }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="list" dataid={selectedId} />
       <div className={styles.cardTitle}>
-        Customers
-        <span className={styles.customerCount}>
-          {showCount ? `${filteredCustomers.length} / ${customers.length}` : customers.length}
+        <span>
+          Customers
+          <span className={styles.customerCount}>
+            {showCount ? `${filteredCustomers.length} / ${customers.length}` : customers.length}
+          </span>
         </span>
       </div>
 

@@ -127,6 +127,7 @@
 
 /* ── Shared card box ── */
 .card {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;
@@ -135,10 +136,48 @@
 }
 
 .cardTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 16px 20px;
   border-bottom: 1px solid #e8edeb;
   font-weight: 600;
   color: #001e2b;
+}
+
+/* Reusable "show document" icon button. */
+.docButtonBase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #5c6970;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.docButtonBase:hover:not(:disabled) {
+  background: #f1f3f2;
+  color: #00684a;
+}
+.docButtonBase:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.docButton {
+  composes: docButtonBase;
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  z-index: 2;
+}
+.docButtonInline {
+  composes: docButtonBase;
+  flex: 0 0 auto;
 }
 
 /* ── Customer list ── */
@@ -357,6 +396,7 @@
 
 /* ── Consumption trend chart ── */
 .chartCard {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;
@@ -543,4 +583,158 @@
 .appliancePct {
   font-size: 11px;
   color: #89979b;
+}
+
+/* ── Usage Segment + Insights row (side by side) ── */
+.segmentRow {
+  display: flex;
+  gap: 24px;
+  align-items: stretch;
+}
+.segmentRow > * {
+  min-width: 0;
+}
+.segmentRow > *:first-child {
+  flex: 1.6 1 0;
+}
+.segmentRow > *:last-child {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1024px) {
+  .segmentRow {
+    flex-direction: column;
+  }
+}
+
+/* ── Insights card ── */
+.insightsBody {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+}
+.insightMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.insightLabel {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5c6970;
+}
+.insightValue {
+  font-size: 26px;
+  font-weight: 700;
+  color: #001e2b;
+  line-height: 1.15;
+}
+.insightSub {
+  font-size: 12px;
+  color: #89979b;
+  min-height: 15px;
+}
+.insightDivider {
+  height: 1px;
+  background: #e8edeb;
+}
+
+/* ── Data-model modal ── */
+.modelIntro {
+  margin: 8px 0 24px;
+  color: #3d4f58;
+  line-height: 1.5;
+}
+.modelSection {
+  margin-bottom: 28px;
+}
+.modelSectionTitle {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5c6970;
+  margin: 0 0 12px;
+}
+.modelBlock {
+  border: 1px solid #c1c7c6;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.modelBlockLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 20px;
+  border-bottom: 1px solid #e8edeb;
+  background: #f9fbfa;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #001e2b;
+}
+.modelBadge {
+  color: #00684a;
+  font-size: 11px;
+}
+.modelBlock pre {
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  padding: 10px 0;
+}
+
+/* ── Custom modal (portal + overlay) ── */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 30, 43, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.modalDialog {
+  position: relative;
+  width: 100%;
+  max-width: 860px;
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 8px 40px rgba(0, 30, 43, 0.25);
+}
+.modalClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: #5c6970;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.modalClose:hover {
+  background: #f1f3f2;
+  color: #001e2b;
+}
+
+.chartHeaderRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }

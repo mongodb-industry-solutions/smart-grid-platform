@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { useMemo } from "react";
 import { geoAlbers, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
@@ -169,6 +171,7 @@ export default function CustomerMap() {
       </div>
 
       <div className={styles.card}>
+        <ShowDocButton scope="monitoring" component="customer-map" />
         <div className={styles.legend}>
           <LegendItem color={CUSTOMER_COLOR} label="Customers" />
           <LegendItem color={OUTAGE_COLOR} label="Outages" />

@@ -2,6 +2,7 @@
 
 import { Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { useTariffRecommendation } from "./useTariffRecommendation";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/tariff-recommendation.module.css";
 
 const fmt2 = (n) => (n != null ? n.toFixed(2) : "—");
@@ -55,7 +56,7 @@ export default function TariffRecommendation({ dataid }) {
     <div className={styles.card}>
       <div className={styles.header}>
         <span className={styles.title}>Tariff Recommendation</span>
-        <span className={styles.ribbon}>★</span>
+        <ShowDocButton inline component="tariff" dataid={dataid} />
       </div>
 
       <div className={styles.label}>Estimated Plan</div>

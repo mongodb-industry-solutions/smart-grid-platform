@@ -17,7 +17,7 @@ export default function AppHeader() {
 
           <div className="leading-none">
             <div className="font-serif text-[25px] leading-[0.9] text-slate-900">
-              Smart Meter
+              Smart Grid
             </div>
             <div className="mt-1 text-[15px] leading-none text-slate-900">
               Intelligent Platform

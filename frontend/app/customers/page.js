@@ -8,6 +8,7 @@ import ConsumptionTrend from "@/components/customers/ConsumptionTrend";
 import TariffRecommendation from "@/components/customers/TariffRecommendation";
 import ApplianceUsage from "@/components/customers/ApplianceUsage";
 import UsageSegment from "@/components/customers/UsageSegment";
+import Insights from "@/components/customers/Insights";
 import { useCustomerDetail } from "@/components/customers/useCustomerDetail";
 import styles from "@/style/customers/customers.module.css";
 
@@ -27,7 +28,10 @@ export default function CustomersPage() {
             isLoading={isLoading}
             error={error}
           />
-          <UsageSegment dataid={selectedId} />
+          <div className={styles.segmentRow}>
+            <UsageSegment dataid={selectedId} />
+            <Insights dataid={selectedId} />
+          </div>
         </div>
         <div className={styles.areaDetail}>
           <CustomerProfile

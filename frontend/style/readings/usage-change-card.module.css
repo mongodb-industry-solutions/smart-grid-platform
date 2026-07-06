@@ -1,5 +1,6 @@
 /* Outer wrapper fills the grid cell; title sits above the card. */
 .widget {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -12,6 +13,7 @@
 }
 
 .card {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;

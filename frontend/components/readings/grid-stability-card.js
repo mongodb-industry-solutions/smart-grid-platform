@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { useEffect, useState } from "react";
 import { PieChart, Pie } from "recharts";
 import { H2, Body } from "@leafygreen-ui/typography";
@@ -125,6 +127,7 @@ export default function GridStabilityCard() {
       </div>
 
       <div className={styles.card}>
+        <ShowDocButton scope="monitoring" component="grid-stability" />
         {error ? (
           <Body className={styles.errorText}>Error: {error}</Body>
         ) : !data ? (

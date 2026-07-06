@@ -23,6 +23,7 @@ import {
   TOOLTIP_CURSOR,
   LEGEND_WRAPPER,
 } from "@/lib/const/chartConfig";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 const ACTUAL_COLOR = "#00684A";
@@ -116,23 +117,26 @@ export default function ConsumptionTrend({ dataid }) {
       {/* Title sits outside the card, matching the monitoring panel pattern. */}
       <div className={styles.chartHeader}>
         <H2>Consumption Trend</H2>
-        {regions.length > 0 && (
-          <Select
-            label="Region"
-            value={currentRegion}
-            onChange={setRegion}
-            className={styles.regionSelect}
-          >
-            {regions.map((r) => (
-              <Option key={r} value={r}>
-                {r}
-              </Option>
-            ))}
-          </Select>
-        )}
+        <div className={styles.chartHeaderRight}>
+          {regions.length > 0 && (
+            <Select
+              label="Region"
+              value={currentRegion}
+              onChange={setRegion}
+              className={styles.regionSelect}
+            >
+              {regions.map((r) => (
+                <Option key={r} value={r}>
+                  {r}
+                </Option>
+              ))}
+            </Select>
+          )}
+        </div>
       </div>
 
       <div className={styles.chartCard}>
+        <ShowDocButton component="trend" dataid={dataid} />
         <div className={styles.chartBody}>{body}</div>
       </div>
     </div>

@@ -119,8 +119,12 @@ export async function getAnomalies(
       },
     },
 
-    // Keep only metrics that exceed the threshold.
-    { $match: { "metrics.sigma": { $gt: threshold } } },
+    // Keep metrics above the threshold; threshold <= 0 shows all valid rows.
+    {
+      $match: {
+        "metrics.sigma": threshold > 0 ? { $gt: threshold } : { $ne: null },
+      },
+    },
 
     {
       $project: {

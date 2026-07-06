@@ -2,6 +2,7 @@
 
 import { PieChart, Pie } from "recharts";
 import { useUsageSegment } from "./useUsageSegment";
+import ShowDocButton from "./ShowDocButton";
 import styles from "../../style/customers/customers.module.css";
 
 const CX = 70, CY = 70;
@@ -116,6 +117,7 @@ export default function UsageSegment({ dataid }) {
 
   return (
     <div className={styles.card}>
+      <ShowDocButton component="segment" dataid={dataid} />
       <div className={styles.cardTitle}>Usage Segment</div>
 
       {isLoading && !data ? (

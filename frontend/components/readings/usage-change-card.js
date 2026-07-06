@@ -1,5 +1,7 @@
 "use client";
 
+import ShowDocButton from "@/components/customers/ShowDocButton";
+
 import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/usage-change-card.module.css";
@@ -52,6 +54,7 @@ export default function UsageChangeCard() {
 
       {/* Card */}
       <div className={styles.card}>
+        <ShowDocButton scope="monitoring" component="usage" />
         {error ? (
           <Body className={styles.errorText}>Error: {error}</Body>
         ) : !data ? (
@@ -76,12 +79,12 @@ export default function UsageChangeCard() {
             <div className={styles.subStats}>
               <div className={styles.subStat}>
                 <span className={styles.subLabel}>Now</span>
-                <span className={styles.subValue}>{data.current}</span>
+                <span className={styles.subValue}>{data.current} kW</span>
               </div>
               <div className={styles.divider} />
               <div className={styles.subStat}>
                 <span className={styles.subLabel}>Before</span>
-                <span className={styles.subValue}>{data.previous}</span>
+                <span className={styles.subValue}>{data.previous} kW</span>
               </div>
             </div>
           </>
