@@ -69,10 +69,19 @@ export async function GET(request) {
     const db          = mongoClient.db(dbName);
     const collection  = db.collection(readingsCollectionName);
 
-    // Three period anchors: the current window is (t1 → t0), the previous
-    // window it is compared against is (t2 → t1).
-    const t0 = await latestPeriod(collection);
-    if (!t0) {
+    // Most recent distinct timestamp that has real reading data. (A partial
+    // "heartbeat" doc can carry only power/energy and a current timestamp;
+    // requiring voltage keeps us on a genuine reading period.)
+    const latestDoc = await collection
+      .aggregate([
+        { $match: { voltage: { $ne: null } } },
+        { $group: { _id: "$timestamp" } },
+        { $sort:  { _id: -1 } },
+        { $limit: 1 },
+      ])
+      .next();
+
+    if (!latestDoc) {
       return new Response(JSON.stringify({ error: "No data available" }), {
         status: 404,
         headers: { "Content-Type": "application/json" },
@@ -87,7 +96,15 @@ export async function GET(request) {
     // immediately before the latest so we can still show a comparison.
     const usedFallback = !t1;
     if (usedFallback) {
-      t1 = await latestPeriod(collection, new Date(new Date(t0).getTime() - 1));
+      previousDoc = await collection
+        .aggregate([
+          { $match: { voltage: { $ne: null } } },
+          { $group: { _id: "$timestamp" } },
+          { $sort:  { _id: -1 } },
+          { $skip:  1 },
+          { $limit: 1 },
+        ])
+        .next();
     }
 
     const t2 = t1
