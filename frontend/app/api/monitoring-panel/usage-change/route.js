@@ -88,6 +88,10 @@ export async function GET(request) {
       });
     }
 
+    // Three period anchors: the current window is (t1 → t0); the previous
+    // window it is compared against is (t2 → t1).
+    const t0 = latestDoc._id;
+
     let t1 = await latestPeriod(
       collection,
       new Date(new Date(t0).getTime() - windowMs)
@@ -96,15 +100,7 @@ export async function GET(request) {
     // immediately before the latest so we can still show a comparison.
     const usedFallback = !t1;
     if (usedFallback) {
-      previousDoc = await collection
-        .aggregate([
-          { $match: { voltage: { $ne: null } } },
-          { $group: { _id: "$timestamp" } },
-          { $sort:  { _id: -1 } },
-          { $skip:  1 },
-          { $limit: 1 },
-        ])
-        .next();
+      t1 = await latestPeriod(collection, new Date(new Date(t0).getTime() - 1));
     }
 
     const t2 = t1
