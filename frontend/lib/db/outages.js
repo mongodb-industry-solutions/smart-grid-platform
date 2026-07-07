@@ -10,7 +10,7 @@ const CUSTOMERS_COLLECTION_NAME =
 /**
  * Computes an outage summary entirely in the database.
  *
- * An "outage" is a reading with avg_reading <= 0. The summary contains:
+ * An "outage" is a reading with power <= 0. The summary contains:
  *  - totalOutages: total number of outage readings.
  *  - customersWithOutage: distinct meters (dataid) that had an outage AND
  *    exist in the customers collection (joined via $lookup).
