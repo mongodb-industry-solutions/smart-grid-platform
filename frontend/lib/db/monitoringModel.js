@@ -56,14 +56,31 @@ export async function getMonitoringComponentModel(db, component) {
       collections = [await sample(READINGS, { timestamp: -1 })];
       operations = [
         {
-          title: "Total demand per period (compare recent)",
+          title: "Reading periods (window anchors, newest first)",
           collection: READINGS,
           type: "aggregate",
           pipeline: [
             { $match: { voltage: { $ne: null } } },
-            { $group: { _id: "$timestamp", total_power: { $sum: "$power" } } },
+            { $group: { _id: "$timestamp" } },
             { $sort: { _id: -1 } },
-            { $limit: 2 },
+            { $limit: 3 },
+          ],
+        },
+        {
+          title: "Energy consumed between two periods (per-meter delta of cumulative energy)",
+          collection: READINGS,
+          type: "aggregate",
+          pipeline: [
+            { $match: { timestamp: { $in: ["<window start>", latestTs] }, energy: { $ne: null } } },
+            {
+              $group: {
+                _id: "$dataid",
+                start: { $max: { $cond: [{ $eq: ["$timestamp", "<window start>"] }, "$energy", null] } },
+                end: { $max: { $cond: [{ $eq: ["$timestamp", latestTs] }, "$energy", null] } },
+              },
+            },
+            { $match: { start: { $ne: null }, end: { $ne: null } } },
+            { $group: { _id: null, total_kwh: { $sum: { $subtract: ["$end", "$start"] } } } },
           ],
         },
       ];
