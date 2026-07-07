@@ -65,6 +65,9 @@ export async function getAnomalies(
   }));
 
   const pipeline = [
+    // Ignore partial "heartbeat" docs (only power/energy at a current timestamp)
+    // so a meter's latest reading under test is always a real reading.
+    { $match: { voltage: { $ne: null } } },
     { $sort: { dataid: 1, timestamp: 1 } },
 
     // Collect every reading per meter in chronological order.

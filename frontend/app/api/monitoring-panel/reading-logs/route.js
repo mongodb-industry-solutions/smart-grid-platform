@@ -16,6 +16,7 @@ export async function GET(request) {
     // Get the timestamp for this period by finding the Nth distinct timestamp
     const periodDoc = await collection
       .aggregate([
+        { $match: { voltage: { $ne: null } } },
         { $group: { _id: "$timestamp" } },
         { $sort:  { _id: 1 } },
         { $skip:  periodIndex },
