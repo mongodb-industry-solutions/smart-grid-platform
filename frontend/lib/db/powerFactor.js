@@ -21,6 +21,7 @@ export async function getPowerFactor(db) {
 
   const latest = await readings
     .aggregate([
+      { $match: { power_factor: { $ne: null } } },
       { $group: { _id: "$timestamp" } },
       { $sort: { _id: -1 } },
       { $limit: 1 },

@@ -10,7 +10,9 @@ export async function GET(request, { params }) {
   const doc = await db
     .collection("readings")
     .findOne(
-      { dataid: meterId },
+      // Require voltage so a partial "heartbeat" doc can't shadow the meter's
+      // most recent real reading.
+      { dataid: meterId, voltage: { $ne: null } },
       {
         sort: { timestamp: -1 },
         projection: {

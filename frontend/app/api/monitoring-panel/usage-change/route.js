@@ -16,9 +16,12 @@ export async function GET(request) {
     const db         = mongoClient.db(dbName);
     const collection = db.collection(readingsCollectionName);
 
-    // Most recent distinct timestamp
+    // Most recent distinct timestamp that has real reading data. (A partial
+    // "heartbeat" doc can carry only power/energy and a current timestamp;
+    // requiring voltage keeps us on a genuine reading period.)
     const latestDoc = await collection
       .aggregate([
+        { $match: { voltage: { $ne: null } } },
         { $group: { _id: "$timestamp" } },
         { $sort:  { _id: -1 } },
         { $limit: 1 },
@@ -50,6 +53,7 @@ export async function GET(request) {
     if (usedFallback) {
       previousDoc = await collection
         .aggregate([
+          { $match: { voltage: { $ne: null } } },
           { $group: { _id: "$timestamp" } },
           { $sort:  { _id: -1 } },
           { $skip:  1 },

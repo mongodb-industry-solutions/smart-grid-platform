@@ -21,6 +21,7 @@ export async function getGridStability(db, periodIndex = 0) {
 
   // Step 1 — resolve the timestamp for this period
   const periodDoc = await col.aggregate([
+    { $match: { voltage: { $ne: null } } },
     { $group: { _id: "$timestamp" } },
     { $sort:  { _id: 1 } },
     { $skip:  periodIndex },

@@ -36,9 +36,14 @@ export async function getMonitoringComponentModel(db, component) {
   };
 
   // A representative period for pipelines that match a single timestamp.
+  // Require voltage so a partial "heartbeat" doc (only power/energy at a current
+  // timestamp) can't stand in for a real reading period.
   const latest = await db
     .collection(READINGS)
-    .findOne({}, { sort: { timestamp: -1 }, projection: { timestamp: 1 } });
+    .findOne(
+      { voltage: { $ne: null } },
+      { sort: { timestamp: -1 }, projection: { timestamp: 1 } }
+    );
   const latestTs = latest?.timestamp
     ? latest.timestamp.toISOString?.() ?? latest.timestamp
     : "<latest period>";
@@ -55,6 +60,7 @@ export async function getMonitoringComponentModel(db, component) {
           collection: READINGS,
           type: "aggregate",
           pipeline: [
+            { $match: { voltage: { $ne: null } } },
             { $group: { _id: "$timestamp", total_power: { $sum: "$power" } } },
             { $sort: { _id: -1 } },
             { $limit: 2 },
@@ -70,7 +76,7 @@ export async function getMonitoringComponentModel(db, component) {
           title: "Latest reading period",
           collection: READINGS,
           type: "aggregate",
-          pipeline: [{ $group: { _id: "$timestamp" } }, { $sort: { _id: -1 } }, { $limit: 1 }],
+          pipeline: [{ $match: { power_factor: { $ne: null } } }, { $group: { _id: "$timestamp" } }, { $sort: { _id: -1 } }, { $limit: 1 }],
         },
         {
           title: "Average / min power factor at that period",
