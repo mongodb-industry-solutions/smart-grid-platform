@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 const OUTAGES_ENDPOINT = "/api/monitoring-panel/outages";
+const TICK_MS = 5_000;
 
 /**
  * Fetches the outage summary from the monitoring API on mount.
@@ -32,9 +33,11 @@ export function useOutages() {
     };
 
     fetchOutages();
+    const intervalId = setInterval(fetchOutages, TICK_MS);
 
     return () => {
       isActive = false;
+      clearInterval(intervalId);
     };
   }, []);
 

@@ -25,7 +25,7 @@ import {
 } from "@/lib/const/chartConfig";
 
 const TICK_MS = 5_000;
-const MAX_ROWS = 25;
+const MAX_ROWS = 250;
 const MAX_HISTORY = 20;
 
 const LINES = [
@@ -34,8 +34,8 @@ const LINES = [
 
 export default function LiveReadingsChart() {
   const [history, setHistory]         = useState([]);
-  const [limit, setLimit]             = useState(5);
-  const [selectValue, setSelectValue] = useState("5");
+  const [limit, setLimit]             = useState(10);
+  const [selectValue, setSelectValue] = useState("10");
   const [customInput, setCustomInput] = useState("");
   const [error, setError]             = useState("");
 
@@ -118,11 +118,12 @@ export default function LiveReadingsChart() {
             onChange={handleSelectChange}
             className={styles.selectWrapper}
           >
-            <Option value="5">5</Option>
             <Option value="10">10</Option>
-            <Option value="15">15</Option>
-            <Option value="20">20</Option>
-            <Option value="25">All 25</Option>
+            <Option value="25">25</Option>
+            <Option value="50">50</Option>
+            <Option value="100">100</Option>
+            <Option value="150">150</Option>
+            <Option value="250">All 250</Option>
             <Option value="custom">Custom…</Option>
           </Select>
 

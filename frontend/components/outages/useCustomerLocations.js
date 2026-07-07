@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 
 const LOCATIONS_ENDPOINT = "/api/monitoring-panel/customer-locations";
+const TICK_MS = 5_000;
 
 /**
  * Fetches customer locations (city/state/count) from the monitoring API on mount.
@@ -32,9 +33,11 @@ export function useCustomerLocations() {
     };
 
     fetchLocations();
+    const intervalId = setInterval(fetchLocations, TICK_MS);
 
     return () => {
       isActive = false;
+      clearInterval(intervalId);
     };
   }, []);
 
