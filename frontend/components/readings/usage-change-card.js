@@ -79,12 +79,16 @@ export default function UsageChangeCard() {
             <div className={styles.subStats}>
               <div className={styles.subStat}>
                 <span className={styles.subLabel}>Now</span>
-                <span className={styles.subValue}>{data.current} kW</span>
+                <span className={styles.subValue}>
+                  {data.current} {data.unit ?? "kWh"}
+                </span>
               </div>
               <div className={styles.divider} />
               <div className={styles.subStat}>
                 <span className={styles.subLabel}>Before</span>
-                <span className={styles.subValue}>{data.previous} kW</span>
+                <span className={styles.subValue}>
+                  {data.previous} {data.unit ?? "kWh"}
+                </span>
               </div>
             </div>
           </>
