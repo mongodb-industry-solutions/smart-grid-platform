@@ -1,16 +1,16 @@
 /**
  * Seeds the knowledge base for the AI chatbot using Atlas AUTOMATED EMBEDDING
  * (Voyage AI native in Atlas):
- *   1. upserts the articles as plain text (no embeddings computed here),
- *   2. creates the Vector Search index with an auto-embedded text field
- *      (Atlas generates embeddings with Voyage at index- and query-time),
+ *   1. upserts the articles as plain text (Atlas generates the embeddings),
+ *   2. creates the Vector Search index with an auto-embedded text field,
  *   3. creates the full-text search index for hybrid search.
  *
  * Run from the frontend/ directory (Node 20.6+ for --env-file):
  *   node --env-file=.env.local scripts/seedKnowledgeBase.mjs
  *
- * Requires MONGODB_URI, DATABASE_NAME. Requires Atlas M10+ with the automated-
- * embedding preview enabled. No Voyage API key needed (Atlas handles it).
+ * Requires MONGODB_URI, DATABASE_NAME. No Voyage key needed here — Atlas embeds
+ * documents and queries. (The Voyage key is only used at runtime to compute
+ * vectors for the Vector Map visualization.)
  */
 import { MongoClient } from "mongodb";
 import { KB_ARTICLES } from "../lib/ai/knowledgeBaseSeed.js";
@@ -67,8 +67,6 @@ async function main() {
     console.log(`  • ${KB_ARTICLES.length} articles upserted`);
 
     console.log(`Ensuring Atlas search indexes (auto-embedding with ${EMBED_MODEL})…`);
-    // Vector Search index with an AUTO-EMBEDDED text field: Atlas embeds the
-    // "text" field with Voyage at index time and embeds queries at search time.
     await ensureSearchIndex(col, {
       name: KB_VECTOR_INDEX,
       type: "vectorSearch",
@@ -76,7 +74,6 @@ async function main() {
         fields: [{ type: "text", path: "text", model: EMBED_MODEL }],
       },
     });
-    // Full-text index for the keyword half of hybrid search.
     await ensureSearchIndex(col, {
       name: KB_TEXT_INDEX,
       definition: {

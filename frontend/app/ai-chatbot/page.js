@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import Icon from "@leafygreen-ui/icon";
 import ChatMessage from "@/components/ai-chatbot/ChatMessage";
-import AgentGraph from "@/components/ai-chatbot/AgentGraph";
+import AssistantPanel from "@/components/ai-chatbot/AssistantPanel";
 import { useChat } from "@/components/ai-chatbot/useChat";
+import { useVectorMap } from "@/components/ai-chatbot/useVectorMap";
 import styles from "@/style/ai-chatbot/chat.module.css";
 
 const SUGGESTIONS = [
@@ -20,6 +21,7 @@ const SUGGESTIONS = [
 
 export default function AIChatbotPage() {
   const { messages, isLoading, error, send } = useChat();
+  const { map, isLoading: mapLoading, error: mapError, run: runMap } = useVectorMap();
   const [input, setInput] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
   const endRef = useRef(null);
@@ -35,7 +37,6 @@ export default function AIChatbotPage() {
 
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
-  const assistantCount = messages.filter((m) => m.role === "assistant").length;
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -45,6 +46,7 @@ export default function AIChatbotPage() {
     const q = (text ?? "").trim();
     if (!q) return;
     send(q);
+    runMap(q); // update the Vector Map tab for this query
   };
 
   const submit = (e) => {
@@ -178,11 +180,13 @@ export default function AIChatbotPage() {
           </form>
         </div>
 
-        <AgentGraph
-          key={assistantCount}
+        <AssistantPanel
           question={lastUser?.content}
           message={isLoading ? null : lastAssistant}
           isLoading={isLoading}
+          map={map}
+          mapLoading={mapLoading}
+          mapError={mapError}
         />
       </div>
     </main>

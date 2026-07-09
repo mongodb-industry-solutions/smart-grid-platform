@@ -45,14 +45,11 @@ function Arrow({ index }) {
 export default function AgentGraph({ question, message, isLoading }) {
   if (!message && !isLoading) {
     return (
-      <div className={styles.explorer}>
-        <div className={styles.explorerTitle}>Agent Graph</div>
-        <div className={styles.explorerEmpty}>
-          <Body>
-            Ask a question to watch the agent reason: the router picks a domain
-            skill, calls tools, and composes an answer.
-          </Body>
-        </div>
+      <div className={styles.explorerEmpty}>
+        <Body>
+          Ask a question to watch the agent reason: the router picks a domain
+          skill, calls tools, and composes an answer.
+        </Body>
       </div>
     );
   }
@@ -70,9 +67,7 @@ export default function AgentGraph({ question, message, isLoading }) {
 
   let i = 0;
   return (
-    <div className={styles.explorer}>
-      <div className={styles.explorerTitle}>Agent Graph</div>
-      <div className={styles.graph} key={runKey}>
+    <div className={styles.graph} key={runKey}>
         {question && (
           <Layer index={i++} className={styles.gQuestion}>
             <span className={styles.gQuestionText}>“{question}”</span>
@@ -145,7 +140,6 @@ export default function AgentGraph({ question, message, isLoading }) {
             </Layer>
           </>
         )}
-      </div>
     </div>
   );
 }
