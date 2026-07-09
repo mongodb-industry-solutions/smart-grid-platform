@@ -1,0 +1,497 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 100%;
+}
+
+.headerRow {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+/* Two columns: chat (fluid) + vector explorer (fixed). */
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 20px;
+  height: calc(100vh - 220px);
+  min-height: 460px;
+}
+@media (max-width: 1024px) {
+  .layout {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+}
+
+/* Chat card fills its column; messages scroll, input pinned bottom. */
+.chatCard {
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  overflow: hidden;
+}
+@media (max-width: 1024px) {
+  .chatCard {
+    height: 70vh;
+  }
+}
+
+.messages {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ── Empty state / suggestions ── */
+.empty {
+  margin: auto;
+  text-align: center;
+  color: #5c6970;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+.suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 620px;
+}
+.suggestion {
+  border: 1px solid #c1c7c6;
+  border-radius: 20px;
+  background: #f9fbfa;
+  color: #001e2b;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.suggestion:hover {
+  background: #eaf4f1;
+  border-color: #00684a;
+}
+
+/* ── Message rows / bubbles ── */
+.row {
+  display: flex;
+}
+.rowUser {
+  justify-content: flex-end;
+}
+.rowAssistant {
+  justify-content: flex-start;
+}
+
+.bubble {
+  max-width: 78%;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  line-height: 1.55;
+}
+.bubbleUser {
+  background: #00684a;
+  color: #ffffff;
+  border-bottom-right-radius: 4px;
+}
+.bubbleAssistant {
+  background: #f1f3f2;
+  color: #001e2b;
+  border-bottom-left-radius: 4px;
+}
+
+.userText {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+/* Markdown content inside assistant bubbles. */
+.markdown :global(p) {
+  margin: 0 0 8px;
+}
+.markdown :global(p:last-child) {
+  margin-bottom: 0;
+}
+.markdown :global(ul),
+.markdown :global(ol) {
+  margin: 4px 0 8px;
+  padding-left: 20px;
+}
+.markdown :global(li) {
+  margin: 2px 0;
+}
+.markdown :global(code) {
+  background: #e1e7e5;
+  border-radius: 4px;
+  padding: 1px 4px;
+  font-size: 12.5px;
+}
+.markdown :global(strong) {
+  font-weight: 600;
+}
+.markdown :global(h1),
+.markdown :global(h2),
+.markdown :global(h3) {
+  font-size: 15px;
+  margin: 8px 0 4px;
+}
+
+/* ── Meta: tools used + sources ── */
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid #dfe4e2;
+}
+.sourceChip {
+  font-size: 11px;
+  color: #00684a;
+  border: 1px solid #a7d8c4;
+  background: #f3faf6;
+  border-radius: 4px;
+  padding: 1px 7px;
+  cursor: default;
+}
+
+.typing {
+  color: #5c6970;
+  font-size: 13px;
+  font-style: italic;
+  padding: 2px 4px;
+}
+.errorText {
+  color: #db3030;
+  font-size: 13px;
+}
+
+/* ── Input bar ── */
+.inputBar {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid #e8edeb;
+  background: #ffffff;
+}
+.input {
+  flex: 1;
+  resize: none;
+  max-height: 160px;
+  overflow-y: auto;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.4;
+  outline: none;
+}
+.input:focus {
+  border-color: #00684a;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+.sendBtn {
+  flex: 0 0 auto;
+  align-self: flex-end;
+  border: none;
+  border-radius: 8px;
+  background: #00684a;
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 10px 18px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.sendBtn:hover:not(:disabled) {
+  background: #00543b;
+}
+.sendBtn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ── Vector Explorer panel ── */
+.explorer {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  display: flex;
+  flex-direction: column;
+}
+.explorerTitle {
+  padding: 14px 16px;
+  border-bottom: 1px solid #e8edeb;
+  font-weight: 600;
+  color: #001e2b;
+}
+.explorerEmpty {
+  padding: 24px 16px;
+  color: #5c6970;
+  text-align: center;
+  margin: auto;
+}
+
+.metaLabel {
+  font-size: 11px;
+  color: #89979b;
+}
+
+/* ── Markdown tables (GFM) ── */
+.markdown :global(table) {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 8px 0;
+  font-size: 12.5px;
+}
+.markdown :global(th),
+.markdown :global(td) {
+  border: 1px solid #d6dcda;
+  padding: 5px 8px;
+  text-align: left;
+}
+.markdown :global(th) {
+  background: #e8edeb;
+  font-weight: 600;
+}
+.markdown :global(tr:nth-child(even) td) {
+  background: #f9fbfa;
+}
+
+/* ── Title row + subtitle + technical-details tooltip ── */
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.subtitle {
+  max-width: 760px;
+}
+.infoWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: #889397;
+  cursor: help;
+  flex: 0 0 auto;
+}
+.infoWrap:hover,
+.infoWrap:focus-visible {
+  color: #00684a;
+  outline: none;
+}
+.tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 340px;
+  background: #001e2b;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.55;
+  border-radius: 8px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 24px rgba(0, 30, 43, 0.28);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.12s ease, transform 0.12s ease;
+  pointer-events: none;
+}
+.tooltip strong {
+  color: #7fd4b0;
+  font-weight: 600;
+}
+.infoWrap:hover .tooltip,
+.infoWrap:focus-within .tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* ── Agent Graph (how the agent thinks) ── */
+.graph {
+  padding: 16px 14px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.gLayer {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: gReveal 0.35s ease forwards;
+}
+.gArrow {
+  color: #a0aeb3;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0;
+  animation: gReveal 0.35s ease forwards;
+}
+@keyframes gReveal {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.gQuestion {
+  margin-bottom: 2px;
+}
+.gQuestionText {
+  font-size: 12px;
+  font-style: italic;
+  color: #5c6970;
+  text-align: center;
+  max-width: 320px;
+}
+.gNode {
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 5px 12px;
+}
+.gRouter {
+  background: #e8edeb;
+  color: #3d4f58;
+}
+.gPulse {
+  animation: gPulse 1s ease-in-out infinite;
+}
+@keyframes gPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+.gSkills {
+  gap: 4px;
+}
+.gSkill {
+  font-size: 10.5px;
+  border-radius: 4px;
+  padding: 2px 7px;
+  background: #f1f3f2;
+  color: #b0bcc1;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+.gSkillActive {
+  background: #f7f0fd;
+  color: #8f4bd6;
+  border-color: #d9c3f2;
+  font-weight: 600;
+  transform: scale(1.06);
+}
+.gTools {
+  gap: 5px;
+}
+.gTool {
+  background: #f0f6ff;
+  color: #016bf8;
+  border: 1px solid #c3d7fb;
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+.gToolNone {
+  font-size: 11px;
+  color: #89979b;
+  font-style: italic;
+}
+.gSources {
+  gap: 4px;
+  align-items: center;
+}
+.gSourcesLabel {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #89979b;
+}
+.gSource {
+  font-size: 10.5px;
+  background: #f3faf6;
+  color: #00684a;
+  border: 1px solid #a7d8c4;
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+.gAnswer {
+  background: #e3f4ec;
+  color: #00684a;
+  border: 1px solid #a7d8c4;
+}
+
+.gTool {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.gToolArg {
+  font-size: 9.5px;
+  color: #4a7fb5;
+  font-weight: 400;
+}
+
+/* ── Collapsible suggested questions (above the input) ── */
+.suggestBar {
+  flex: 0 0 auto;
+  border-top: 1px solid #e8edeb;
+  background: #fbfcfc;
+}
+.suggestToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #5c6970;
+  cursor: pointer;
+}
+.suggestToggle:hover {
+  color: #00684a;
+}
+.suggestChevron {
+  margin-left: auto;
+}
+.suggestList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px 16px 4px;
+}
