@@ -32,7 +32,7 @@ export const TALK_TRACK = [
     content: [
       {
         heading: "Data model",
-        body: "The flexible document model keeps related data together and joins the rest on demand. Core collections:",
+        body: "The flexible document model keeps related data together and joins the rest on demand.",
       },
       {
         heading: "Collections",
