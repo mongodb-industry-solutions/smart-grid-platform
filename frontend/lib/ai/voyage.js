@@ -1,7 +1,7 @@
 // Direct Voyage AI embeddings call (Bearer auth), matching the working example.
 // Used only to compute vectors for the Vector Map — search itself uses Atlas
 // automated embedding.
-const VOYAGE_API_URL = "https://api.voyageai.com/v1/embeddings";
+const VOYAGE_API_URL = "https://ai.mongodb.com/v1/embeddings";
 
 export const EMBED_MODEL =
   process.env.VOYAGE_MODEL || process.env.EMBEDDING_MODEL || "voyage-3-large";
