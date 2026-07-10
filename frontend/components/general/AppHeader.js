@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
+import InfoWizard from "@/components/infoWizard/InfoWizard";
 
 export default function AppHeader() {
   return (
     <header className="border-b border-slate-200 bg-white">
-      <div className="flex items-start gap-6 px-6 py-4">
+      <div className="flex items-center justify-between gap-6 px-6 py-4">
         <Link
           href="/"
           aria-label="Smart Meter home"
@@ -28,6 +31,9 @@ export default function AppHeader() {
             </div>
           </div>
         </Link>
+        <div>
+          <InfoWizard />
+        </div>
       </div>
     </header>
   );
