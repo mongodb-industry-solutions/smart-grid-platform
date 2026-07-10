@@ -13,6 +13,7 @@ import { useNetworkFilters } from "@/components/forecasting/useNetworkFilters";
 import { useDemandForecast } from "@/components/forecasting/useDemandForecast";
 import { useNetworkHierarchy } from "@/components/forecasting/useNetworkHierarchy";
 import { useRegionalForecast } from "@/components/forecasting/useRegionalForecast";
+import { useWeatherForecast } from "@/components/forecasting/useWeatherForecast";
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
 import { buildRegionalForecastPipeline } from "@/lib/const/regionalForecastPipeline";
 import styles from "@/style/forecasting/document-showcase.module.css";
@@ -33,6 +34,10 @@ export default function ForecastingPage() {
   } = useNetworkFilters(regions, feeders);
 
   const forecast = useDemandForecast(regions, feeders, meterIds);
+
+  // Weather-adjusted forecast: driven by the same panel selection as the demand
+  // forecast, so both charts move together when a filter is adjusted.
+  const weather = useWeatherForecast(regions, feeders, meterIds);
 
   // Build the pipeline client-side so the card updates instantly with the
   // filters — no server round-trip, no dimming.
@@ -83,15 +88,16 @@ export default function ForecastingPage() {
 
   return (
     <main className={styles.page}>
-      {/* ── Section 1: expected demand peaks by region ── */}
+      {/* ── Section 1: filter panel next to both forecast charts. All three
+          are driven by the same region/feeder/meter selection. ── */}
       <div className={styles.grid}>
-        {/* Left: one card — intro text, horizontal filters, then the pipeline. */}
+        {/* Left: one card — intro text, filters, then the pipeline. */}
         <div className={styles.panelCard}>
           <div className={styles.panelText}>
             <Body>
               Compare projected demand across regions and see the exact MongoDB
               aggregation behind it. Start with a region, then drill down by
-              feeder and meter — the chart and the pipeline update together.
+              feeder and meter — both charts and the pipeline update together.
             </Body>
           </div>
 
@@ -111,16 +117,27 @@ export default function ForecastingPage() {
           <PipelineCard pipeline={pipeline} />
         </div>
 
-        {/* Right: the chart. */}
-        <DemandForecastChart
-          bars={forecast.bars}
-          isLoading={forecast.isLoading}
-          isRefreshing={forecast.isRefreshing}
-          error={forecast.error}
-        />
+        {/* Right: both forecast charts, stacked. */}
+        <div className={styles.chartStack}>
+          <WeatherDemandForecastChart
+            region={weather.region}
+            points={weather.points}
+            nowIndex={weather.nowIndex}
+            isLoading={weather.isLoading}
+            isRefreshing={weather.isRefreshing}
+            error={weather.error}
+          />
+
+          <DemandForecastChart
+            bars={forecast.bars}
+            isLoading={forecast.isLoading}
+            isRefreshing={forecast.isRefreshing}
+            error={forecast.error}
+          />
+        </div>
       </div>
 
-      {/* ── Section 2: projected demand vs capacity, by grid-hierarchy region ── */}
+      {/* ── Section 2: projected demand vs capacity, by grid-hierarchy region ──
       <div className={styles.grid}>
         <div className={styles.panelCard}>
           <div className={styles.panelText}>
@@ -151,13 +168,10 @@ export default function ForecastingPage() {
           isRefreshing={capacityForecast.isRefreshing}
           error={capacityForecast.error}
         />
-      </div>
+      </div> */}
 
       {/* Per-region summary cards for the capacity forecast. */}
       <RegionSummaryCards regions={capacityForecast.regions} />
-
-      {/* ── Section 3: weather-adjusted hourly demand forecast, by region ── */}
-      <WeatherDemandForecastChart />
     </main>
   );
 }

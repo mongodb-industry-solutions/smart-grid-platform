@@ -2,6 +2,9 @@ import {
   buildWeatherForecastPipeline,
   buildRegionCapacityPipeline,
   COMFORT_TEMP_F,
+  HEATING_BASE_F,
+  COOLING_BASE_F,
+  DEFAULT_LOOKBACK_DAYS,
 } from "@/lib/const/weatherForecastPipeline";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
 import { fetchHourlyTempsF } from "@/lib/weather/openMeteo";
@@ -54,6 +57,29 @@ async function getRegions(db) {
     .filter(Boolean);
 }
 
+// Resolve the region/feeder/meter selection (as sent by the panel) to the set
+// of meter dataids it covers, using the same fields as the demand pipeline.
+// Returns null when nothing is selected (caller falls back to a default region).
+async function resolveSelectedMeterIds(db, { states, feeders, meterIds }) {
+  const match = {};
+  if (states?.length) match.state = { $in: states };
+  if (feeders?.length) match.feeder_id = { $in: feeders };
+  if (meterIds?.length) {
+    const nums = meterIds.map(Number).filter((n) => !Number.isNaN(n));
+    if (nums.length) match.dataid = { $in: nums };
+  }
+  if (Object.keys(match).length === 0) return null; // "all" → no narrowing
+
+  const row = await db
+    .collection(NETWORK_MAP_COLLECTION)
+    .aggregate([
+      { $match: match },
+      { $group: { _id: null, ids: { $addToSet: "$dataid" } } },
+    ])
+    .next();
+  return row?.ids ?? [];
+}
+
 // Anchor the window to the latest real reading (the dataset is fixed in the
 // past — see the readings-data-window note), looking back `lookbackDays`.
 async function resolveWindow(db, meterIds, lookbackDays) {
@@ -82,21 +108,49 @@ async function resolveWindow(db, meterIds, lookbackDays) {
  *
  * @param {import("mongodb").Db} db
  * @param {Object} [opts]
- * @param {string} [opts.region] region id ("City, State")
- * @param {number} [opts.lookbackDays=7] history window for profiling the baseline
+ * @param {string[]} [opts.states] selected regions
+ * @param {string[]} [opts.feeders] selected feeder_ids
+ * @param {string[]} [opts.meterIds] selected meter ids
+ * @param {number} [opts.lookbackDays] history window for the baseline & slope
+ *   fit (defaults to DEFAULT_LOOKBACK_DAYS — all available history)
  */
 export async function getWeatherForecast(db, opts = {}) {
-  const { region, lookbackDays = 7 } = opts;
+  const {
+    states = [],
+    feeders = [],
+    meterIds: selMeters = [],
+    lookbackDays = DEFAULT_LOOKBACK_DAYS,
+  } = opts;
 
   const regions = await getRegions(db);
   const regionList = regions.map((r) => ({ id: r.id, label: r.label }));
 
-  const selected = regions.find((r) => r.id === region) || regions[0] || null;
-  if (!selected) {
+  if (regions.length === 0) {
     return { regions: regionList, region: null, points: [], nowIndex: 0, pipeline: [] };
   }
 
-  const meterIds = selected.meterIds;
+  // Map the panel selection to a meter set. The forecast covers those meters;
+  // its weather comes from the forecastable region they overlap most (a single
+  // city's temperature drives the whole selection). Empty selection → default.
+  const selectedIds = await resolveSelectedMeterIds(db, {
+    states,
+    feeders,
+    meterIds: selMeters,
+  });
+
+  let selected;
+  let meterIds;
+  if (selectedIds && selectedIds.length) {
+    const idSet = new Set(selectedIds);
+    selected = regions
+      .map((r) => ({ r, overlap: r.meterIds.filter((id) => idSet.has(id)).length }))
+      .sort((a, b) => b.overlap - a.overlap)[0].r;
+    meterIds = selectedIds;
+  } else {
+    selected = regions[0];
+    meterIds = selected.meterIds;
+  }
+
   const { from, to } = await resolveWindow(db, meterIds, lookbackDays);
 
   // Fetch weather (external — can't run in Mongo) covering the history window
@@ -138,6 +192,10 @@ export async function getWeatherForecast(db, opts = {}) {
       weatherSensitivity: forecastDoc?.weatherSensitivity ?? 0,
       weatherMode: forecastDoc?.weatherMode ?? "heating",
       comfortTempF: COMFORT_TEMP_F,
+      heatingBaseF: HEATING_BASE_F,
+      coolingBaseF: COOLING_BASE_F,
+      weekdayFactor: forecastDoc?.weekdayFactor ?? 1,
+      weekendFactor: forecastDoc?.weekendFactor ?? 1,
     },
     window: { from, to },
     points,

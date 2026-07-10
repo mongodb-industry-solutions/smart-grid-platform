@@ -9,13 +9,23 @@ const EMPTY = { regions: [], region: null, points: [], nowIndex: 0 };
  * Stale-while-revalidate: the previous series stays on screen while the next
  * loads. See GET /api/forecast/weather.
  *
- * @param {string|null} regionId selected region id ("City, State"), or null for default
+ * Driven by the same region/feeder/meter selection as the demand forecast, so
+ * both charts move together. An empty selection means "all" (the API picks a
+ * default region).
+ *
+ * @param {string[]} states selected regions
+ * @param {string[]} feeders selected feeder_ids
+ * @param {string[]} meterIds selected meter ids
  */
-export function useWeatherForecast(regionId) {
+export function useWeatherForecast(states, feeders, meterIds) {
   const [result, setResult] = useState(EMPTY);
   const [error, setError] = useState(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [hasLoaded, setHasLoaded] = useState(false);
+
+  const statesKey = (states ?? []).join(",");
+  const feedersKey = (feeders ?? []).join(",");
+  const idsKey = (meterIds ?? []).map(String).join(",");
 
   useEffect(() => {
     let isActive = true;
@@ -23,7 +33,9 @@ export function useWeatherForecast(regionId) {
     setError(null);
 
     const params = new URLSearchParams();
-    if (regionId) params.set("region", regionId);
+    if (statesKey) params.set("states", statesKey);
+    if (feedersKey) params.set("feeders", feedersKey);
+    if (idsKey) params.set("ids", idsKey);
 
     (async () => {
       try {
@@ -51,7 +63,7 @@ export function useWeatherForecast(regionId) {
     return () => {
       isActive = false;
     };
-  }, [regionId]);
+  }, [statesKey, feedersKey, idsKey]);
 
   const isLoading = isRefreshing && !hasLoaded;
   return { ...result, isLoading, isRefreshing, error };
