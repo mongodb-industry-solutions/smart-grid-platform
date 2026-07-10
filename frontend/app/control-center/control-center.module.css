@@ -1,0 +1,355 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Header band (MongoDB slate, matches NetworkTree's dashboard header) ── */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #001e2b;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 12px;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scopeSelect {
+  font-size: 13px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
+}
+
+.live {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #e3fcf7;
+}
+
+.liveDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #00ed64;
+  box-shadow: 0 0 0 0 rgba(0, 237, 100, 0.7);
+}
+
+.liveDotPulse {
+  animation: pulse 1s ease-out;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 237, 100, 0.7); }
+  100% { box-shadow: 0 0 0 8px rgba(0, 237, 100, 0); }
+}
+
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background: #00ed64;
+  color: #001e2b;
+}
+
+/* ── Network KPI strip (mirrors grid-network KPI cards) ── */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.kpiCard {
+  background: #ffffff;
+  border: 1px solid #e8edeb;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.06);
+  padding: 12px 14px;
+}
+
+.kpiLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #889397;
+  margin-bottom: 6px;
+}
+
+.kpiCardValue {
+  font-size: 22px;
+  font-weight: 700;
+  color: #00684a;
+  line-height: 1;
+}
+
+.kpiHint {
+  font-size: 10px;
+  color: #889397;
+  margin-top: 4px;
+}
+
+/* ── Asset detail (grid map selection) ── */
+.assetHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.assetStatus {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 1px 7px;
+  margin-left: auto;
+}
+
+.assetRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f4f3;
+}
+
+/* ── Layout rows ── */
+.mainRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+@media (max-width: 1200px) {
+  .mainRow { grid-template-columns: 1fr; }
+  .bottomRow { grid-template-columns: 1fr; }
+}
+
+/* ── Cards ── */
+.card {
+  background: #ffffff;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+.cardTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #889397;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Live demand KPI */
+.kpiValue {
+  font-size: 34px;
+  font-weight: 700;
+  color: #00684a;
+  line-height: 1;
+}
+
+.kpiSub {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.meterTrack {
+  height: 8px;
+  border-radius: 4px;
+  background: #e8edeb;
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* List rows (peak warnings / health / risk) */
+/* A card marked .grow fills the remaining height of its column so stacked
+   cards align flush to the bottom instead of leaving gaps. */
+.grow {
+  flex: 1;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 120px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: #001e2b;
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowSub {
+  font-size: 11px;
+  color: #889397;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.bar {
+  flex: 1.2;
+  height: 6px;
+  border-radius: 3px;
+  background: #e8edeb;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+}
+
+.empty {
+  font-size: 12px;
+  color: #889397;
+  font-style: italic;
+}
+
+/* Simple two-column status rows (peak warnings / substation health) */
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #e8edeb;
+  font-size: 13px;
+  color: #001e2b;
+}
+
+/* Two side-by-side KPI tiles (customers served / estimated tariff total) */
+.statTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: center;
+  flex: 1;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 4px;
+}
+
+/* Segment mix pills */
+.pillRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #f9fbfa;
+  border: 1px solid #e8edeb;
+}
+
+.pillActive {
+  background: #e3fcf7;
+  border-color: #00a35c;
+}
+
+.pillLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.pillActive .pillLabel {
+  color: #00684a;
+}
+
+.pillPct {
+  font-size: 13px;
+  font-weight: 700;
+  color: #5c6970;
+}
+
+.pillActive .pillPct {
+  color: #00684a;
+}

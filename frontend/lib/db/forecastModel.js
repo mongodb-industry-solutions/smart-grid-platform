@@ -1,7 +1,12 @@
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
+import {
+  buildRegionalForecastPipeline,
+  buildRegionCapacityPipeline,
+} from "@/lib/const/regionalForecastPipeline";
 
 const READINGS = process.env.READINGS_COLLECTION_NAME || "readings";
 const NETWORK_MAP = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
+const NETWORK = process.env.NETWORK_COLLECTION_NAME || "network";
 
 function strId(doc) {
   if (doc && doc._id != null) doc._id = doc._id.toString?.() ?? doc._id;
@@ -10,36 +15,64 @@ function strId(doc) {
 
 const TITLES = {
   demand: "Regional Demand Forecast",
+  capacity: "Projected Demand vs Capacity",
 };
 
 /**
- * Documents + the aggregation pipeline behind the forecasting view. The demand
- * aggregation runs on meter_network_map and $lookups readings.
+ * Documents + the aggregation pipeline behind each forecasting component.
+ *  - "demand"   → expected demand by region per hour (bar-per-region view).
+ *  - "capacity" → per-region per-period series + each region node's capacity_kw.
  *
  * @param {import("mongodb").Db} db
  * @param {string} component
  */
 export async function getForecastComponentModel(db, component) {
-  if (component !== "demand") return null;
-
   const sample = async (name, sort) => {
     const doc = await db.collection(name).findOne({}, sort ? { sort } : {});
     return { name, sample: doc ? strId(doc) : null };
   };
 
-  const collections = [
-    await sample(NETWORK_MAP),
-    await sample(READINGS, { timestamp: -1 }),
-  ];
+  if (component === "demand") {
+    return {
+      title: TITLES.demand,
+      component,
+      collections: [await sample(NETWORK_MAP), await sample(READINGS, { timestamp: -1 })],
+      operations: [
+        {
+          title: "Expected demand by region per hour",
+          collection: NETWORK_MAP,
+          type: "aggregate",
+          pipeline: buildDemandPipeline({}),
+        },
+      ],
+    };
+  }
 
-  const operations = [
-    {
-      title: "Expected demand by region per hour",
-      collection: NETWORK_MAP,
-      type: "aggregate",
-      pipeline: buildDemandPipeline({}),
-    },
-  ];
+  if (component === "capacity") {
+    return {
+      title: TITLES.capacity,
+      component,
+      collections: [
+        await sample(NETWORK_MAP),
+        await sample(READINGS, { timestamp: -1 }),
+        await sample(NETWORK),
+      ],
+      operations: [
+        {
+          title: "Coincident demand per region per period",
+          collection: NETWORK_MAP,
+          type: "aggregate",
+          pipeline: buildRegionalForecastPipeline({ level: "feeder" }),
+        },
+        {
+          title: "Region capacity (rated capacity_kw per node)",
+          collection: NETWORK,
+          type: "aggregate",
+          pipeline: buildRegionCapacityPipeline({}),
+        },
+      ],
+    };
+  }
 
-  return { title: TITLES[component], component, collections, operations };
+  return null;
 }

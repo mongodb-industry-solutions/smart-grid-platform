@@ -4,13 +4,21 @@ import { useMemo, useState } from "react";
 import { Body } from "@leafygreen-ui/typography";
 import NetworkFilters from "@/components/forecasting/NetworkFilters";
 import DemandForecastChart from "@/components/forecasting/DemandForecastChart";
+import RegionFilters from "@/components/forecasting/RegionFilters";
+import RegionalDemandForecastChart from "@/components/forecasting/RegionalDemandForecastChart";
+import RegionSummaryCards from "@/components/forecasting/RegionSummaryCards";
+import WeatherDemandForecastChart from "@/components/forecasting/WeatherDemandForecastChart";
 import PipelineCard from "@/components/forecasting/PipelineCard";
 import { useNetworkFilters } from "@/components/forecasting/useNetworkFilters";
 import { useDemandForecast } from "@/components/forecasting/useDemandForecast";
+import { useNetworkHierarchy } from "@/components/forecasting/useNetworkHierarchy";
+import { useRegionalForecast } from "@/components/forecasting/useRegionalForecast";
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
+import { buildRegionalForecastPipeline } from "@/lib/const/regionalForecastPipeline";
 import styles from "@/style/forecasting/document-showcase.module.css";
 
 export default function ForecastingPage() {
+  // ── Existing: expected demand peaks by region (bar per region) ──
   const [regions, setRegions] = useState([]);
   const [feeders, setFeeders] = useState([]);
   const [meterIds, setMeterIds] = useState([]);
@@ -44,8 +52,38 @@ export default function ForecastingPage() {
     setMeterIds([]);
   };
 
+  // ── New: projected demand vs capacity, by grid-hierarchy region ──
+  const [level, setLevel] = useState("feeder");
+  const [regionNodeIds, setRegionNodeIds] = useState([]);
+
+  const {
+    utilities,
+    substations,
+    feeders: feederNodes,
+    error: hierarchyError,
+  } = useNetworkHierarchy();
+
+  const regionOptions = useMemo(() => {
+    if (level === "utility") return utilities;
+    if (level === "substation") return substations;
+    return feederNodes;
+  }, [level, utilities, substations, feederNodes]);
+
+  const capacityForecast = useRegionalForecast(level, regionNodeIds);
+
+  const capacityPipeline = useMemo(
+    () => buildRegionalForecastPipeline({ level, regionIds: regionNodeIds }),
+    [level, regionNodeIds]
+  );
+
+  const handleLevel = (value) => {
+    setLevel(value);
+    setRegionNodeIds([]);
+  };
+
   return (
     <main className={styles.page}>
+      {/* ── Section 1: expected demand peaks by region ── */}
       <div className={styles.grid}>
         {/* Left: one card — intro text, horizontal filters, then the pipeline. */}
         <div className={styles.panelCard}>
@@ -81,6 +119,45 @@ export default function ForecastingPage() {
           error={forecast.error}
         />
       </div>
+
+      {/* ── Section 2: projected demand vs capacity, by grid-hierarchy region ── */}
+      <div className={styles.grid}>
+        <div className={styles.panelCard}>
+          <div className={styles.panelText}>
+            <Body>
+              Identify expected demand peaks by region and prepare for localized
+              capacity pressure. Choose a grid granularity — utility, substation,
+              or feeder — then compare regions&apos; projected demand against each
+              region&apos;s own capacity. The chart and the aggregation below
+              update together.
+            </Body>
+          </div>
+
+          <RegionFilters
+            level={level}
+            onLevelChange={handleLevel}
+            regionOptions={regionOptions}
+            regionIds={regionNodeIds}
+            onRegionIdsChange={setRegionNodeIds}
+            error={hierarchyError}
+          />
+
+          <PipelineCard pipeline={capacityPipeline} />
+        </div>
+
+        <RegionalDemandForecastChart
+          regions={capacityForecast.regions}
+          isLoading={capacityForecast.isLoading}
+          isRefreshing={capacityForecast.isRefreshing}
+          error={capacityForecast.error}
+        />
+      </div>
+
+      {/* Per-region summary cards for the capacity forecast. */}
+      <RegionSummaryCards regions={capacityForecast.regions} />
+
+      {/* ── Section 3: weather-adjusted hourly demand forecast, by region ── */}
+      <WeatherDemandForecastChart />
     </main>
   );
 }
