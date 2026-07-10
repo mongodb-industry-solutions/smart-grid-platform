@@ -87,6 +87,11 @@
   min-width: 150px;
 }
 
+.filterSelectWide {
+  flex: 2 1 0;
+  min-width: 220px;
+}
+
 .filtersHint {
   margin: 4px 0 0;
   font-size: 12px;
@@ -241,4 +246,116 @@
 
 .errorText {
   padding: 20px;
+}
+
+/* ── Per-region summary cards ── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.summaryCard {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summaryTitle {
+  font-weight: 600;
+  color: #001e2b;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryBadge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 0 0 auto;
+}
+
+.summaryPctRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.summaryPct {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summaryPctLabel {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.summaryMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summaryMetricLabel {
+  font-size: 11px;
+  color: #89979b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.summaryMetricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.summaryTrendUp {
+  color: #db3030;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryTrendDown {
+  color: #00684a;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryTrendFlat {
+  color: #89979b;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryNote {
+  color: #89979b;
+  font-size: 12px;
 }

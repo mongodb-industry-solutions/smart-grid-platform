@@ -26,6 +26,17 @@ export default function NavBar({ collapsed, setCollapsed }) {
       >
         Monitoring Panel
       </SideNavItem>
+      
+      <SideNavItem
+        as={Link}
+        href="/network-center"
+        active={pathname === "/network-center"}
+        glyph={<Icon glyph="Dashboard" />}
+      >
+        Network Center
+      </SideNavItem>
+
+
 
       <SideNavItem
         as={Link}

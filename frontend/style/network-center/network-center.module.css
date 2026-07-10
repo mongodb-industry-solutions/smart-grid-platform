@@ -1,0 +1,329 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* ── Header (standardized: typography + LeafyGreen controls) ── */
+.header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.headerTitle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.headerHeading {
+  margin: 0;
+}
+
+.headerSubtitle {
+  color: #5c6970;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.scopeSelect {
+  min-width: 180px;
+}
+
+/* Pulsing dot inside the live badge. */
+.liveDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00a35c;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.liveDotPulse {
+  animation: pulse 1s ease-out;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(0, 163, 92, 0.7); }
+  100% { box-shadow: 0 0 0 6px rgba(0, 163, 92, 0); }
+}
+
+.errorText {
+  color: #db3030;
+}
+
+/* ── Network KPI strip ── */
+.kpiRow {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+/* KPI tiles match the customers view metric tiles (soft fill, no accent). */
+.kpiCard {
+  background: #f9fbfa;
+  border: 1px solid #e8edeb;
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.kpiLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #89979b;
+  margin-bottom: 4px;
+}
+
+.kpiCardValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #001e2b;
+  line-height: 1.1;
+}
+
+.kpiHint {
+  font-size: 11px;
+  color: #89979b;
+  margin-top: 3px;
+}
+
+/* ── Layout rows ── */
+.mainRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.8fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+/* Grid map (wide) beside a stacked side column, so it isn't full-screen. The
+   map's aspect ratio sets the row height and the side column fills it. */
+.mapRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+@media (max-width: 1200px) {
+  .mapRow { grid-template-columns: 1fr; }
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-height: 0;
+}
+
+@media (max-width: 1200px) {
+  .mainRow { grid-template-columns: 1fr; }
+  .bottomRow { grid-template-columns: 1fr; }
+}
+
+/* ── Standard panel (matches the customers view): bordered card with an
+   in-card title header row and a padded body ── */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  overflow: hidden;
+}
+
+/* Grow cards fill their column but may shrink below their content so their
+   inner list scrolls, capping the column at the center (map + tariff) height
+   instead of pushing it taller. */
+.grow {
+  flex: 1;
+  min-height: 0;
+}
+
+.cardTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 18px;
+  border-bottom: 1px solid #e8edeb;
+  font-size: 15px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.cardBody {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+/* Grid map: a dark hub-and-spoke canvas (like the control-room mockup). */
+.mapBody {
+  padding: 10px;
+}
+
+/* Fixed aspect ratio = the SVG viewBox, so the graph fills the panel with no
+   letterbox gaps. */
+.mapCanvas {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 720;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f9fbfa;
+  border: 1px solid #e8edeb;
+}
+
+.mapCanvas svg {
+  position: absolute;
+  inset: 0;
+}
+
+.mapOverlay {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 12px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: none;
+}
+
+.mapLegendDark {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.mapTotals {
+  font-size: 12px;
+  color: #889397;
+  text-align: right;
+}
+
+.muted {
+  color: #5c6970;
+}
+
+.empty {
+  font-size: 13px;
+  color: #889397;
+  font-style: italic;
+}
+
+/* ── KPI value (live demand / stat tiles) ── */
+.kpiValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: #00684a;
+  line-height: 1;
+}
+
+.meterTrack {
+  height: 8px;
+  border-radius: 4px;
+  background: #e8edeb;
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: 4px;
+}
+
+/* ── List rows (peak warnings / substation health) ── */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #e8edeb;
+  font-size: 13px;
+  color: #001e2b;
+}
+
+.rowName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rowSub {
+  font-size: 11px;
+  color: #889397;
+}
+
+/* ── Stat tiles (customers served / tariff total) ── */
+.statTiles {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: center;
+}
+
+.statTile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+/* ── Asset detail ── */
+.assetHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.assetRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #f1f4f3;
+}

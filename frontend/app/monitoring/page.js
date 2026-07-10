@@ -7,7 +7,7 @@ import CustomerMap from "@/components/outages/customerMap";
 import GridStabilityCard from "@/components/readings/grid-stability-card";
 // import MeterPowerChart from "@/components/monitoring/meter-power-chart";
 import Anomalies from "@/components/anomalies/anomalies";
-import styles from "./monitoring.module.css";
+import styles from "@/style/monitoring/monitoring.module.css";
 
 export default function MonitoringPage() {
   return (
