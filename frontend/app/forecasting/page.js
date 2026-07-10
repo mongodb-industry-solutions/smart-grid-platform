@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Body } from "@leafygreen-ui/typography";
 import NetworkFilters from "@/components/forecasting/NetworkFilters";
 import DemandForecastChart from "@/components/forecasting/DemandForecastChart";
+import PeakTimingChart from "@/components/forecasting/PeakTimingChart";
 import RegionFilters from "@/components/forecasting/RegionFilters";
 import RegionalDemandForecastChart from "@/components/forecasting/RegionalDemandForecastChart";
 import RegionSummaryCards from "@/components/forecasting/RegionSummaryCards";
@@ -91,33 +92,38 @@ export default function ForecastingPage() {
       {/* ── Section 1: filter panel next to both forecast charts. All three
           are driven by the same region/feeder/meter selection. ── */}
       <div className={styles.grid}>
-        {/* Left: one card — intro text, filters, then the pipeline. */}
+        {/* Left: one card — intro text, filters, then the pipeline. The inner
+            layer is absolutely positioned so the panel's height is set by the
+            charts (not the pipeline JSON), which scrolls to fit. */}
         <div className={styles.panelCard}>
-          <div className={styles.panelText}>
-            <Body>
-              Compare projected demand across regions and see the exact MongoDB
-              aggregation behind it. Start with a region, then drill down by
-              feeder and meter — both charts and the pipeline update together.
-            </Body>
+          <div className={styles.panelInner}>
+            <div className={styles.panelText}>
+              <Body>
+                Compare projected demand across regions and see the exact MongoDB
+                aggregation behind it. Start with a region, then drill down by
+                feeder and meter — both charts and the pipeline update together.
+              </Body>
+            </div>
+
+            <NetworkFilters
+              stateOptions={stateOptions}
+              feederOptions={feederOptions}
+              meterOptions={meterOptions}
+              regions={regions}
+              feeders={feeders}
+              meterIds={meterIds}
+              onRegionsChange={handleRegions}
+              onFeedersChange={handleFeeders}
+              onMeterIdsChange={setMeterIds}
+              error={filtersError}
+            />
+
+            <PipelineCard pipeline={pipeline} />
           </div>
-
-          <NetworkFilters
-            stateOptions={stateOptions}
-            feederOptions={feederOptions}
-            meterOptions={meterOptions}
-            regions={regions}
-            feeders={feeders}
-            meterIds={meterIds}
-            onRegionsChange={handleRegions}
-            onFeedersChange={handleFeeders}
-            onMeterIdsChange={setMeterIds}
-            error={filtersError}
-          />
-
-          <PipelineCard pipeline={pipeline} />
         </div>
 
-        {/* Right: both forecast charts, stacked. */}
+        {/* Right column: the weather-adjusted forecast on top, then the
+            demand-planning charts below it — all beside the filter panel. */}
         <div className={styles.chartStack}>
           <WeatherDemandForecastChart
             region={weather.region}
@@ -128,12 +134,23 @@ export default function ForecastingPage() {
             error={weather.error}
           />
 
-          <DemandForecastChart
-            bars={forecast.bars}
-            isLoading={forecast.isLoading}
-            isRefreshing={forecast.isRefreshing}
-            error={forecast.error}
-          />
+          {/* Expected peak magnitude by region next to when those peaks land
+              in local time. Both driven by the same filters. */}
+          <div className={styles.gridEqual}>
+            <DemandForecastChart
+              bars={forecast.bars}
+              isLoading={forecast.isLoading}
+              isRefreshing={forecast.isRefreshing}
+              error={forecast.error}
+            />
+
+            <PeakTimingChart
+              bars={forecast.bars}
+              isLoading={forecast.isLoading}
+              isRefreshing={forecast.isRefreshing}
+              error={forecast.error}
+            />
+          </div>
         </div>
       </div>
 

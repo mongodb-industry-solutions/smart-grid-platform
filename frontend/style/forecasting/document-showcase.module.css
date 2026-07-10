@@ -10,16 +10,25 @@
   /* Left panel takes 1/3 of the width, the chart gets the remaining 2/3. */
   grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: 24px;
-  align-items: start;
+  align-items: stretch;
 }
 
-/* Left panel: one card holding intro text, horizontal filters, and pipeline. */
+/* Left panel: one card holding intro text, horizontal filters, and pipeline.
+   Positioned so its absolutely-filled inner layer can take the card's stretched
+   height without the pipeline JSON dictating how tall the row is. */
 .panelCard {
+  position: relative;
   border: 1px solid #c1c7c6;
   border-radius: 8px;
   background: #ffffff;
   box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
   overflow: hidden;
+  min-width: 0;
+}
+
+.panelInner {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -32,6 +41,14 @@
 
 .chartCol {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* When two chart columns sit side by side, let the card fill the column so
+   both cards end at the same height regardless of footnote length. */
+.chartCol .chartCard {
+  flex: 1;
 }
 
 /* Right column when it holds more than one chart stacked vertically. */
@@ -40,6 +57,20 @@
   flex-direction: column;
   gap: 24px;
   min-width: 0;
+}
+
+/* Two equal-width chart columns (e.g. demand peaks next to peak timing). */
+.gridEqual {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .gridEqual {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Chart ── */
@@ -117,6 +148,9 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Absorb the panel's extra height when it's stretched to match the charts. */
+  flex: 1;
+  min-height: 0;
 }
 
 .pipelineHeader,
@@ -185,7 +219,8 @@
 
 .jsonWrap {
   padding: 8px 0;
-  max-height: 560px;
+  flex: 1;
+  min-height: 0;
   overflow: auto;
   background: #ffffff;
 }
