@@ -12,7 +12,8 @@ import {
   ReferenceLine,
 } from "recharts";
 import { CHART_MARGIN, AXIS_TICK, TOOLTIP_CONTENT, TOOLTIP_LABEL } from "@/lib/const/chartConfig";
-import styles from "@/app/control-center/control-center.module.css";
+import { Panel } from "@/components/network-center/panels";
+import styles from "@/style/network-center/network-center.module.css";
 
 const ACTUAL_COLOR = "#00A35C";
 const FORECAST_COLOR = "#016BF8";
@@ -142,10 +143,5 @@ export default function ForecastVsActual({ regions, isLoading, isRefreshing, err
     );
   }
 
-  return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>Forecast vs actual</div>
-      {body}
-    </div>
-  );
+  return <Panel title="Forecast vs Actual">{body}</Panel>;
 }

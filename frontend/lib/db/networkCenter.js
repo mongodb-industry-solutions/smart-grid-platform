@@ -51,7 +51,7 @@ function collectDescendants(node) {
 }
 
 /**
- * Composes the grid control-center overview from the project's existing
+ * Composes the grid network-center overview from the project's existing
  * aggregations — feeder load vs capacity (getGridStability), the network
  * hierarchy (getNetworkTree), per-meter anomalies (getAnomalies), plus the same
  * "power ≤ 0" outage definition used by getOutagesSummary — and rolls them up
@@ -61,7 +61,7 @@ function collectDescendants(node) {
  * @param {object} [options]
  * @param {string} [options.scope="all"] a utility asset id to scope to, or "all"
  */
-export async function getControlCenterOverview(db, { scope = "all" } = {}) {
+export async function getNetworkCenterOverview(db, { scope = "all" } = {}) {
   const [grid, { tree }, anomalies, outageRows] = await Promise.all([
     getGridStability(db, 0),
     getNetworkTree(db),
@@ -93,16 +93,26 @@ export async function getControlCenterOverview(db, { scope = "all" } = {}) {
     }
   })(utilities);
 
-  // Flatten the scoped hierarchy into substations + a feeder → metadata lookup.
+  // Flatten the scoped hierarchy into substations + a feeder → metadata lookup,
+  // and roll current load (kW) up feeder → substation → utility for the map.
   const substations = [];
   const feederMeta = new Map();
+  const loadById = {};
   for (const u of utilities) {
+    let uLoad = 0;
     for (const sub of u.children || []) {
       substations.push({ node: sub, utilityName: u.name });
+      let sLoad = 0;
       for (const feeder of sub.children || []) {
         feederMeta.set(feeder.id, { name: feeder.name, substationName: sub.name });
+        const load = feederById.get(feeder.id)?.total_load || 0;
+        loadById[feeder.id] = load;
+        sLoad += load;
       }
+      loadById[sub.id] = Math.round(sLoad * 100) / 100;
+      uLoad += sLoad;
     }
+    loadById[u.id] = Math.round(uLoad * 100) / 100;
   }
 
   // ── Peak-load warnings (feeder-level) ──
@@ -212,6 +222,7 @@ export async function getControlCenterOverview(db, { scope = "all" } = {}) {
     scope,
     utilities: tree.map((u) => ({ id: u.id, name: u.name })),
     totals,
+    loadById,
     thresholds: { warning: PEAK_WARNING_PCT, critical: PEAK_CRITICAL_PCT },
     liveDemand,
     peakWarnings,

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const ENDPOINT = "/api/control-center/segment-mix";
+const ENDPOINT = "/api/network-center/segment-mix";
 
 /**
  * Fetches the regional customer-segment / tariff mix on scope change. Not

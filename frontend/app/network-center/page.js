@@ -1,12 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@leafygreen-ui/icon";
-import GridMap from "@/components/control-center/GridMap";
-import ForecastVsActual from "@/components/control-center/ForecastVsActual";
+import Badge from "@leafygreen-ui/badge";
+import Button from "@leafygreen-ui/button";
+import { Select, Option } from "@leafygreen-ui/select";
+import { H1, Body } from "@leafygreen-ui/typography";
+import GridMap from "@/components/network-center/GridMap";
+import ForecastVsActual from "@/components/network-center/ForecastVsActual";
 import { useRegionalForecast } from "@/components/forecasting/useRegionalForecast";
-import { useControlCenter } from "@/components/control-center/useControlCenter";
-import { useSegmentMix } from "@/components/control-center/useSegmentMix";
+import { useNetworkCenter } from "@/components/network-center/useNetworkCenter";
+import { useSegmentMix } from "@/components/network-center/useSegmentMix";
 import {
   NetworkKpis,
   LiveDemandTile,
@@ -15,14 +19,27 @@ import {
   SubstationHealth,
   CustomersTariffPanel,
   AssetDetail,
-} from "@/components/control-center/panels";
-import styles from "./control-center.module.css";
+} from "@/components/network-center/panels";
+import styles from "@/style/network-center/network-center.module.css";
 
-export default function ControlCenterPage() {
+export default function NetworkCenterPage() {
   const [scope, setScope] = useState("all");
   const [selectedNode, setSelectedNode] = useState(null);
 
-  const { data, isLoading, error, tick } = useControlCenter(scope);
+  // Cap the side columns to the center column (map + tariff) height, so their
+  // lists scroll instead of growing taller than where the tariff card ends.
+  const centerRef = useRef(null);
+  const [centerH, setCenterH] = useState(null);
+  useEffect(() => {
+    const el = centerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(([entry]) => setCenterH(Math.round(entry.contentRect.height)));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const sideStyle = centerH ? { height: centerH, overflow: "hidden" } : undefined;
+
+  const { data, isLoading, error, tick } = useNetworkCenter(scope);
   const { data: mix, isLoading: mixLoading } = useSegmentMix(scope);
 
   // Drive the reused forecast chart from the substations in view (worst-health
@@ -67,7 +84,7 @@ export default function ControlCenterPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `control-center-report-${scope}-${Date.now()}.html`;
+      a.download = `network-center-report-${scope}-${Date.now()}.html`;
       a.click();
       URL.revokeObjectURL(url);
     }
@@ -75,49 +92,43 @@ export default function ControlCenterPage() {
 
   return (
     <div className={styles.page}>
-      {/* ── Header: scope selector, live indicator, export ── */}
+      {/* ── Header: title, scope filter, live indicator, export ── */}
       <div className={styles.header}>
         <div className={styles.headerTitle}>
-          <div style={{ width: 34, height: 34, borderRadius: 9, background: "#00ed64", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Icon glyph="Dashboard" fill="#001e2b" />
-          </div>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 600 }}>Grid Control Center</div>
-            <div style={{ fontSize: 12, color: "#e3fcf7", opacity: 0.85 }}>
-              Live demand, capacity pressure, outage risk & forecast across the service territory
-            </div>
-          </div>
+          <H1 className={styles.headerHeading}>Grid Network Center</H1>
+          <Body className={styles.headerSubtitle}>
+            Live demand, capacity pressure, outage risk &amp; forecast across the service territory
+          </Body>
         </div>
 
         <div className={styles.headerActions}>
-          <span className={styles.live}>
-            <span
-              key={tick}
-              className={`${styles.liveDot} ${styles.liveDotPulse}`}
-            />
-            {error ? "Reconnecting…" : "Live · 5s"}
-          </span>
+          <Badge variant={error ? "red" : "green"}>
+            <span key={tick} className={`${styles.liveDot} ${styles.liveDotPulse}`} />
+            {error ? "Reconnecting" : "Live · 5s"}
+          </Badge>
 
-          <select
-            className={styles.scopeSelect}
-            value={scope}
-            onChange={(e) => setScope(e.target.value)}
+          <Select
             aria-label="Scope"
+            value={scope}
+            onChange={setScope}
+            size="small"
+            allowDeselect={false}
+            className={styles.scopeSelect}
           >
-            <option value="all">All utilities</option>
+            <Option value="all">All utilities</Option>
             {utilities.map((u) => (
-              <option key={u.id} value={u.id}>{u.name}</option>
+              <Option key={u.id} value={u.id}>{u.name}</Option>
             ))}
-          </select>
+          </Select>
 
-          <button className={styles.exportBtn} onClick={handleExport}>
-            <Icon glyph="Download" size="small" fill="#001e2b" /> Export
-          </button>
+          <Button size="small" leftGlyph={<Icon glyph="Download" />} onClick={handleExport}>
+            Export
+          </Button>
         </div>
       </div>
 
       {error && (
-        <div style={{ color: "#DB3030", fontSize: 13 }}>Error loading overview: {error}</div>
+        <Body className={styles.errorText}>Error loading overview: {error}</Body>
       )}
 
       {/* ── Network totals KPI strip ── */}
@@ -125,21 +136,24 @@ export default function ControlCenterPage() {
 
       {/* ── Main row: live demand + peak warnings | grid map | outage risk + health ── */}
       <div className={styles.mainRow}>
-        <div className={styles.column}>
+        <div className={styles.column} style={sideStyle}>
           <LiveDemandTile liveDemand={data?.liveDemand} />
           <PeakWarnings warnings={data?.peakWarnings} thresholds={data?.thresholds} grow />
         </div>
 
-        <div className={styles.column}>
+        <div className={styles.column} ref={centerRef}>
           <GridMap
             statusById={data?.statusById ?? null}
+            loadById={data?.loadById ?? null}
+            totals={data?.totals ?? null}
             scope={scope}
             selectedId={selectedNode?.id ?? null}
             onSelect={setSelectedNode}
           />
+          <CustomersTariffPanel mix={mix} isLoading={mixLoading} />
         </div>
 
-        <div className={styles.column}>
+        <div className={styles.column} style={sideStyle}>
           <AssetDetail
             node={selectedNode}
             status={selectedNode ? data?.statusById?.[selectedNode.id] ?? "unknown" : null}
@@ -150,16 +164,13 @@ export default function ControlCenterPage() {
         </div>
       </div>
 
-      {/* ── Bottom row: segment/tariff | forecast vs actual ── */}
-      <div className={styles.bottomRow}>
-        <CustomersTariffPanel mix={mix} isLoading={mixLoading} />
-        <ForecastVsActual
-          regions={forecast.regions}
-          isLoading={forecast.isLoading}
-          isRefreshing={forecast.isRefreshing}
-          error={forecast.error}
-        />
-      </div>
+      {/* ── Forecast: full width ── */}
+      <ForecastVsActual
+        regions={forecast.regions}
+        isLoading={forecast.isLoading}
+        isRefreshing={forecast.isRefreshing}
+        error={forecast.error}
+      />
 
       {isLoading && !data && (
         <div style={{ fontSize: 13, color: "#5c6970" }}>Loading control center…</div>
@@ -168,7 +179,7 @@ export default function ControlCenterPage() {
   );
 }
 
-// Builds a self-contained, printable HTML report of the current control-center
+// Builds a self-contained, printable HTML report of the current network-center
 // state (Save as PDF from the browser print dialog).
 function buildReportHtml({ scopeLabel, data, mix }) {
   const esc = (s) => String(s ?? "").replace(/[&<>]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
@@ -198,7 +209,7 @@ function buildReportHtml({ scopeLabel, data, mix }) {
     (mix?.segments ?? []).map((s) => [s.label, s.customerCount, `${s.sharePct}%`, Math.round(s.avgPowerW), s.representative?.monthlyTotal != null ? `$${s.representative.monthlyTotal.toFixed(2)}` : "—"])
   );
 
-  return `<!doctype html><html><head><meta charset="utf-8"><title>Grid Control Center Report</title>
+  return `<!doctype html><html><head><meta charset="utf-8"><title>Grid Network Center Report</title>
     <style>
       body { font-family: -apple-system, Helvetica, Arial, sans-serif; color: #001E2B; margin: 32px; }
       h1 { font-size: 20px; margin: 0 0 4px; }
@@ -212,7 +223,7 @@ function buildReportHtml({ scopeLabel, data, mix }) {
       th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #E8EDEB; }
       th { color: #5C6970; font-weight: 600; }
     </style></head><body>
-    <h1>Grid Control Center Report</h1>
+    <h1>Grid Network Center Report</h1>
     <div class="meta">Scope: <strong>${esc(scopeLabel)}</strong> · Generated ${new Date().toLocaleString()}</div>
 
     <div class="kpis">

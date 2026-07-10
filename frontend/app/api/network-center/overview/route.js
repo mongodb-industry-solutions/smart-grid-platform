@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
-import { getControlCenterOverview } from "@/lib/db/controlCenter";
+import { getNetworkCenterOverview } from "@/lib/db/networkCenter";
 
 const dbName = process.env.DATABASE_NAME;
 
@@ -11,13 +11,13 @@ export async function GET(request) {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const overview = await getControlCenterOverview(db, { scope });
+    const overview = await getNetworkCenterOverview(db, { scope });
 
     return NextResponse.json(overview);
   } catch (error) {
-    console.error("Error fetching control-center overview:", error);
+    console.error("Error fetching network-center overview:", error);
     return NextResponse.json(
-      { error: "Failed to fetch control-center overview" },
+      { error: "Failed to fetch network-center overview" },
       { status: 500 }
     );
   }

@@ -1,16 +1,16 @@
 import { useEffect, useState } from "react";
 
-const ENDPOINT = "/api/control-center/overview";
+const ENDPOINT = "/api/network-center/overview";
 const TICK_MS = 5_000;
 
 /**
- * Live grid control-center overview. Polls every 5s (the project's convention
+ * Live grid network-center overview. Polls every 5s (the project's convention
  * for "live" panels — there are no change streams here) and pulses `tick` on
  * each successful refresh so the header live indicator can flash.
  *
  * @param {string} scope a utility asset id, or "all"
  */
-export function useControlCenter(scope = "all") {
+export function useNetworkCenter(scope = "all") {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);

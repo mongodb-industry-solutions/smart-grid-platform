@@ -1,60 +1,32 @@
 "use client";
 
 import Icon from "@leafygreen-ui/icon";
+import Badge from "@leafygreen-ui/badge";
+import { Body } from "@leafygreen-ui/typography";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, Tooltip } from "recharts";
 import { AXIS_TICK, TOOLTIP_CONTENT, TOOLTIP_LABEL } from "@/lib/const/chartConfig";
-import styles from "@/app/control-center/control-center.module.css";
+import styles from "@/style/network-center/network-center.module.css";
 
-// Green-forward categorical palette, matching the grid-network charts.
-const CAT = ["#00684A", "#00A35C", "#00ED64", "#0498EC", "#FFC010", "#016BF8", "#B45AF2"];
-
-// Shared status → color mapping (mirrors the grid map's live-status ramp).
+// Live-status ramp — same tokens the grid map and overview use.
 const STATUS_COLOR = { normal: "#00A35C", warning: "#D97706", critical: "#DB3030", unknown: "#C1C7C6" };
 const STATUS_LABEL = { normal: "Normal", warning: "Warning", critical: "Critical", unknown: "No data" };
+const STATUS_VARIANT = { normal: "green", warning: "yellow", critical: "red", unknown: "lightgray" };
 const SEVERITY_COLOR = { low: "#00A35C", medium: "#D97706", high: "#DB3030" };
-const TYPE_LABEL = { substation: "Substation", feeder: "Feeder" };
-const TYPE_GLYPH = { substation: "LightningBolt", feeder: "Diagram3" };
+const TYPE_LABEL = { utility: "Utility", substation: "Substation", feeder: "Feeder", transformer: "Transformer" };
+const TYPE_GLYPH = { utility: "GovernmentBuilding", substation: "LightningBolt", feeder: "Diagram3", transformer: "Apps" };
 
-/** Asset detail for the node selected on the grid map. */
-export function AssetDetail({ node, status, metrics }) {
-  const color = STATUS_COLOR[status] ?? STATUS_COLOR.unknown;
-  const rows = [];
-  if (node) {
-    rows.push(["Asset type", TYPE_LABEL[node.type] ?? node.type]);
-    rows.push(["Rated capacity", node.capacityKw ? `${node.capacityKw.toLocaleString()} kW` : "—"]);
-    rows.push(["Customers served", (node.meterCount ?? 0).toLocaleString()]);
-    if (metrics) {
-      if (metrics.utilizationPct != null) rows.push(["Utilization", `${metrics.utilizationPct}%`]);
-      if (metrics.loadKw != null) rows.push(["Current load", `${metrics.loadKw.toLocaleString()} kW`]);
-      if (metrics.healthScore != null) rows.push(["Health score", `${metrics.healthScore}/100`]);
-      if (metrics.anomalyCount != null) rows.push(["Anomalies", metrics.anomalyCount]);
-      if (metrics.riskScore != null) rows.push(["Outage risk", `${metrics.riskScore} (${metrics.severity})`]);
-    }
-  }
-
+/**
+ * Standard panel wrapper matching the customers view: a bordered `.card` box
+ * with an in-card `.cardTitle` header row and a padded `.cardBody`.
+ */
+export function Panel({ title, right, children, grow, bodyClassName }) {
   return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>Asset detail</div>
-      {!node ? (
-        <div className={styles.empty}>Select a substation or feeder on the map to inspect it.</div>
-      ) : (
-        <>
-          <div className={styles.assetHead}>
-            <Icon glyph={TYPE_GLYPH[node.type] ?? "Diagram3"} fill={color} />
-            <span style={{ fontSize: 13, fontWeight: 600, color: "#001E2B" }}>{node.name}</span>
-            <span className={styles.assetStatus} style={{ color, borderColor: color }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: color, display: "inline-block" }} />
-              {STATUS_LABEL[status] ?? "No data"}
-            </span>
-          </div>
-          {rows.map(([k, v]) => (
-            <div key={k} className={styles.assetRow}>
-              <span style={{ color: "#889397" }}>{k}</span>
-              <span style={{ color: "#001E2B", fontWeight: 500 }}>{v}</span>
-            </div>
-          ))}
-        </>
-      )}
+    <div className={`${styles.card} ${grow ? styles.grow : ""}`}>
+      <div className={styles.cardTitle}>
+        <span>{title}</span>
+        {right}
+      </div>
+      <div className={`${styles.cardBody} ${bodyClassName || ""}`}>{children}</div>
     </div>
   );
 }
@@ -64,24 +36,22 @@ function fmtKw(n) {
   return n >= 1000 ? `${(n / 1000).toFixed(1)}k kW` : `${Math.round(n)} kW`;
 }
 
-/** Scoped network totals — mirrors the grid-network KPI strip, in our style. */
+/** Scoped network totals — a compact KPI strip in the customers metric-tile style. */
 export function NetworkKpis({ totals }) {
   const t = totals ?? {};
   const cards = [
-    { label: "Utilities", value: t.utilities ?? "—", accent: "#00684A", glyph: "GovernmentBuilding" },
-    { label: "Substations", value: t.substations ?? "—", accent: "#00684A", glyph: "LightningBolt" },
-    { label: "Feeders", value: t.feeders ?? "—", accent: "#00A35C", glyph: "Diagram3" },
-    { label: "Transformers", value: t.transformers ?? "—", accent: "#00ED64", glyph: "Apps" },
-    { label: "Customers served", value: (t.meters ?? 0).toLocaleString(), hint: "metered", accent: "#00684A", glyph: "Person" },
-    { label: "Installed capacity", value: `${((t.capacity ?? 0) / 1000).toFixed(1)}k kW`, hint: "sum of transformers", accent: "#00684A", glyph: "LightningBolt" },
+    { label: "Utilities", value: t.utilities ?? "—" },
+    { label: "Substations", value: t.substations ?? "—" },
+    { label: "Feeders", value: t.feeders ?? "—" },
+    { label: "Transformers", value: t.transformers ?? "—" },
+    { label: "Customers served", value: (t.meters ?? 0).toLocaleString(), hint: "metered" },
+    { label: "Installed capacity", value: `${((t.capacity ?? 0) / 1000).toFixed(1)}k kW`, hint: "sum of transformers" },
   ];
   return (
     <div className={styles.kpiRow}>
       {cards.map((c) => (
-        <div key={c.label} className={styles.kpiCard} style={{ borderLeft: `3px solid ${c.accent}` }}>
-          <div className={styles.kpiLabel}>
-            <Icon glyph={c.glyph} size="small" fill={c.accent} /> {c.label}
-          </div>
+        <div key={c.label} className={styles.kpiCard}>
+          <div className={styles.kpiLabel}>{c.label}</div>
           <div className={styles.kpiCardValue}>{c.value}</div>
           {c.hint && <div className={styles.kpiHint}>{c.hint}</div>}
         </div>
@@ -93,56 +63,50 @@ export function NetworkKpis({ totals }) {
 /** Live aggregate demand vs capacity for the current scope. */
 export function LiveDemandTile({ liveDemand }) {
   const pct = liveDemand?.utilizationPct ?? null;
-  const color = pct == null ? "#00684A" : STATUS_COLOR[
-    pct >= 95 ? "critical" : pct >= 85 ? "warning" : "normal"
-  ];
+  const statusKey = pct == null ? "normal" : pct >= 95 ? "critical" : pct >= 85 ? "warning" : "normal";
   return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>Live demand</div>
+    <Panel title="Live Demand">
       <div className={styles.kpiValue}>{fmtKw(liveDemand?.totalLoadKw)}</div>
-      <div className={styles.kpiSub}>
+      <Body className={styles.muted}>
         {pct == null ? "capacity unknown" : `${pct}% of ${fmtKw(liveDemand?.totalCapacityKw)} capacity`}
         {liveDemand?.feederCount ? ` · ${liveDemand.feederCount} feeders` : ""}
-      </div>
+      </Body>
       <div className={styles.meterTrack}>
-        <div
-          className={styles.meterFill}
-          style={{ width: `${Math.min(100, pct ?? 0)}%`, background: color }}
-        />
+        <div className={styles.meterFill} style={{ width: `${Math.min(100, pct ?? 0)}%`, background: STATUS_COLOR[statusKey] }} />
       </div>
-    </div>
+    </Panel>
   );
 }
 
-/** Feeders flagged by load / capacity — name + colored %, worst first. */
+/** Feeders flagged by load / capacity — name + status badge, worst first. */
 export function PeakWarnings({ warnings, thresholds, grow }) {
   const flagged = (warnings ?? []).filter((w) => w.status !== "normal");
   return (
-    <div className={`${styles.card} ${grow ? styles.grow : ""}`}>
-      <div className={styles.cardTitle}>Peak load warnings</div>
-      <div className={styles.kpiSub}>
-        {flagged.length} feeders ≥ {thresholds?.warning ?? 85}% capacity
-      </div>
+    <Panel
+      title="Peak Load Warnings"
+      grow={grow}
+      right={<Badge variant={flagged.length ? "yellow" : "green"}>{flagged.length} flagged</Badge>}
+    >
+      <Body className={styles.muted} style={{ marginBottom: 4 }}>
+        ≥ {thresholds?.warning ?? 85}% of capacity
+      </Body>
       <div className={styles.list}>
-        {(warnings ?? []).length === 0 && <div className={styles.empty}>No feeder data.</div>}
+        {(warnings ?? []).length === 0 && <Body className={styles.muted}>No feeder data.</Body>}
         {(warnings ?? []).slice(0, 20).map((w) => (
           <div key={w.feederId} className={styles.statusRow}>
             <div className={styles.rowName}>
               {w.name}
               <div className={styles.rowSub}>{w.substationName}</div>
             </div>
-            <span style={{ color: STATUS_COLOR[w.status], fontWeight: 700, fontSize: 14 }}>
-              {w.utilizationPct}%
-            </span>
+            <Badge variant={STATUS_VARIANT[w.status]}>{w.utilizationPct}%</Badge>
           </div>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }
 
-/** Per-substation outage/anomaly risk as a horizontal bar chart. Horizontal so
- *  long substation names sit on the axis and never clip, however many show. */
+/** Per-substation outage/anomaly risk as a horizontal bar chart. */
 export function OutageRisk({ risk, grow }) {
   const data = (risk ?? []).slice(0, 8).map((r) => ({
     name: r.name.replace(/ Substation$/, ""),
@@ -152,14 +116,12 @@ export function OutageRisk({ risk, grow }) {
     meterCount: r.meterCount,
     anomalyCount: r.anomalyCount,
   }));
-
   const height = Math.max(140, data.length * 30 + 24);
 
   return (
-    <div className={`${styles.card} ${grow ? styles.grow : ""}`}>
-      <div className={styles.cardTitle}>Outage risk</div>
+    <Panel title="Outage Risk" grow={grow}>
       {data.length === 0 ? (
-        <div className={styles.empty}>No substation data.</div>
+        <Body className={styles.muted}>No substation data.</Body>
       ) : (
         <ResponsiveContainer width="100%" height={height}>
           <BarChart data={data} layout="vertical" margin={{ top: 4, right: 12, left: 4, bottom: 4 }}>
@@ -187,25 +149,18 @@ export function OutageRisk({ risk, grow }) {
           </BarChart>
         </ResponsiveContainer>
       )}
-    </div>
+    </Panel>
   );
 }
 
-/** Single health status per substation as a simple colored list. */
+/** Single health status per substation as a simple list with status badges. */
 export function SubstationHealth({ health, grow }) {
   const statusFor = (h) =>
-    h.status && h.status !== "unknown"
-      ? h.status
-      : h.healthScore >= 80
-      ? "normal"
-      : h.healthScore >= 60
-      ? "warning"
-      : "critical";
+    h.status && h.status !== "unknown" ? h.status : h.healthScore >= 80 ? "normal" : h.healthScore >= 60 ? "warning" : "critical";
   return (
-    <div className={`${styles.card} ${grow ? styles.grow : ""}`}>
-      <div className={styles.cardTitle}>Substation health</div>
+    <Panel title="Substation Health" grow={grow}>
       <div className={styles.list}>
-        {(health ?? []).length === 0 && <div className={styles.empty}>No substation data.</div>}
+        {(health ?? []).length === 0 && <Body className={styles.muted}>No substation data.</Body>}
         {(health ?? []).map((h) => {
           const status = statusFor(h);
           return (
@@ -216,64 +171,54 @@ export function SubstationHealth({ health, grow }) {
                   {h.utilizationPct == null ? "util n/a" : `${h.utilizationPct}% load`} · {h.anomalyCount} anomalies
                 </div>
               </div>
-              <span style={{ color: STATUS_COLOR[status], fontWeight: 600 }}>{STATUS_LABEL[status]}</span>
+              <Badge variant={STATUS_VARIANT[status]}>{STATUS_LABEL[status]}</Badge>
             </div>
           );
         })}
       </div>
-    </div>
+    </Panel>
   );
 }
 
-/** Customers served + estimated total monthly tariff revenue for the scope. */
-export function CustomersTariffPanel({ mix, isLoading }) {
+/** Customers served + estimated tariff total, plus customers-by-utility chart. */
+export function CustomersTariffPanel({ mix, isLoading, grow }) {
   const customers = mix?.customersServed ?? null;
   const total = mix?.estimatedMonthlyTotal ?? null;
-  const fmtMoney = (n) =>
-    n == null
-      ? "—"
-      : n >= 1000
-      ? `$${(n / 1000).toFixed(1)}k`
-      : `$${n.toFixed(0)}`;
+  const fmtMoney = (n) => (n == null ? "—" : n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${n.toFixed(0)}`);
 
   return (
-    <div className={styles.card}>
-      <div className={styles.cardTitle}>Customers &amp; tariff</div>
-
+    <Panel title="Customers & Tariff" grow={grow}>
       {isLoading && customers == null ? (
-        <div className={styles.empty}>Loading…</div>
+        <Body className={styles.muted}>Loading…</Body>
       ) : (
         <>
           <div className={styles.statTiles}>
             <div className={styles.statTile}>
               <div className={styles.kpiValue}>{customers?.toLocaleString() ?? "—"}</div>
-              <div className={styles.kpiSub}>Customers served</div>
+              <Body className={styles.muted}>Customers served</Body>
             </div>
             <div className={styles.statTile}>
               <div className={styles.kpiValue}>{fmtMoney(total)}</div>
-              <div className={styles.kpiSub}>Est. tariff total / mo</div>
+              <Body className={styles.muted}>Est. tariff total / mo</Body>
             </div>
           </div>
-
           <CustomersByUtilityChart byUtility={mix?.byUtility ?? []} />
         </>
       )}
-    </div>
+    </Panel>
   );
 }
 
-/** Customers served by utility — horizontal bars, matching the grid-network chart. */
+// Green-forward categorical palette for the customers-by-utility bars.
+const CAT = ["#00684A", "#00A35C", "#00ED64", "#0498EC", "#FFC010", "#016BF8", "#B45AF2"];
+
 function CustomersByUtilityChart({ byUtility }) {
-  const data = byUtility.map((u) => ({
-    id: u.id,
-    name: u.name.replace(/ Utility$/, ""),
-    customers: u.customers,
-  }));
+  const data = byUtility.map((u) => ({ id: u.id, name: u.name.replace(/ Utility$/, ""), customers: u.customers }));
   if (data.length === 0) return null;
 
   return (
     <div>
-      <div className={styles.rowSub} style={{ marginBottom: 4 }}>Customers served by utility</div>
+      <div className={styles.rowSub} style={{ marginBottom: 4 }}>Customers Served by Utility</div>
       <ResponsiveContainer width="100%" height={Math.max(120, data.length * 28 + 16)}>
         <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
           <CartesianGrid horizontal={false} stroke="#E8EDEB" />
@@ -300,5 +245,48 @@ function CustomersByUtilityChart({ byUtility }) {
         </BarChart>
       </ResponsiveContainer>
     </div>
+  );
+}
+
+/** Asset detail for the node selected on the grid map. */
+export function AssetDetail({ node, status, metrics, grow }) {
+  const color = STATUS_COLOR[status] ?? STATUS_COLOR.unknown;
+  const rows = [];
+  if (node) {
+    rows.push(["Asset type", TYPE_LABEL[node.type] ?? node.type]);
+    rows.push(["Rated capacity", node.capacityKw ? `${node.capacityKw.toLocaleString()} kW` : "—"]);
+    rows.push(["Customers served", (node.meterCount ?? 0).toLocaleString()]);
+    if (metrics) {
+      if (metrics.utilizationPct != null) rows.push(["Utilization", `${metrics.utilizationPct}%`]);
+      if (metrics.loadKw != null) rows.push(["Current load", `${metrics.loadKw.toLocaleString()} kW`]);
+      if (metrics.healthScore != null) rows.push(["Health score", `${metrics.healthScore}/100`]);
+      if (metrics.anomalyCount != null) rows.push(["Anomalies", metrics.anomalyCount]);
+      if (metrics.riskScore != null) rows.push(["Outage risk", `${metrics.riskScore} (${metrics.severity})`]);
+    }
+  }
+
+  return (
+    <Panel
+      title="Asset Detail"
+      grow={grow}
+      right={node ? <Badge variant={STATUS_VARIANT[status] ?? "lightgray"}>{STATUS_LABEL[status] ?? "No data"}</Badge> : null}
+    >
+      {!node ? (
+        <Body className={styles.muted}>Select a substation or feeder on the map to inspect it.</Body>
+      ) : (
+        <>
+          <div className={styles.assetHead}>
+            <Icon glyph={TYPE_GLYPH[node.type] ?? "Diagram3"} fill={color} />
+            <span style={{ fontSize: 14, fontWeight: 600, color: "#001E2B" }}>{node.name}</span>
+          </div>
+          {rows.map(([k, v]) => (
+            <div key={k} className={styles.assetRow}>
+              <span style={{ color: "#889397" }}>{k}</span>
+              <span style={{ color: "#001E2B", fontWeight: 500 }}>{v}</span>
+            </div>
+          ))}
+        </>
+      )}
+    </Panel>
   );
 }

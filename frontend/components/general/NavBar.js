@@ -29,11 +29,11 @@ export default function NavBar({ collapsed, setCollapsed }) {
       
       <SideNavItem
         as={Link}
-        href="/control-center"
-        active={pathname === "/control-center"}
+        href="/network-center"
+        active={pathname === "/network-center"}
         glyph={<Icon glyph="Dashboard" />}
       >
-        Control Center
+        Network Center
       </SideNavItem>
 
 
