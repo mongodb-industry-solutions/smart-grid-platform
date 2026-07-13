@@ -7,7 +7,6 @@ import {
 } from "recharts";
 import Icon from "@leafygreen-ui/icon";
 import { AXIS_TICK, TOOLTIP_CONTENT, LEGEND_WRAPPER } from "@/lib/const/chartConfig";
-import { useWeatherForecast } from "@/components/forecasting/useWeatherForecast";
 import styles from "../../style/forecasting/document-showcase.module.css";
 
 // LeafyGreen palette (matches the other forecasting charts).
@@ -55,12 +54,18 @@ function CustomTooltip({ active, payload, label, unit }) {
   );
 }
 
-export default function WeatherDemandForecastChart() {
-  const [regionId, setRegionId] = useState(null); // null → API returns first region
+// The region/feeder/meter selection lives in the page panel and drives the
+// forecast data (passed in as props). Temperature unit is a local display
+// preference, so it stays here as component state.
+export default function WeatherDemandForecastChart({
+  region,
+  points = [],
+  nowIndex = 0,
+  isLoading,
+  isRefreshing,
+  error,
+}) {
   const [unit, setUnit] = useState("F"); // temperature display unit: "F" | "C"
-  const { regions, region, points, nowIndex, isLoading, isRefreshing, error } =
-    useWeatherForecast(regionId);
-
   const peakInfo = useMemo(() => findPeakWindow(points, nowIndex), [points, nowIndex]);
 
   // Add a unit-converted temperature field for the chart to plot.
@@ -68,7 +73,10 @@ export default function WeatherDemandForecastChart() {
     () => points.map((p) => ({ ...p, tempDisplay: toDisplayTemp(p.tempF, unit) })),
     [points, unit]
   );
-  const comfortDisplay = toDisplayTemp(region?.comfortTempF ?? 68, unit);
+  const heatingDisplay = toDisplayTemp(region?.heatingBaseF ?? 65, unit);
+  const coolingDisplay = toDisplayTemp(region?.coolingBaseF ?? 72, unit);
+  const weekendFactor = region?.weekendFactor ?? 1;
+  const weekendPct = Math.round((weekendFactor - 1) * 100);
 
   const capacityKw = region?.capacityKw ?? null;
   const hasCapacity = typeof capacityKw === "number" && capacityKw > 0;
@@ -83,26 +91,12 @@ export default function WeatherDemandForecastChart() {
       : null;
   const nearCapacity = percentOfCapacity != null && percentOfCapacity >= 90;
 
-  // Selector value: the resolved region (from the API) once loaded.
-  const selectValue = regionId ?? region?.id ?? "";
-
   return (
     <div className={styles.chartCard}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Energy usage forecast — weather adjusted</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {isRefreshing && <span className={styles.updating}>updating…</span>}
-          <Icon glyph="Pin" fill={C.textSecondary} />
-          <select
-            value={selectValue}
-            onChange={(e) => setRegionId(e.target.value)}
-            disabled={regions.length === 0}
-            style={{ fontSize: 13, padding: "6px 10px", borderRadius: "8px", border: `1px solid ${C.strong}`, background: "#ffffff", color: C.textPrimary }}
-          >
-            {regions.map((r) => (
-              <option key={r.id} value={r.id}>{r.label}</option>
-            ))}
-          </select>
           <div style={{ display: "inline-flex", border: `1px solid ${C.strong}`, borderRadius: 8, overflow: "hidden" }}>
             {["F", "C"].map((u) => (
               <button
@@ -209,10 +203,11 @@ export default function WeatherDemandForecastChart() {
 
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, fontSize: 12, color: C.textSecondary }}>
             <Icon glyph="LightningBolt" fill={C.textSecondary} size="small" />
-            Forecast adjusts each region&apos;s typical baseline (total hour-of-day energy use from its
-            meter readings) using Open-Meteo temperature for {region?.city ?? "the region"}; temperature
-            outside a ~{comfortDisplay}°{unit} comfort band is treated as added{" "}
-            {region?.weatherMode === "cooling" ? "cooling" : "heating"} demand.
+            Degree-day model: each region&apos;s hour-of-day baseline (from its meter readings, adjusted
+            for weekday vs. weekend{weekendPct !== 0 ? ` — weekends run ~${Math.abs(weekendPct)}% ${weekendPct > 0 ? "higher" : "lower"}` : ""})
+            plus a temperature term fit from history — heating-degree-hours below {heatingDisplay}°{unit} and
+            cooling-degree-hours above {coolingDisplay}°{unit}, using Open-Meteo temperature for{" "}
+            {region?.city ?? "the region"}. This region is {region?.weatherMode === "cooling" ? "cooling" : "heating"}-dominated.
           </div>
         </>
       )}
