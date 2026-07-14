@@ -41,23 +41,41 @@
   min-width: 180px;
 }
 
-/* Pulsing dot inside the live badge. */
+/* Live status pill — matches the monitoring "LIVE" badge. */
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: #eaf4f1;
+  border: 1px solid #00684a;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00684a;
+  letter-spacing: 0.06em;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.liveBadgeError {
+  background: #fdecea;
+  border-color: #db3030;
+  color: #b1371b;
+}
+
 .liveDot {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: #00a35c;
-  display: inline-block;
-  margin-right: 6px;
+  background: currentColor;
+  flex-shrink: 0;
+  animation: livePulse 1.5s ease-in-out infinite;
 }
 
-.liveDotPulse {
-  animation: pulse 1s ease-out;
-}
-
-@keyframes pulse {
-  0% { box-shadow: 0 0 0 0 rgba(0, 163, 92, 0.7); }
-  100% { box-shadow: 0 0 0 6px rgba(0, 163, 92, 0); }
+@keyframes livePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.75); }
 }
 
 .errorText {

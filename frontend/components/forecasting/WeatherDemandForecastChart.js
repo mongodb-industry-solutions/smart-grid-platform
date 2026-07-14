@@ -7,6 +7,7 @@ import {
 } from "recharts";
 import Icon from "@leafygreen-ui/icon";
 import { AXIS_TICK, TOOLTIP_CONTENT, LEGEND_WRAPPER } from "@/lib/const/chartConfig";
+import ShowDocButton from "@/components/customers/ShowDocButton";
 import styles from "../../style/forecasting/document-showcase.module.css";
 
 // LeafyGreen palette (matches the other forecasting charts).
@@ -96,6 +97,7 @@ export default function WeatherDemandForecastChart({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "1rem", flexWrap: "wrap", gap: 12 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: C.textPrimary }}>Energy usage forecast — weather adjusted</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <ShowDocButton scope="forecasting" component="weather" inline />
           {isRefreshing && <span className={styles.updating}>updating…</span>}
           <div style={{ display: "inline-flex", border: `1px solid ${C.strong}`, borderRadius: 8, overflow: "hidden" }}>
             {["F", "C"].map((u) => (

@@ -8,6 +8,9 @@ function modelUrl(scope, component, dataid) {
   if (scope === "forecasting") {
     return `/api/network/model?component=${encodeURIComponent(component)}`;
   }
+  if (scope === "network") {
+    return `/api/network-center/model?component=${encodeURIComponent(component)}`;
+  }
   return `/api/customers/${dataid}/model?component=${encodeURIComponent(component)}`;
 }
 

@@ -10,8 +10,9 @@ export const TALK_TRACK = [
         heading: "What it shows",
         body: [
           "Monitoring: outages, grid/feeder stability, anomalies, power factor, live readings, and a customer/outage map.",
+          "Network Center: the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage risk across the service territory.",
           "Customers: profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.",
-          "Forecasting: expected demand per region with a prediction interval, plus the exact aggregation pipeline behind it.",
+          "Forecasting: expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.",
           "AI Assistant: a multi-agent chatbot that answers questions over the data and a knowledge base.",
         ],
       },
@@ -20,8 +21,9 @@ export const TALK_TRACK = [
         body: [
           "Start in Monitoring - point out outages, grid stability and anomalies computed live in MongoDB.",
           "Open any card's { } 'Show document' button to reveal the real documents and aggregation pipelines behind it.",
+          "Go to the Network Center - explore the grid topology, substation health and capacity pressure, all joined on demand with $lookup.",
           "Go to Customers - select a customer to see their tariff estimate, insights and consumption trend.",
-          "Go to Forecasting - filter by region/feeder/meter and watch the aggregation pipeline update with the chart.",
+          "Go to Forecasting - filter by region/feeder/meter and watch the weather-adjusted aggregation pipeline update with the chart.",
           "Finish in the AI Assistant - ask a question and show the Agent Graph (how it routed) and the Vector Map (semantic retrieval).",
         ],
       },
@@ -30,6 +32,13 @@ export const TALK_TRACK = [
   {
     heading: "Behind the Scenes",
     content: [
+      {
+        heading: "Reference architecture",
+        image: {
+          src: "/ref_arq.svg",
+          alt: "Reference architecture: the agentic AI layer (Perception, Planning, Tools, Memory) and MongoDB Atlas collections.",
+        },
+      },
       {
         heading: "Data model",
         body: "The flexible document model keeps related data together and joins the rest on demand.",
@@ -48,9 +57,10 @@ export const TALK_TRACK = [
         heading: "Aggregations doing the work",
         body: [
           "Outages: $match + $facet + $setWindowFields/$shift (gaps-and-islands) for the longest continuous outage.",
-          "Grid stability: $lookup meter → feeder → capacity, $group load, compute utilization.",
+          "Grid stability: $lookup readings → meter_network_map → network, $group load, compute utilization vs capacity_kw.",
+          "Network Center: same topology join across the utility → substation → feeder → transformer hierarchy to score substation health and outage risk.",
           "Anomalies: per-meter baseline mean/$stdDevSamp, flag readings beyond N sigma.",
-          "Forecasting: $group by region and hour with $avg/$stdDevSamp for expected demand.",
+          "Forecasting: $group by region and hour with $avg/$stdDevSamp, enriched with external weather data (heating/cooling degree days) for peak demand and timing.",
           "AI retrieval: $vectorSearch + $search fused with Reciprocal Rank Fusion (hybrid search).",
         ],
       },

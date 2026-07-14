@@ -15,6 +15,7 @@ import {
   ReferenceLine,
 } from "recharts";
 import { AXIS_TICK, TOOLTIP_CONTENT, TOOLTIP_LABEL } from "@/lib/const/chartConfig";
+import ShowDocButton from "@/components/customers/ShowDocButton";
 import styles from "../../style/forecasting/document-showcase.module.css";
 
 // State → time zone. The demo dataset is January (no DST), so a fixed UTC
@@ -154,7 +155,10 @@ export default function PeakTimingChart({ bars, isLoading, isRefreshing, error }
           <span className={styles.updating}>updating…</span>
         )}
       </div>
-      <div className={styles.chartCard}>{body}</div>
+      <div className={styles.chartCard}>
+        <ShowDocButton scope="forecasting" component="peak" />
+        {body}
+      </div>
       <p className={styles.peakNote}>
         {insight ? (
           <>

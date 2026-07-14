@@ -21,3 +21,11 @@ uv_sync:
 
 uv_update:
 	cd backend && uv lock --upgrade
+
+# Export the operational collections into ./dump (maintainers only; needs cluster access).
+dump_data:
+	./scripts/dump-data.sh
+
+# Restore the operational collections from ./dump into your own cluster.
+restore_data:
+	./scripts/restore-data.sh

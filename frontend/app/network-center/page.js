@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Icon from "@leafygreen-ui/icon";
-import Badge from "@leafygreen-ui/badge";
 import Button from "@leafygreen-ui/button";
 import { Select, Option } from "@leafygreen-ui/select";
 import { H1, Body } from "@leafygreen-ui/typography";
@@ -102,10 +101,10 @@ export default function NetworkCenterPage() {
         </div>
 
         <div className={styles.headerActions}>
-          <Badge variant={error ? "red" : "green"}>
-            <span key={tick} className={`${styles.liveDot} ${styles.liveDotPulse}`} />
-            {error ? "Reconnecting" : "Live · 5s"}
-          </Badge>
+          <span className={`${styles.liveBadge} ${error ? styles.liveBadgeError : ""}`}>
+            <span key={tick} className={styles.liveDot} />
+            {error ? "RECONNECTING" : "LIVE · 5s"}
+          </span>
 
           <Select
             aria-label="Scope"
