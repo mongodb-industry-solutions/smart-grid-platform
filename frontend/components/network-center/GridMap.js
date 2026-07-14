@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useNetworkTree } from "@/components/network/useNetworkTree";
 import { Panel } from "@/components/network-center/panels";
+import ShowDocButton from "@/components/customers/ShowDocButton";
 import styles from "@/style/network-center/network-center.module.css";
 
 // Live-status ramp (light theme).
@@ -129,7 +130,11 @@ export default function GridMap({ statusById = null, loadById = null, totals = n
   const coreStatus = worst(spokes.map((s) => s.status));
 
   return (
-    <Panel title="Grid Map" bodyClassName={styles.mapBody}>
+    <Panel
+      title="Grid Map"
+      bodyClassName={styles.mapBody}
+      right={<ShowDocButton scope="network" component="topology" inline />}
+    >
       <div className={styles.mapCanvas}>
         {isLoading && <div className={styles.empty}>Loading network…</div>}
         {error && <div style={{ color: STATUS_COLOR.critical, fontSize: 12 }}>Error: {error}</div>}

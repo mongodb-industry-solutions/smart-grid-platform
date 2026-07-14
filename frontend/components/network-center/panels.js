@@ -5,6 +5,7 @@ import Badge from "@leafygreen-ui/badge";
 import { Body } from "@leafygreen-ui/typography";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, Tooltip } from "recharts";
 import { AXIS_TICK, TOOLTIP_CONTENT, TOOLTIP_LABEL } from "@/lib/const/chartConfig";
+import ShowDocButton from "@/components/customers/ShowDocButton";
 import styles from "@/style/network-center/network-center.module.css";
 
 // Live-status ramp — same tokens the grid map and overview use.
@@ -65,7 +66,10 @@ export function LiveDemandTile({ liveDemand }) {
   const pct = liveDemand?.utilizationPct ?? null;
   const statusKey = pct == null ? "normal" : pct >= 95 ? "critical" : pct >= 85 ? "warning" : "normal";
   return (
-    <Panel title="Live Demand">
+    <Panel
+      title="Live Demand"
+      right={<ShowDocButton scope="network" component="stability" inline />}
+    >
       <div className={styles.kpiValue}>{fmtKw(liveDemand?.totalLoadKw)}</div>
       <Body className={styles.muted}>
         {pct == null ? "capacity unknown" : `${pct}% of ${fmtKw(liveDemand?.totalCapacityKw)} capacity`}
@@ -158,7 +162,11 @@ export function SubstationHealth({ health, grow }) {
   const statusFor = (h) =>
     h.status && h.status !== "unknown" ? h.status : h.healthScore >= 80 ? "normal" : h.healthScore >= 60 ? "warning" : "critical";
   return (
-    <Panel title="Substation Health" grow={grow}>
+    <Panel
+      title="Substation Health"
+      grow={grow}
+      right={<ShowDocButton scope="network" component="health" inline />}
+    >
       <div className={styles.list}>
         {(health ?? []).length === 0 && <Body className={styles.muted}>No substation data.</Body>}
         {(health ?? []).map((h) => {
