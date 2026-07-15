@@ -20,6 +20,8 @@ envSecrets:
   MONGODB_URI: smart-meter
   DATABASE_NAME: smart-meter
   VOYAGE_API_KEY: smart-meter
+  # AI assistant LLM — Claude via the Grove gateway (MongoDB-internal)
+  GROVE_API_KEY: smart-meter
   # Bedrock Inference Profiles (see cloud-cost-tracking.md)
   CHATCOMPLETIONS_MODEL_ID: smart-meter
   EMBEDDINGS_MODEL_ID: smart-meter
