@@ -1,153 +1,193 @@
-# Demo Template: Python Backend with Next.js Frontend
+# Smart Grid Intelligent Platform
 
-This repository provides a template for creating a web application with a Python backend and a Next.js frontend. The backend is managed using uv for dependency management, while the frontend is built with Next.js, offering a modern React-based user interface.
+A utility operations demo built entirely on **MongoDB Atlas**. It brings five
+workloads together on one operational data layer, all over the same smart-meter
+data:
 
-## Table of Contents
+- **Monitoring** - outages, grid/feeder stability, anomalies, power factor, live readings, and a customer/outage map.
+- **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage risk.
+- **Customers** - profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.
+- **Forecasting** - expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.
+- **AI Assistant** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
 
-- [Demo Template: Python Backend with Next.js Frontend](#demo-template-python-backend-with-nextjs-frontend)
-  - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Prerequisites](#prerequisites)
-  - [Getting Started](#getting-started)
-    - [Create a New Repository](#create-a-new-repository)
-    - [GitHub Desktop Setup](#github-desktop-setup)
-    - [Backend Setup](#backend-setup)
-  - [DEMO README](#demo-readme)
+Every card exposes a `{ }` **"Show document"** button that reveals the real
+documents and aggregation pipelines powering it.
 
-## Features
+## Where MongoDB Shines?
 
-- Python backend with a RESTful API powered by [FastAPI](https://fastapi.tiangolo.com/)
-- Next.js frontend for a responsive user interface
-- Dependency management with uv ([More info](https://docs.astral.sh/uv/))
-- Easy setup and configuration
+- **Atlas Time Series** - high-frequency smart-meter readings stored and queried efficiently.
+- **Aggregation Framework** - analytics run in the database: `$setWindowFields`/`$shift` (gaps-and-islands outage detection), `$lookup` across the grid topology for utilization, and `$group` with `$stdDevSamp` for anomalies and forecasting.
+- **Flexible document model** - meters, customers, and the grid hierarchy live as related documents joined on demand; the schema evolves without migrations.
+- **Atlas Vector Search with automated Voyage AI embeddings** - semantic search with no separate embedding service.
+- **Hybrid search** - vector + full-text results fused with Reciprocal Rank Fusion (RRF).
+- **Agentic AI on MongoDB** - a LangGraph multi-agent with conversation memory persisted in Atlas (`agent_checkpoints`).
+
+## High Level Architecture
+
+The platform combines two architectures on a single Atlas cluster: an
+**operational data layer** (monitoring, network, forecasting, customers) and an
+**agentic AI layer** that lets users query it all in natural language.
+
+![Reference architecture](frontend/public/ref_arq.svg)
+
+## Tech Stack
+
+- Next.js [App Router](https://nextjs.org/docs/app) for the framework and API routes
+- [MongoDB Atlas](https://www.mongodb.com/atlas/database) for the database, search, and agent memory
+- [LangGraph.js](https://langchain-ai.github.io/langgraphjs/) for the multi-agent orchestration
+- [Anthropic Claude](https://www.anthropic.com/) as the LLM and [Voyage AI](https://www.voyageai.com/) for embeddings
+- [Recharts](https://recharts.org/) and [LeafyGreen UI](https://www.mongodb.design/) for the interface
 
 ## Prerequisites
 
-Before you begin, ensure you have met the following requirements:
+Before you begin, ensure you have the following:
 
-- Python >=3.13,<3.14 - If you are Mac user, you can install Python 3.13 using this [link](https://www.python.org/downloads/).
-- Node.js 22 or higher
-- uv (install via [uv's official documentation](https://docs.astral.sh/uv/getting-started/installation/))
+- **Node.js 22** or higher
+- A **MongoDB Atlas** account with a cluster (**M10 or higher** - required for Atlas Vector Search with automated embeddings)
+- The **[MongoDB Database Tools](https://www.mongodb.com/docs/database-tools/)** (`mongorestore`) - on macOS: `brew install mongodb/brew/mongodb-database-tools`
+- An **Anthropic API key** (the AI assistant uses Claude)
+- A **Voyage AI API key** (used by the Vector Map visualization)
 
-## Getting Started
+<!-- > Optional: the repository includes a FastAPI backend scaffold (Python 3.13 + [uv](https://docs.astral.sh/uv/)). The demo runs entirely on the Next.js frontend and Atlas, so the backend is **not required**. -->
 
-Follow these steps to set up the project locally.
+## Run it Locally
 
-### Create a New Repository
+### 1. Clone the repository
 
-1. Navigate to the repository template on GitHub and click on **Use this template**.
-2. Create a new repository.
-3. **Do not** check the "Include all branches" option.
-4. Define a repository name following the naming convention: `<industry>-<project_name>-<highlighted_feature>`. For example, `fsi-leafybank-ai-personal-assistant` (use hyphens to separate words).
-   - The **industry** and **project name** are required; you can be creative with the highlighted feature.
-5. Provide a clear description for the repository, such as: "A repository template to easily create new demos by following the same structure."
-6. Set the visibility to **Internal**.
-7. Click **Create repository**.
-
-### GitHub Desktop Setup
-
-1. Install GitHub Desktop if you haven't already. You can download it from [GitHub Desktop's official website](https://desktop.github.com/).
-2. Open GitHub Desktop and sign in to your GitHub account.
-3. Clone the newly created repository:
-   - Click on **File** > **Clone Repository**.
-   - Select your repository from the list and click **Clone**.
-4. Create your first branch:
-   - In the GitHub Desktop interface, click on the **Current Branch** dropdown.
-   - Select **New Branch** and name it `feature/branch01`.
-   - Click **Create Branch**.
-
-### Backend Setup
-
-1. (Optional) Set your project description and author information in the `pyproject.toml` file:
-   ```toml
-   description = "Your Description"
-   authors = ["Your Name <you@example.com>"]
-2. Open the project in your preferred IDE (the standard for the team is Visual Studio Code).
-3. Open the Terminal within Visual Studio Code.
-4. Ensure you are in the root project directory where the `makefile` is located.
-5. Execute the following commands:
-  - uv initialization
-    ````bash
-    make uv_init
-    ````
-  - uv sync
-    ````bash
-    make uv_sync
-    ````
-6. Verify that the `.venv` folder has been generated within the `/backend` directory.
-
-### Running Backend Locally
-
-After setting up the backend dependencies, you can run the development server:
-
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Start the FastAPI development server:
-   ```bash
-   uv run uvicorn main:app --host 0.0.0.0 --port 8000
-   ```
-
-3. The backend API will be accessible at http://localhost:8000
-
-**Note**: If port 8000 is already in use (e.g., by Docker containers), either stop the containers with `make clean` or use a different port like `--port 8001`.
-
-### Frontend Setup
-
-1. Navigate to the `frontend` folder.
-2. Install dependencies by running:
 ```bash
+git clone https://github.com/mongodb-industry-solutions/smart-grid-platform.git
+cd smart-meter
+```
+
+### 2. Install frontend dependencies
+
+```bash
+cd frontend
 npm install
 ```
-3. Start the frontend development server with:
-````bash
+
+### 3. Configure environment variables
+
+Create a `.env.local` file inside the `frontend` folder:
+
+```bash
+MONGODB_URI=<YOUR_MONGODB_ATLAS_CONNECTION_STRING>
+DATABASE_NAME=<YOUR_DATABASE_NAME>
+
+# AI assistant - Claude via the standard Anthropic API
+ANTHROPIC_API_KEY=<YOUR_ANTHROPIC_API_KEY>
+# Optional: override the default model (claude-haiku-4-5)
+# ANTHROPIC_MODEL=claude-haiku-4-5
+
+# Vector Map visualization - direct Voyage AI embeddings
+VOYAGE_API_KEY=<YOUR_VOYAGE_API_KEY>
+```
+
+> **MongoDB internal users** can instead point the assistant at the Grove gateway
+> by setting `GROVE_API_KEY` (and optionally `GROVE_ANTHROPIC_URL`). When those are
+> absent, the app uses the standard Anthropic API above.
+
+If you need help getting your Atlas connection string, see
+[Connect to your cluster](https://www.mongodb.com/docs/atlas/tutorial/connect-to-your-cluster/).
+
+### 4. Load the data
+
+The demo runs on five operational collections (`readings`, `network`,
+`meter_network_map`, `customer_db`, `tariff_catalog`) plus the AI knowledge base
+(`kb_articles`).
+
+**a. Restore the operational collections** from the committed `dump/` directory
+into your own cluster (the script reads `MONGODB_URI` / `DATABASE_NAME` from
+`frontend/.env.local`). From the **repo root**:
+
+```bash
+./scripts/restore-data.sh
+# or: make restore_data
+```
+
+**b. Seed the AI knowledge base.** This loads the articles and creates the Atlas
+Vector Search (automated Voyage AI embeddings) and full-text search indexes used
+for hybrid retrieval. From the `frontend` folder:
+
+```bash
+node --env-file=.env.local scripts/seedKnowledgeBase.mjs
+```
+
+> Atlas builds search indexes asynchronously - allow about a minute before
+> querying the assistant.
+
+### 5. Start the frontend
+
+From the `frontend` folder:
+
+```bash
 npm run dev
-````
-4. The frontend will now be accessible at http://localhost:3000 by default, providing a user interface.
-
-### Git Hooks Setup (Recommended)
-
-This repository includes a pre-commit hook that automatically scans for secrets and credentials before each commit, preventing accidental exposure of sensitive data.
-
-**Setup (run once after cloning):**
-
-```bash
-chmod +x setup-hooks.sh
-./setup-hooks.sh
 ```
 
-This configures Git to use the `.githooks` directory and enables the pre-commit security scanner.
+The application is now available at **http://localhost:3000**. Explore the
+Monitoring, Network Center, Customers, Forecasting, and AI Assistant views.
 
-**What it does:**
+<!-- ### (Optional) Run the backend
 
-- Runs `security_check.sh` before every commit
-- Scans staged files for potential secrets (API keys, passwords, tokens, etc.)
-- Blocks the commit if security issues are detected
-
-**If a commit is blocked:**
-
-1. Review the security issues listed in the output
-2. Remove or properly secure the flagged credentials
-3. Re-stage your changes and commit again
-
-**Bypass (not recommended):**
+The FastAPI scaffold is not required for the demo. If you want to run it:
 
 ```bash
-git commit --no-verify
+# from the repo root
+make uv_init
+make uv_sync
+cd backend
+uv run uvicorn main:app --host 0.0.0.0 --port 8000
 ```
 
-### Kanopy Deployment
+The backend API will be accessible at http://localhost:8000. Create a `.env` file
+in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it. -->
 
-For deploying your demo to Kanopy (MongoDB's internal Kubernetes platform), see the [KANOPY_DEPLOYMENT_README.md](KANOPY_DEPLOYMENT_README.md) for detailed instructions on:
+## Environment variables
 
-- Setting up Drone CI/CD pipeline
-- Configuring Kubernetes secrets
-- Choosing between separate pods vs multi-container deployments
-- Environment variables and secrets configuration
-- Resource management and troubleshooting
+| Variable | Where | Required | Description |
+| --- | --- | --- | --- |
+| `MONGODB_URI` | `frontend/.env.local` | Yes | Atlas connection string. |
+| `DATABASE_NAME` | `frontend/.env.local` | Yes | Target database name. |
+| `ANTHROPIC_API_KEY` | `frontend/.env.local` | Yes* | Claude API key for the AI assistant. |
+| `VOYAGE_API_KEY` | `frontend/.env.local` | Yes | Voyage AI key for the Vector Map. |
+| `ANTHROPIC_MODEL` | `frontend/.env.local` | No | Override the default model (`claude-haiku-4-5`). |
+| `GROVE_API_KEY` / `GROVE_ANTHROPIC_URL` | `frontend/.env.local` | No | MongoDB-internal Grove gateway (used instead of `ANTHROPIC_API_KEY` when set). |
 
-## DEMO README
+\* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
 
-<h1 style="color:red">REPLACE THE CONTENT OF THIS README WITH `README-demo.md` and DELETE THE `README-demo.md` FILE!!!!!!!!! </h1>
+## Load / refresh the data (maintainers)
+
+To refresh the committed `dump/` from a source cluster, run from the repo root:
+
+```bash
+./scripts/dump-data.sh
+# or: make dump_data
+```
+
+Then commit the updated `dump/` directory. The knowledge base is not dumped - it
+is (re)created by `frontend/scripts/seedKnowledgeBase.mjs`, which also builds the
+search indexes.
+
+## Run with Docker
+
+From the repo root:
+
+```bash
+# build and start
+make build
+
+# stop and remove containers/images
+make clean
+```
+
+## Common errors
+
+### Frontend
+
+- **`Set ANTHROPIC_API_KEY ...`** - the AI assistant has no LLM credentials. Set `ANTHROPIC_API_KEY` (or `GROVE_API_KEY`) in `frontend/.env.local` and restart `npm run dev`.
+- **Empty dashboards** - the data hasn't been loaded. Run `./scripts/restore-data.sh` and the knowledge-base seed.
+- **AI assistant returns no sources** - the Atlas search indexes are still building, or the cluster tier is below M10 (required for Vector Search with automated embeddings).
+
+### Data tools
+
+- **`mongorestore: command not found`** - install the MongoDB Database Tools (`brew install mongodb/brew/mongodb-database-tools`).
