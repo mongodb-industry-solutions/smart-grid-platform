@@ -5,7 +5,7 @@ workloads together on one operational data layer, all over the same smart-meter
 data:
 
 - **Monitoring** - outages, grid/feeder stability, anomalies, power factor, live readings, and a customer/outage map.
-- **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage risk.
+- **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status.
 - **Customers** - profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.
 - **Forecasting** - expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.
 - **AI Assistant** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.

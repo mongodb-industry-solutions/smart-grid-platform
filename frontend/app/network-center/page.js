@@ -96,7 +96,7 @@ export default function NetworkCenterPage() {
         <div className={styles.headerTitle}>
           <H1 className={styles.headerHeading}>Grid Network Center</H1>
           <Body className={styles.headerSubtitle}>
-            Live demand, capacity pressure, outage risk &amp; forecast across the service territory
+            Live demand, capacity pressure, outage status &amp; forecast across the service territory
           </Body>
         </div>
 
@@ -133,7 +133,7 @@ export default function NetworkCenterPage() {
       {/* ── Network totals KPI strip ── */}
       <NetworkKpis totals={data?.totals} />
 
-      {/* ── Main row: live demand + peak warnings | grid map | outage risk + health ── */}
+      {/* ── Main row: live demand + peak warnings | grid map | outage status + health ── */}
       <div className={styles.mainRow}>
         <div className={styles.column} style={sideStyle}>
           <LiveDemandTile liveDemand={data?.liveDemand} />
@@ -234,7 +234,7 @@ function buildReportHtml({ scopeLabel, data, mix }) {
 
     <h2>Peak load warnings</h2>${peak}
     <h2>Substation health</h2>${health}
-    <h2>Outage risk</h2>${risk}
+    <h2>Outage Status</h2>${risk}
     <h2>Customer segments &amp; tariff</h2>${segs}
     </body></html>`;
 }

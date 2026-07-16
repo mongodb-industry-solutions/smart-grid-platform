@@ -10,7 +10,7 @@ export const TALK_TRACK = [
         heading: "What it shows",
         body: [
           "Monitoring: outages, grid/feeder stability, anomalies, power factor, live readings, and a customer/outage map.",
-          "Network Center: the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage risk across the service territory.",
+          "Network Center: the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status across the service territory.",
           "Customers: profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.",
           "Forecasting: expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.",
           "AI Assistant: a multi-agent chatbot that answers questions over the data and a knowledge base.",
@@ -58,7 +58,7 @@ export const TALK_TRACK = [
         body: [
           "Outages: $match + $facet + $setWindowFields/$shift (gaps-and-islands) for the longest continuous outage.",
           "Grid stability: $lookup readings → meter_network_map → network, $group load, compute utilization vs capacity_kw.",
-          "Network Center: same topology join across the utility → substation → feeder → transformer hierarchy to score substation health and outage risk.",
+          "Network Center: same topology join across the utility → substation → feeder → transformer hierarchy to score substation health and outage status.",
           "Anomalies: per-meter baseline mean/$stdDevSamp, flag readings beyond N sigma.",
           "Forecasting: $group by region and hour with $avg/$stdDevSamp, enriched with external weather data (heating/cooling degree days) for peak demand and timing.",
           "AI retrieval: $vectorSearch + $search fused with Reciprocal Rank Fusion (hybrid search).",

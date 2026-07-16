@@ -123,7 +123,7 @@ export function OutageRisk({ risk, grow }) {
   const height = Math.max(140, data.length * 30 + 24);
 
   return (
-    <Panel title="Outage Risk" grow={grow}>
+    <Panel title="Outage Status" grow={grow}>
       {data.length === 0 ? (
         <Body className={styles.muted}>No substation data.</Body>
       ) : (
@@ -269,7 +269,7 @@ export function AssetDetail({ node, status, metrics, grow }) {
       if (metrics.loadKw != null) rows.push(["Current load", `${metrics.loadKw.toLocaleString()} kW`]);
       if (metrics.healthScore != null) rows.push(["Health score", `${metrics.healthScore}/100`]);
       if (metrics.anomalyCount != null) rows.push(["Anomalies", metrics.anomalyCount]);
-      if (metrics.riskScore != null) rows.push(["Outage risk", `${metrics.riskScore} (${metrics.severity})`]);
+      if (metrics.riskScore != null) rows.push(["Outage status", `${metrics.riskScore} (${metrics.severity})`]);
     }
   }
 
