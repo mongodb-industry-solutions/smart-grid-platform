@@ -7,7 +7,7 @@ import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGr
 import TablePagination from "@/components/general/TablePagination";
 import { useAutoPageSize } from "@/components/general/useAutoPageSize";
 
-const TICK_MS = 5_000;
+const TICK_MS = 2_000;
 const MAX_ROWS = 250;
 
 const fmt = (val, decimals) => (val != null ? val.toFixed(decimals) : "N/A");

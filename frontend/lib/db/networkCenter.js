@@ -132,7 +132,7 @@ export async function getNetworkCenterOverview(db, { scope = "all" } = {}) {
   }
   peakWarnings.sort((a, b) => b.utilizationPct - a.utilizationPct);
 
-  // ── Substation health + outage risk, and node status map for the grid map ──
+  // ── Substation health + outage status, and node status map for the grid map ──
   const substationHealth = [];
   const outageRisk = [];
   const statusById = {};

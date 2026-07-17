@@ -1,104 +1,189 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
-import { Select, Option } from "@leafygreen-ui/select";
-import {
-  ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-} from "recharts";
+import * as am5 from "@amcharts/amcharts5";
+import * as am5xy from "@amcharts/amcharts5/xy";
+import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import styles from "../../style/readings/live-readings-chart.module.css";
-import {
-  CHART_MARGIN,
-  AXIS_TICK,
-  X_AXIS_LINE,
-  TOOLTIP_CONTENT,
-  TOOLTIP_LABEL,
-  TOOLTIP_CURSOR,
-  LEGEND_WRAPPER,
-} from "@/lib/const/chartConfig";
 
-const TICK_MS = 5_000;
-const MAX_ROWS = 250;
-const MAX_HISTORY = 20;
-
-const LINES = [
-  { key: "power", label: "Energy Consumption (kWh)", color: "#00684A" },
-];
+const TICK_MS = 2_000;
+const MAX_HISTORY = 48;
+const LIMIT = 10; // meters averaged per reading
+const LINE_COLOR = 0x00684a;
+const AXIS_LABEL_COLOR = 0x5c6970; // matches AXIS_TICK on the other charts
+const GRID_COLOR = 0xe8edeb;
 
 export default function LiveReadingsChart() {
-  const [history, setHistory]         = useState([]);
-  const [limit, setLimit]             = useState(10);
-  const [selectValue, setSelectValue] = useState("10");
-  const [customInput, setCustomInput] = useState("");
-  const [error, setError]             = useState("");
+  const [error, setError] = useState("");
 
+  const chartDivRef = useRef(null);
+  const rootRef = useRef(null);
+  const seriesRef = useRef(null);
+  const xAxisRef = useRef(null);
+
+  // Build the amCharts live chart once (client-only).
   useEffect(() => {
-    let periodIndex = 0;
-    setHistory([]);
+    const root = am5.Root.new(chartDivRef.current);
+    rootRef.current = root;
+    root.setThemes([am5themes_Animated.new(root)]);
+    // Remove the amCharts logo.
+    root._logo?.dispose();
 
-    const fetchReadings = async () => {
+    const chart = root.container.children.push(
+      am5xy.XYChart.new(root, {
+        panX: false,
+        panY: false,
+        wheelX: "none",
+        wheelY: "none",
+        paddingLeft: 0,
+        paddingRight: 10,
+        paddingTop: 8,
+      })
+    );
+
+    const xAxis = chart.xAxes.push(
+      am5xy.DateAxis.new(root, {
+        maxDeviation: 0.5,
+        groupData: false,
+        extraMax: 0.05,
+        baseInterval: { timeUnit: "second", count: TICK_MS / 1000 },
+        renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 70 }),
+        tooltip: am5.Tooltip.new(root, {}),
+      })
+    );
+    xAxisRef.current = xAxis;
+    xAxis.get("renderer").labels.template.setAll({
+      fontSize: 11,
+      fill: am5.color(AXIS_LABEL_COLOR),
+    });
+    xAxis.get("renderer").grid.template.setAll({
+      stroke: am5.color(GRID_COLOR),
+      strokeOpacity: 1,
+    });
+
+    const yAxis = chart.yAxes.push(
+      am5xy.ValueAxis.new(root, {
+        maxDeviation: 1,
+        renderer: am5xy.AxisRendererY.new(root, {}),
+      })
+    );
+    yAxis.get("renderer").labels.template.setAll({
+      fontSize: 11,
+      fill: am5.color(AXIS_LABEL_COLOR),
+    });
+    yAxis.get("renderer").grid.template.setAll({
+      stroke: am5.color(GRID_COLOR),
+      strokeOpacity: 1,
+    });
+
+    const series = chart.series.push(
+      am5xy.LineSeries.new(root, {
+        name: "Energy Consumption (kWh)",
+        xAxis,
+        yAxis,
+        valueYField: "value",
+        valueXField: "date",
+        stroke: am5.color(LINE_COLOR),
+        fill: am5.color(LINE_COLOR),
+        tooltip: am5.Tooltip.new(root, { labelText: "{valueY} kWh" }),
+      })
+    );
+    series.strokes.template.setAll({ strokeWidth: 2 });
+
+    // Circular markers, like the amCharts live demo.
+    series.bullets.push(() =>
+      am5.Bullet.new(root, {
+        sprite: am5.Circle.new(root, { radius: 3, fill: series.get("fill") }),
+      })
+    );
+
+    chart.set("cursor", am5xy.XYCursor.new(root, { xAxis, behavior: "none" }));
+
+    seriesRef.current = series;
+
+    return () => {
+      root.dispose();
+      rootRef.current = null;
+      seriesRef.current = null;
+      xAxisRef.current = null;
+    };
+  }, []);
+
+  // Live data feed.
+  useEffect(() => {
+    const series = seriesRef.current;
+    if (!series) return;
+
+    let periodIndex = 0;
+    let active = true;
+    let prevDate = null;
+    let baseIntervalSet = false;
+    let id;
+    series.data.setAll([]);
+
+    const fetchTick = async () => {
       try {
         const res = await fetch(
-          `/api/monitoring-panel/reading-logs?periodIndex=${periodIndex}&limit=${limit}`
+          `/api/monitoring-panel/reading-logs?periodIndex=${periodIndex}&limit=${LIMIT}`
         );
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
         }
         const data = await res.json();
+        if (!active) return;
 
-        if (data.length) {
-          const avg = (key) =>
-            data.reduce((sum, r) => sum + (r[key] ?? 0), 0) / data.length;
-
-          const point = {
-            time: new Date(data[0].timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }),
-            power: parseFloat(avg("energy").toFixed(2)),
-          };
-
-          setHistory((prev) => {
-            const next = [...prev, point];
-            return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
-          });
-          periodIndex += 1;
+        // No more periods in the dataset — stop; don't invent readings.
+        if (!data.length) {
+          clearInterval(id);
+          return;
         }
+
+        const avg =
+          data.reduce((sum, r) => sum + (r.energy ?? 0), 0) / data.length;
+        const value = parseFloat(avg.toFixed(2));
+        const date = new Date(data[0].timestamp).getTime();
+
+        // Match the axis grid to the real cadence between readings.
+        if (!baseIntervalSet && prevDate != null && date > prevDate) {
+          xAxisRef.current?.set("baseInterval", {
+            timeUnit: "millisecond",
+            count: date - prevDate,
+          });
+          baseIntervalSet = true;
+        }
+        prevDate = date;
+
+        const prev =
+          series.dataItems[series.dataItems.length - 1]?.get("valueY") ?? value;
+        series.data.push({ date, value });
+        if (series.dataItems.length > MAX_HISTORY) series.data.removeIndex(0);
+
+        // Animate the new point sliding in from the previous value.
+        const di = series.dataItems[series.dataItems.length - 1];
+        di.animate({
+          key: "valueYWorking",
+          to: value,
+          from: prev,
+          duration: TICK_MS * 0.8,
+          easing: am5.ease.linear,
+        });
+
+        periodIndex += 1;
+        setError("");
       } catch (err) {
-        setError(err.message);
+        if (active) setError(err.message);
       }
     };
 
-    fetchReadings();
-    const intervalId = setInterval(fetchReadings, TICK_MS);
-    return () => clearInterval(intervalId);
-  }, [limit]);
-
-  function handleSelectChange(val) {
-    setSelectValue(val);
-    if (val !== "custom") {
-      setCustomInput("");
-      setLimit(Number(val));
-    }
-  }
-
-  function handleCustomApply() {
-    const n = parseInt(customInput);
-    if (!isNaN(n) && n >= 1 && n <= MAX_ROWS) {
-      setLimit(n);
-    }
-  }
-
-  if (error) return <Body>Error: {error}</Body>;
+    fetchTick();
+    id = setInterval(fetchTick, TICK_MS);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, []);
 
   return (
     <div className={styles.widget}>
@@ -110,94 +195,12 @@ export default function LiveReadingsChart() {
             LIVE
           </span>
         </div>
-
-        <div className={styles.controls}>
-          <Select
-            label="Meters to average"
-            value={selectValue}
-            onChange={handleSelectChange}
-            className={styles.selectWrapper}
-          >
-            <Option value="10">10</Option>
-            <Option value="25">25</Option>
-            <Option value="50">50</Option>
-            <Option value="100">100</Option>
-            <Option value="150">150</Option>
-            <Option value="250">All 250</Option>
-            <Option value="custom">Custom…</Option>
-          </Select>
-
-          {selectValue === "custom" && (
-            <div className={styles.customInputRow}>
-              <input
-                type="number"
-                min={1}
-                max={MAX_ROWS}
-                value={customInput}
-                onChange={(e) => setCustomInput(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCustomApply()}
-                placeholder={`1–${MAX_ROWS}`}
-                className={styles.customInput}
-              />
-              <button onClick={handleCustomApply} className={styles.applyButton}>
-                Apply
-              </button>
-            </div>
-          )}
-        </div>
       </div>
 
+      {error && <Body style={{ color: "#DB3030" }}>Error: {error}</Body>}
+
       <div className={styles.chartWrapper}>
-        {!history.length ? (
-          <div className={styles.loadingRow}>
-            <Body>Loading data…</Body>
-          </div>
-        ) : (
-          <ResponsiveContainer width="100%" height={320}>
-            <LineChart
-              data={history}
-              margin={CHART_MARGIN}
-            >
-              <CartesianGrid strokeDasharray="3 3" stroke="#e8edeb" vertical={false} />
-              <XAxis
-                dataKey="time"
-                tick={AXIS_TICK}
-                tickLine={false}
-                axisLine={X_AXIS_LINE}
-                interval="preserveStartEnd"
-              />
-              <YAxis
-                tick={AXIS_TICK}
-                tickLine={false}
-                axisLine={false}
-                width={52}
-              />
-              <Tooltip
-                contentStyle={TOOLTIP_CONTENT}
-                labelStyle={TOOLTIP_LABEL}
-                cursor={TOOLTIP_CURSOR}
-              />
-              <Legend
-                iconType="circle"
-                iconSize={8}
-                wrapperStyle={LEGEND_WRAPPER}
-              />
-              {LINES.map(({ key, label, color }) => (
-                <Line
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  name={label}
-                  stroke={color}
-                  strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
-                  isAnimationActive={false}
-                />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-        )}
+        <div ref={chartDivRef} style={{ width: "100%", height: 320 }} />
       </div>
     </div>
   );

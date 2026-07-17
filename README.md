@@ -1,11 +1,15 @@
 # Smart Grid Intelligent Platform
 
-A utility operations demo built entirely on **MongoDB Atlas**. It brings five
-workloads together on one operational data layer, all over the same smart-meter
-data:
+This demo showcases how a utility can turn raw smart-meter data into real-time
+operational decisions using MongoDB Atlas. Built on a single operational data
+layer, it helps grid operators detect outages faster, monitor the health of the
+grid network, understand customer consumption, forecast demand peaks, and
+investigate issues in natural language.
+
+It brings five workloads together over the same smart-meter data:
 
 - **Monitoring** - outages, grid/feeder stability, anomalies, power factor, live readings, and a customer/outage map.
-- **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage risk.
+- **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status.
 - **Customers** - profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.
 - **Forecasting** - expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.
 - **AI Assistant** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
