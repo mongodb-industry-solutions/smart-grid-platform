@@ -103,7 +103,7 @@ export default function NetworkCenterPage() {
         <div className={styles.headerActions}>
           <span className={`${styles.liveBadge} ${error ? styles.liveBadgeError : ""}`}>
             <span key={tick} className={styles.liveDot} />
-            {error ? "RECONNECTING" : "LIVE · 5s"}
+            {error ? "RECONNECTING" : "LIVE · 2s"}
           </span>
 
           <Select

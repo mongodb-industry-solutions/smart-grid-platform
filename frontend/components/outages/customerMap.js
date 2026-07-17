@@ -2,13 +2,14 @@
 
 import ShowDocButton from "@/components/customers/ShowDocButton";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { geoAlbers, geoPath } from "d3-geo";
 import { feature } from "topojson-client";
 import statesTopo from "us-atlas/states-10m.json";
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
 import { useCustomerLocations } from "./useCustomerLocations";
+import { useNotifications } from "@/components/notifications/NotificationsContext";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
 import styles from "../../style/outages/panel.module.css";
 
@@ -25,6 +26,14 @@ const OUTAGE_COLOR = "#D9534F";
 // counts get proportionally fewer. Each ring extends RING_STEP beyond the last.
 const MAX_LAYERS = 5;
 const RING_STEP = 0.45;
+
+// Cities whose outages "arrive" live during the demo, one after another. Every
+// other city's outages are shown immediately.
+const NEW_OUTAGE_CITIES = ["Kansas City", "Phoenix"];
+const FIRST_DELAY_MS = 4000; // before the first new outage pops in
+const GAP_MS = 10000; // spacing between each new outage
+const RAMP_MS = 900; // grow-in animation per new outage
+const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
 // Keeps only the continental US: drops Alaska (02), Hawaii (15) and the
 // territories (FIPS >= 60) so the map has no insets.
@@ -89,7 +98,7 @@ function buildMarkers(locations) {
     0
   );
 
-  return locations
+  const markers = locations
     .map((loc) => {
       const coordinates = getCityCoordinates(loc.city, loc.state);
       if (!coordinates) {
@@ -102,21 +111,39 @@ function buildMarkers(locations) {
       return {
         key: `${loc.city}, ${loc.state}`,
         city: loc.city,
+        state: loc.state,
+        substation: loc.substation ?? null,
+        feeder: loc.feeder ?? null,
+        transformer: loc.transformer ?? null,
         customers: loc.customers,
         outages: loc.outages,
         x: point[0],
         y: point[1],
         customerRadius: getRadius(loc.customers, maxCount),
-        outageRadius: getRadius(loc.outages, maxCount),
         customerLayers: getLayerCount(loc.customers, maxCount),
-        outageLayers: getLayerCount(loc.outages, maxCount),
       };
     })
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((marker, index) => ({ ...marker, index }));
+
+  return { markers, maxCount };
+}
+
+// Builds a notification payload from a city marker (real outage data).
+function alertFor(marker) {
+  return {
+    city: marker.city,
+    substation: marker.substation,
+    feeder: marker.feeder,
+    transformer: marker.transformer,
+    affected: marker.outages,
+    severity: marker.outages >= 5 ? "high" : marker.outages >= 2 ? "medium" : "low",
+    title: `Outage — ${marker.city}, ${marker.state}`,
+  };
 }
 
 // A core circle ringed by concentric fade layers, with the count centered inside.
-function GlowMarker({ cx, cy, radius, layerCount, coreColor, label, count }) {
+function GlowMarker({ cx, cy, radius, layerCount, coreColor, label, count, pulse }) {
   if (!radius) return null;
 
   return (
@@ -131,6 +158,16 @@ function GlowMarker({ cx, cy, radius, layerCount, coreColor, label, count }) {
           fillOpacity={layer.opacity}
         />
       ))}
+      {pulse && (
+        <circle
+          className={styles.pulseRing}
+          cx={cx}
+          cy={cy}
+          r={radius}
+          fill={coreColor}
+          fillOpacity={0.5}
+        />
+      )}
       <circle cx={cx} cy={cy} r={radius} fill={coreColor} fillOpacity={0.95}>
         <title>{`${label}: ${count}`}</title>
       </circle>
@@ -162,7 +199,64 @@ function LegendItem({ color, label }) {
 export default function CustomerMap() {
   const { locations, isLoading, error } = useCustomerLocations();
 
-  const markers = useMemo(() => buildMarkers(locations), [locations]);
+  const { markers, maxCount } = useMemo(() => buildMarkers(locations), [locations]);
+  const { addAlert, reset } = useNotifications();
+
+  // Restart the demo cleanly each time the map mounts (fresh page load or
+  // navigating back to Monitoring), so alerts don't accumulate across visits.
+  useEffect(() => {
+    reset();
+  }, [reset]);
+
+  // The "new" cities (Denver, Phoenix) arrive one after another, each growing in
+  // and firing a notification. Everything else is shown immediately.
+  const [newReveal, setNewReveal] = useState({});
+  const scheduledRef = useRef(false);
+  const seededRef = useRef(false);
+
+  // Seed the notification center with the existing outages (all other cities),
+  // silently, so it looks realistic before the "new" ones roll in.
+  useEffect(() => {
+    if (seededRef.current || markers.length === 0) return;
+    seededRef.current = true;
+    markers
+      .filter((m) => m.outages > 0 && !NEW_OUTAGE_CITIES.includes(m.city))
+      .sort((a, b) => a.outages - b.outages) // prepended, so worst ends up on top
+      .forEach((m) => addAlert(alertFor(m), { silent: true }));
+  }, [markers.length, addAlert]);
+  useEffect(() => {
+    if (scheduledRef.current || markers.length === 0) return;
+    scheduledRef.current = true;
+    const timers = [];
+    let rafs = [];
+
+    NEW_OUTAGE_CITIES.forEach((city, i) => {
+      const marker = markers.find((m) => m.city === city);
+      if (!marker || !marker.outages) return;
+
+      const delay = FIRST_DELAY_MS + i * GAP_MS;
+      timers.push(
+        setTimeout(() => {
+          addAlert(alertFor(marker));
+
+          const start = performance.now();
+          const step = (now) => {
+            const t = Math.min(1, (now - start) / RAMP_MS);
+            setNewReveal((prev) => ({ ...prev, [city]: t }));
+            if (t < 1) rafs.push(requestAnimationFrame(step));
+          };
+          rafs.push(requestAnimationFrame(step));
+        }, delay)
+      );
+    });
+
+    return () => {
+      timers.forEach(clearTimeout);
+      rafs.forEach(cancelAnimationFrame);
+    };
+    // Depend on the city count (stable across polls) so the 5s refetch doesn't
+    // reset the scheduled reveals.
+  }, [markers.length, addAlert]);
 
   return (
     <div className={styles.widget}>
@@ -200,40 +294,51 @@ export default function CustomerMap() {
             />
           ))}
 
-          {markers.map((marker) => (
-            <g key={marker.key}>
-              <text
-                x={marker.x}
-                y={marker.y - Math.max(marker.customerRadius, marker.outageRadius) - 8}
-                textAnchor="middle"
-                fontSize={15}
-                fontWeight="600"
-                fill={palette.gray.dark3}
-              >
-                {marker.city}
-              </text>
+          {markers.map((marker) => {
+            // "New" cities grow in on their schedule; the rest show at once.
+            const isNew = NEW_OUTAGE_CITIES.includes(marker.city);
+            const progress = isNew ? newReveal[marker.city] ?? 0 : 1;
+            const shownOutages = Math.round(marker.outages * easeOut(progress));
+            const outageRadius = getRadius(shownOutages, maxCount);
+            const outageLayers = getLayerCount(shownOutages, maxCount);
 
-              <GlowMarker
-                cx={marker.x - marker.customerRadius}
-                cy={marker.y}
-                radius={marker.customerRadius}
-                layerCount={marker.customerLayers}
-                coreColor={CUSTOMER_COLOR}
-                label="Customers"
-                count={marker.customers}
-              />
+            return (
+              <g key={marker.key}>
+                <text
+                  x={marker.x}
+                  y={marker.y - Math.max(marker.customerRadius, outageRadius) - 8}
+                  textAnchor="middle"
+                  fontSize={15}
+                  fontWeight="600"
+                  fill={palette.gray.dark3}
+                >
+                  {marker.city}
+                </text>
 
-              <GlowMarker
-                cx={marker.x + marker.outageRadius}
-                cy={marker.y}
-                radius={marker.outageRadius}
-                layerCount={marker.outageLayers}
-                coreColor={OUTAGE_COLOR}
-                label="Outages"
-                count={marker.outages}
-              />
-            </g>
-          ))}
+                <GlowMarker
+                  cx={marker.x - marker.customerRadius}
+                  cy={marker.y}
+                  radius={marker.customerRadius}
+                  layerCount={marker.customerLayers}
+                  coreColor={CUSTOMER_COLOR}
+                  label="Customers"
+                  count={marker.customers}
+                  pulse
+                />
+
+                <GlowMarker
+                  cx={marker.x + outageRadius}
+                  cy={marker.y}
+                  radius={outageRadius}
+                  layerCount={outageLayers}
+                  coreColor={OUTAGE_COLOR}
+                  label="Outages"
+                  count={shownOutages}
+                  pulse={shownOutages > 0}
+                />
+              </g>
+            );
+          })}
           </svg>
         )}
       </div>

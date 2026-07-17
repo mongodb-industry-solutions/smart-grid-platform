@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 
 const ENDPOINT = "/api/network-center/overview";
-const TICK_MS = 5_000;
+const TICK_MS = 2_000;
 
 /**
- * Live grid network-center overview. Polls every 5s (the project's convention
+ * Live grid network-center overview. Polls every 2s (the project's convention
  * for "live" panels — there are no change streams here) and pulses `tick` on
  * each successful refresh so the header live indicator can flash.
  *

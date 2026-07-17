@@ -7,7 +7,7 @@ import { PieChart, Pie } from "recharts";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/grid-stability-card.module.css";
 
-const TICK_MS = 5_000;
+const TICK_MS = 2_000;
 
 // Industry-standard feeder utilization thresholds
 const THRESHOLD_ELEVATED = 70;   // %

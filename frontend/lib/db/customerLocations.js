@@ -2,6 +2,10 @@ const CUSTOMERS_COLLECTION_NAME =
   process.env.CUSTOMERS_COLLECTION_NAME || "customer_db";
 const READINGS_COLLECTION_NAME =
   process.env.READINGS_COLLECTION_NAME || "readings";
+const NETWORK_COLLECTION_NAME =
+  process.env.NETWORK_COLLECTION_NAME || "network";
+const NETWORK_MAP_COLLECTION_NAME =
+  process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
 
 /**
  * Aggregates customers and outages by location for the map.
@@ -63,6 +67,64 @@ export async function getCustomerLocations(db) {
     ])
     .toArray();
 
+  // Representative substation → feeder → transformer per city, derived from a
+  // real meter in that city: customer → meter_network_map → network, walking up
+  // parent_asset_id (transformer → feeder → substation). This guarantees the
+  // linkage matches the actual grid, since only substations carry a city field.
+  const assets = await db
+    .collection(NETWORK_COLLECTION_NAME)
+    .find(
+      {},
+      { projection: { _id: 0, asset_id: 1, asset_type: 1, name: 1, parent_asset_id: 1 } }
+    )
+    .toArray();
+  const assetById = new Map(assets.map((a) => [a.asset_id, a]));
+
+  // One representative meter per city.
+  const repMeters = await customers
+    .aggregate([
+      { $match: { city: { $ne: null }, dataid: { $ne: null } } },
+      {
+        $group: {
+          _id: { city: "$city", state: "$state" },
+          dataid: { $first: "$dataid" },
+        },
+      },
+    ])
+    .toArray();
+
+  const mapRows = await db
+    .collection(NETWORK_MAP_COLLECTION_NAME)
+    .find(
+      { dataid: { $in: repMeters.map((r) => r.dataid) } },
+      { projection: { _id: 0, dataid: 1, feeder_id: 1, transformer_id: 1 } }
+    )
+    .toArray();
+  const mapByDataid = new Map(mapRows.map((m) => [m.dataid, m]));
+
+  const substationByKey = new Map();
+  const feederByKey = new Map();
+  const transformerByKey = new Map();
+  for (const r of repMeters) {
+    const key = `${r._id.city}, ${r._id.state}`;
+    const m = mapByDataid.get(r.dataid);
+    if (!m) continue;
+
+    const transformer = assetById.get(m.transformer_id);
+    if (transformer) transformerByKey.set(key, transformer.name);
+
+    // Feeder: from the map's feeder_id, else the transformer's parent.
+    const feeder =
+      (m.feeder_id && assetById.get(m.feeder_id)) ||
+      (transformer?.parent_asset_id && assetById.get(transformer.parent_asset_id));
+    if (feeder) {
+      feederByKey.set(key, feeder.name);
+      const substation =
+        feeder.parent_asset_id && assetById.get(feeder.parent_asset_id);
+      if (substation) substationByKey.set(key, substation.name);
+    }
+  }
+
   // Merge by city/state. Each customer is counted once: those with an outage
   // go to `outages` (red), the rest to `customers` (green) — no double counting.
   const byKey = new Map();
@@ -92,6 +154,9 @@ export async function getCustomerLocations(db) {
       state,
       customers: Math.max(0, total - outages),
       outages,
+      substation: substationByKey.get(`${city}, ${state}`) ?? null,
+      feeder: feederByKey.get(`${city}, ${state}`) ?? null,
+      transformer: transformerByKey.get(`${city}, ${state}`) ?? null,
     }))
     .sort((a, b) => b.customers + b.outages - (a.customers + a.outages));
 }

@@ -89,3 +89,17 @@
   font-weight: 600;
   color: #001e2b;
 }
+
+/* Pulsing halo on the map markers so they read as "live". */
+@keyframes markerPulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  70%  { transform: scale(2.4); opacity: 0;   }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
+
+.pulseRing {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: markerPulse 1.8s ease-out infinite;
+  pointer-events: none;
+}
