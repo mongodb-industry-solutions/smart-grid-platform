@@ -139,7 +139,6 @@ export function OutageRisk({ risk, grow }) {
                 return (
                   <div style={TOOLTIP_CONTENT}>
                     <div style={{ ...TOOLTIP_LABEL, marginBottom: 2 }}>{p.name}</div>
-                    <div style={{ color: SEVERITY_COLOR[p.severity], fontWeight: 600 }}>Risk {p.riskScore}</div>
                     <div style={{ color: "#889397" }}>{p.outageMeters}/{p.meterCount} out · {p.anomalyCount} anomalies</div>
                   </div>
                 );

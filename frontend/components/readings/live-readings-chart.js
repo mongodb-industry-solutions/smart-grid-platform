@@ -9,7 +9,7 @@ import styles from "../../style/readings/live-readings-chart.module.css";
 
 const TICK_MS = 2_000;
 const MAX_HISTORY = 48;
-const LIMIT = 10; // meters averaged per reading
+const LIMIT = 250; // meters averaged per reading (the whole fleet)
 const LINE_COLOR = 0x00684a;
 const AXIS_LABEL_COLOR = 0x5c6970; // matches AXIS_TICK on the other charts
 const GRID_COLOR = 0xe8edeb;
@@ -76,17 +76,27 @@ export default function LiveReadingsChart() {
       stroke: am5.color(GRID_COLOR),
       strokeOpacity: 1,
     });
+    yAxis.children.unshift(
+      am5.Label.new(root, {
+        text: "Avg energy per meter (kWh)",
+        rotation: -90,
+        y: am5.p50,
+        centerX: am5.p50,
+        fontSize: 11,
+        fill: am5.color(AXIS_LABEL_COLOR),
+      })
+    );
 
     const series = chart.series.push(
       am5xy.LineSeries.new(root, {
-        name: "Energy Consumption (kWh)",
+        name: "Avg energy per meter (kWh)",
         xAxis,
         yAxis,
         valueYField: "value",
         valueXField: "date",
         stroke: am5.color(LINE_COLOR),
         fill: am5.color(LINE_COLOR),
-        tooltip: am5.Tooltip.new(root, { labelText: "{valueY} kWh" }),
+        tooltip: am5.Tooltip.new(root, { labelText: "Avg: {valueY} kWh / meter" }),
       })
     );
     series.strokes.template.setAll({ strokeWidth: 2 });
@@ -188,12 +198,18 @@ export default function LiveReadingsChart() {
   return (
     <div className={styles.widget}>
       <div className={styles.header}>
-        <div className={styles.titleRow}>
-          <H2>Live Readings Chart</H2>
-          <span className={styles.liveBadge}>
-            <span className={styles.liveDot} />
-            LIVE
-          </span>
+        <div>
+          <div className={styles.titleRow}>
+            <H2>Live Energy Consumption</H2>
+            <span className={styles.liveBadge}>
+              <span className={styles.liveDot} />
+              LIVE
+            </span>
+          </div>
+          <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
+            Average energy per meter (kWh), across all {LIMIT} live meters - one
+            point per reading interval, updated every {TICK_MS / 1000}s.
+          </Body>
         </div>
       </div>
 
