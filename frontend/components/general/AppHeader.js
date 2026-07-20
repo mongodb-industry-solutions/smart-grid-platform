@@ -24,7 +24,7 @@ export default function AppHeader() {
               Smart Grid
             </div>
             <div className="mt-1 text-[15px] leading-none text-slate-900">
-              Intelligent Platform
+              Management Platform
             </div>
             <div className="mt-2 text-[12px] leading-none">
               <span className="text-slate-900">by </span>
