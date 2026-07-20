@@ -48,12 +48,27 @@ const DEFAULT_THRESHOLD = 3;
  */
 export async function getAnomalies(
   db,
-  { threshold = DEFAULT_THRESHOLD, metrics = DEFAULT_METRICS } = {}
+  { threshold = DEFAULT_THRESHOLD, metrics = DEFAULT_METRICS, periodIndex = null } = {}
 ) {
   const readings = db.collection(READINGS_COLLECTION_NAME);
 
   // Only allow known metric fields (avoids injecting arbitrary field names).
   const monitored = metrics.filter((m) => DEFAULT_METRICS.includes(m));
+
+  // Resolve which reading is "under test": the Nth distinct timestamp when a
+  // periodIndex is given (so the view advances over time like the live chart),
+  // otherwise the latest timestamp overall.
+  const tsDoc = await readings
+    .aggregate([
+      { $match: { voltage: { $ne: null } } },
+      { $group: { _id: "$timestamp" } },
+      { $sort: { _id: periodIndex == null ? -1 : 1 } },
+      ...(periodIndex == null ? [] : [{ $skip: periodIndex }]),
+      { $limit: 1 },
+    ])
+    .next();
+  if (!tsDoc) return [];
+  const targetTs = tsDoc._id;
 
   // One descriptor per metric, built from the latest reading and the baseline.
   const metricDescriptors = monitored.map((metric) => ({
@@ -73,25 +88,36 @@ export async function getAnomalies(
     // Collect every reading per meter in chronological order.
     { $group: { _id: "$dataid", readings: { $push: "$$ROOT" } } },
 
-    // Split into the latest reading (under test) and the baseline (the rest).
+    // The reading under test is the one at the target timestamp; the baseline is
+    // that meter's other readings (its history).
     {
       $set: {
-        latest: { $last: "$readings" },
-        baseline: {
-          $slice: [
-            "$readings",
+        latest: {
+          $arrayElemAt: [
+            {
+              $filter: {
+                input: "$readings",
+                as: "r",
+                cond: { $eq: ["$$r.timestamp", targetTs] },
+              },
+            },
             0,
-            { $max: [0, { $subtract: [{ $size: "$readings" }, 1] }] },
           ],
         },
-        baselineCount: {
-          $max: [0, { $subtract: [{ $size: "$readings" }, 1] }],
+        baseline: {
+          $filter: {
+            input: "$readings",
+            as: "r",
+            cond: { $ne: ["$$r.timestamp", targetTs] },
+          },
         },
       },
     },
+    { $set: { baselineCount: { $size: "$baseline" } } },
 
-    // Need enough baseline readings to form a trustworthy mean/std.
-    { $match: { baselineCount: { $gte: MIN_BASELINE } } },
+    // Only meters that actually have a reading at the target timestamp, with
+    // enough baseline readings to form a trustworthy mean/std.
+    { $match: { latest: { $ne: null }, baselineCount: { $gte: MIN_BASELINE } } },
 
     // Fan out into one row per monitored metric.
     { $set: { metrics: metricDescriptors } },
