@@ -33,9 +33,16 @@ export const TALK_TRACK = [
     heading: "Behind the Scenes",
     content: [
       {
-        heading: "Reference architecture",
+        heading: "Reference architecture - Operational Data layer",
         image: {
-          src: "/ref_arq.svg",
+          src: "/General_Architecture.svg",
+          alt: "Operational Data layer reference architecture: MongoDB Atlas as the operational data layer for the smart grid demo, with four workloads (Monitoring, Network Center, Customers, Forecasting) and an AI assistant.",
+        },
+      },
+      {
+        heading: "Reference architecture - Agentic AI layer",
+        image: {
+          src: "/Reference_Architectures.svg",
           alt: "Reference architecture: the agentic AI layer (Perception, Planning, Tools, Memory) and MongoDB Atlas collections.",
         },
       },
