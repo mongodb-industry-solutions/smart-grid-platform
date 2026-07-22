@@ -32,7 +32,11 @@ The platform combines two architectures on a single Atlas cluster: an
 **operational data layer** (monitoring, network, forecasting, customers) and an
 **agentic AI layer** that lets users query it all in natural language.
 
-![Reference architecture](frontend/public/ref_arq.svg)
+### Operational data layer
+![Operational data layer - Reference architecture](frontend/public/General_Architecture.svg)
+
+### Agentic AI layer
+![agentic AI layer - Reference architecture](frontend/public/Reference_Architectures.svg)
 
 ## Tech Stack
 
@@ -172,7 +176,7 @@ Then commit the updated `dump/` directory. The knowledge base is not dumped - it
 is (re)created by `frontend/scripts/seedKnowledgeBase.mjs`, which also builds the
 search indexes.
 
-## Run with Docker
+<!-- ## Run with Docker
 
 From the repo root:
 
@@ -182,7 +186,7 @@ make build
 
 # stop and remove containers/images
 make clean
-```
+``` -->
 
 ## Common errors
 
