@@ -1,0 +1,143 @@
+.widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  min-height: 3.25rem;
+}
+
+/* Keep the title on one line so the header height stays consistent. */
+.title {
+  white-space: nowrap;
+}
+
+.card {
+  position: relative;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 20px 24px;
+  min-width: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ── Main stat ── */
+.mainStat {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.value {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #00684a;
+}
+
+.statusChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.statusGood {
+  background: #e3f1ec;
+  color: #00684a;
+  border: 1px solid #00684a;
+}
+
+.statusFair {
+  background: #fbeede;
+  color: #b25000;
+  border: 1px solid #b25000;
+}
+
+.statusPoor {
+  background: #fbe5e5;
+  color: #db3030;
+  border: 1px solid #db3030;
+}
+
+.description {
+  font-size: 13px;
+  color: #5c6970;
+  margin: 0 0 20px;
+  line-height: 1.4;
+}
+
+/* ── Sub stats ── */
+.subStats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e8edeb;
+}
+
+.subStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #89979b;
+}
+
+.subValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #e8edeb;
+}
+
+/* ── States ── */
+.skeleton {
+  height: 80px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.errorText {
+  color: #db3030;
+  font-size: 13px;
+}

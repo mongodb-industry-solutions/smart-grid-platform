@@ -1,0 +1,404 @@
+/* Forecasting page: filters card + live MongoDB document showcase. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.grid {
+  display: grid;
+  /* Left panel takes 1/3 of the width, the chart gets the remaining 2/3. */
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* Left panel: one card holding intro text, horizontal filters, and pipeline.
+   Positioned so its absolutely-filled inner layer can take the card's stretched
+   height without the pipeline JSON dictating how tall the row is. */
+.panelCard {
+  position: relative;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.panelInner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.panelText {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.chartCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* When two chart columns sit side by side, let the card fill the column so
+   both cards end at the same height regardless of footnote length. */
+.chartCol .chartCard {
+  flex: 1;
+}
+
+/* Right column when it holds more than one chart stacked vertically. */
+.chartStack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  min-width: 0;
+}
+
+/* Two equal-width chart columns (e.g. demand peaks next to peak timing). */
+.gridEqual {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  align-items: stretch;
+}
+
+@media (max-width: 1024px) {
+  .gridEqual {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Chart ── */
+.chartHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.chartCard {
+  position: relative;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 20px 20px 12px;
+}
+
+.peakNote {
+  margin: 10px 2px 0;
+  font-size: 12px;
+  color: #89979b;
+  line-height: 1.5;
+}
+
+@media (max-width: 1024px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Filters (horizontal row inside the panel) ── */
+.showcaseTitle {
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.filters {
+  padding: 16px 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.filtersRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.filterSelect {
+  flex: 1 1 0;
+  min-width: 150px;
+}
+
+.filterSelectWide {
+  flex: 2 1 0;
+  min-width: 220px;
+}
+
+.filtersHint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #89979b;
+  line-height: 1.5;
+}
+
+.count {
+  color: #5c6970;
+  font-weight: 500;
+}
+
+/* ── Pipeline section (inside the panel) ── */
+.pipelineSection {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  /* Absorb the panel's extra height when it's stretched to match the charts. */
+  flex: 1;
+  min-height: 0;
+}
+
+.pipelineHeader,
+.showcaseHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8edeb;
+}
+
+.headerRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #00684a;
+  border: 1px solid #00a35c;
+  border-radius: 4px;
+  padding: 2px 8px;
+}
+
+.updating {
+  font-size: 11px;
+  color: #89979b;
+  font-style: italic;
+}
+
+/* Dim the document while a new one loads in the background. */
+.refreshing {
+  opacity: 0.55;
+  transition: opacity 0.15s ease;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #e8edeb;
+  background: #f9fbfa;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #5c6970;
+  cursor: default;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+
+.jsonWrap {
+  padding: 8px 0;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  background: #ffffff;
+}
+
+/* ── JSON rendering ── */
+.json {
+  margin: 0;
+  font-family: "SF Mono", "Fira Code", Menlo, Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #001e2b;
+}
+
+.jsonLine {
+  display: block;
+  padding: 0 20px;
+  white-space: pre;
+}
+
+.jsonKey {
+  color: #016bf8;
+}
+
+.jsonString {
+  color: #12824d;
+}
+
+.jsonNumber {
+  color: #b45af2;
+}
+
+.jsonLiteral {
+  color: #c82b0d;
+}
+
+.jsonPunct {
+  color: #5c6970;
+}
+
+/* ── Explainer ── */
+.explainer {
+  margin: 0;
+  padding: 16px 20px 6px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #3d4f58;
+  border-top: 1px solid #e8edeb;
+}
+
+.inlineAccent {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 12px;
+  color: #d97706;
+  background: #fff4e5;
+  border-radius: 3px;
+  padding: 1px 4px;
+}
+
+.assumption {
+  margin: 0;
+  padding: 0 20px 16px;
+  font-size: 12px;
+  font-style: italic;
+  color: #89979b;
+}
+
+.errorText {
+  padding: 20px;
+}
+
+/* ── Per-region summary cards ── */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.summaryCard {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.summaryHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.summaryTitle {
+  font-weight: 600;
+  color: #001e2b;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summaryBadge {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border: 1px solid;
+  border-radius: 4px;
+  padding: 2px 8px;
+  flex: 0 0 auto;
+}
+
+.summaryPctRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.summaryPct {
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.summaryPctLabel {
+  font-size: 12px;
+  color: #5c6970;
+}
+
+.summaryMetrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
+}
+
+.summaryMetric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.summaryMetricLabel {
+  font-size: 11px;
+  color: #89979b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.summaryMetricValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.summaryTrendUp {
+  color: #db3030;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryTrendDown {
+  color: #00684a;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryTrendFlat {
+  color: #89979b;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.summaryNote {
+  color: #89979b;
+  font-size: 12px;
+}

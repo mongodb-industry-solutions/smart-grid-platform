@@ -1,0 +1,105 @@
+/* Shared card style for the monitoring panel widgets, matching the other
+   monitoring components (title outside, then a bordered/shadowed card). */
+
+/* Outer wrapper: lets the card stretch to equal height beside its siblings. */
+.widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Title row, sits outside (above) the card. min-height keeps every widget's
+   header the same height across a row so the cards below them line up. */
+.header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+  min-height: 3.25rem;
+}
+
+/* The bordered/shadowed content box. */
+.card {
+  position: relative;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.1);
+  padding: 20px 24px;
+  flex: 1;
+}
+
+/* Vertically centers the card content (used where the card stretches taller
+   than its content, e.g. the Outage Summary). */
+.cardCentered {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.legend {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 16px;
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #5c6970;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Label/value list with the subtle divider used in the Energy Usage card. */
+.statList {
+  display: flex;
+  flex-direction: column;
+}
+
+.statRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid #e8edeb;
+}
+
+.statRow:first-child {
+  border-top: none;
+  padding-top: 0;
+}
+
+.statLabel {
+  font-size: 14px;
+  color: #5c6970;
+}
+
+.statValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+/* Pulsing halo on the map markers so they read as "live". */
+@keyframes markerPulse {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  70%  { transform: scale(2.4); opacity: 0;   }
+  100% { transform: scale(2.4); opacity: 0;   }
+}
+
+.pulseRing {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: markerPulse 1.8s ease-out infinite;
+  pointer-events: none;
+}

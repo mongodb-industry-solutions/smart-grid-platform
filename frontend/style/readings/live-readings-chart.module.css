@@ -1,0 +1,117 @@
+/* Fills the column height so cards/tables in a row line up. */
+.widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  min-height: 3.25rem;
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.liveBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  background: #eaf4f1;
+  border: 1px solid #00684a;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #00684a;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #00684a;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1;   transform: scale(1);   }
+  50%       { opacity: 0.4; transform: scale(0.75); }
+}
+
+.controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.selectWrapper {
+  width: 180px;
+}
+
+.customInputRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.customInput {
+  width: 72px;
+  height: 36px;
+  padding: 0 8px;
+  border: 1px solid #89979b;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+}
+
+.customInput:focus {
+  border-color: #00684a;
+  box-shadow: 0 0 0 2px rgba(0, 104, 74, 0.15);
+}
+
+.applyButton {
+  height: 36px;
+  padding: 0 12px;
+  background: #00684a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.applyButton:hover {
+  background: #023430;
+}
+
+/* ── Chart container ── */
+.chartWrapper {
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+  padding: 20px 8px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.loadingRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 320px;
+  color: #5c6970;
+}

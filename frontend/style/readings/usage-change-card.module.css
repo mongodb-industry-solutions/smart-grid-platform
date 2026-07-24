@@ -1,0 +1,142 @@
+/* Outer wrapper fills the grid cell; title sits above the card. */
+.widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+}
+
+/* Keep the title on a single line next to the dropdown. */
+.title {
+  white-space: nowrap;
+}
+
+.card {
+  position: relative;
+  border: 1px solid #c1c7c6;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 30, 43, 0.10);
+  padding: 20px 24px;
+  min-width: 220px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ── Header (outside the card) ── */
+.cardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  min-height: 3.25rem;
+}
+
+
+/* ── Main stat ── */
+.mainStat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.arrow {
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.pctValue {
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* color states */
+.trendDown .arrow,
+.trendDown .pctValue {
+  color: #00684a;
+}
+
+.trendUp .arrow,
+.trendUp .pctValue {
+  color: #db3030;
+}
+
+.trendFlat .arrow,
+.trendFlat .pctValue {
+  color: #5c6970;
+}
+
+/* ── Trend label ── */
+.trendLabel {
+  font-size: 13px;
+  color: #5c6970;
+  margin: 0 0 20px;
+  line-height: 1.4;
+}
+
+.fallbackNote {
+  font-size: 11px;
+  color: #89979b;
+  font-style: italic;
+}
+
+/* ── Sub stats ── */
+.subStats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e8edeb;
+}
+
+.subStat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.subLabel {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #89979b;
+}
+
+.subValue {
+  font-size: 15px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+.divider {
+  width: 1px;
+  height: 28px;
+  background: #e8edeb;
+}
+
+/* ── States ── */
+.skeleton {
+  height: 80px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #f9fbfa 25%, #e8edeb 50%, #f9fbfa 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.errorText {
+  color: #db3030;
+  font-size: 13px;
+}

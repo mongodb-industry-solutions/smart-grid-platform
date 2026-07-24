@@ -1,2 +1,7 @@
 @import "tailwindcss";
 
+/* Slightly smaller section/card titles (LeafyGreen H2) across the dashboard. */
+h2 {
+  font-size: 1.8rem !important;
+  line-height: 1.5 !important;
+}
