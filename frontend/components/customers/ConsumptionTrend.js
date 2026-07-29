@@ -37,16 +37,67 @@ function formatTime(iso) {
   });
 }
 
+// Renders each legend entry as a swatch of its actual line style (solid or
+// dashed) instead of a plain colored dot, so the line pattern itself is the label.
+function renderLineLegend({ payload }) {
+  return (
+    <ul
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        gap: 20,
+        margin: 0,
+        padding: "12px 0 0",
+        listStyle: "none",
+        fontSize: 12,
+        color: "#3D4F58",
+      }}
+    >
+      {payload.map((entry) => (
+        <li
+          key={entry.value}
+          style={{ display: "flex", alignItems: "center", gap: 6 }}
+        >
+          <svg width="24" height="10" aria-hidden="true">
+            <line
+              x1="0"
+              y1="5"
+              x2="24"
+              y2="5"
+              stroke={entry.color}
+              strokeWidth="2"
+              strokeDasharray={entry.payload?.strokeDasharray}
+            />
+          </svg>
+          {entry.value}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function ConsumptionTrend({ dataid }) {
   // null = follow the selected customer's own region.
   const [region, setRegion] = useState(null);
+  // The customer's own home region — fixed regardless of which region is
+  // picked for comparison, since the "actual" line never changes with it.
+  const [homeRegion, setHomeRegion] = useState(null);
 
   // Reset to the customer's own region whenever the selected customer changes.
   useEffect(() => {
     setRegion(null);
+    setHomeRegion(null);
   }, [dataid]);
 
   const { data, isLoading, error } = useConsumptionTrend(dataid, region);
+
+  // The first response for a customer (region === null) reflects their own
+  // region — capture it once so it survives later comparison-region changes.
+  useEffect(() => {
+    if (region === null && data?.regionLabel) {
+      setHomeRegion(data.regionLabel);
+    }
+  }, [region, data]);
 
   const chartData = useMemo(
     () =>
@@ -59,6 +110,7 @@ export default function ConsumptionTrend({ dataid }) {
 
   const regions = data?.availableRegions ?? [];
   const currentRegion = region ?? data?.regionLabel ?? "";
+  const actualRegion = homeRegion ?? currentRegion;
 
   let body;
   if (dataid == null) {
@@ -86,11 +138,11 @@ export default function ConsumptionTrend({ dataid }) {
             labelStyle={TOOLTIP_LABEL}
             cursor={TOOLTIP_CURSOR}
           />
-          <Legend iconType="circle" iconSize={8} wrapperStyle={LEGEND_WRAPPER} />
+          <Legend content={renderLineLegend} wrapperStyle={LEGEND_WRAPPER} />
           <Line
             type="monotone"
             dataKey="actual"
-            name="Actual Consumption (kWh)"
+            name={`${actualRegion} — Actual (kWh)`}
             stroke={ACTUAL_COLOR}
             strokeWidth={2}
             dot={false}
@@ -100,7 +152,7 @@ export default function ConsumptionTrend({ dataid }) {
           <Line
             type="monotone"
             dataKey="segment"
-            name="Segment Average (kWh)"
+            name={`${currentRegion} — Segment Average (kWh)`}
             stroke={SEGMENT_COLOR}
             strokeWidth={2}
             strokeDasharray="4 4"
@@ -116,7 +168,13 @@ export default function ConsumptionTrend({ dataid }) {
     <div>
       {/* Title sits outside the card, matching the monitoring panel pattern. */}
       <div className={styles.chartHeader}>
-        <H2>Consumption Trend</H2>
+        <div>
+          <H2>Consumption Trend</H2>
+          <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
+            Actual usage versus the segment average for{" "}
+            {currentRegion || "the selected region"}, over time.
+          </Body>
+        </div>
         <div className={styles.chartHeaderRight}>
           {regions.length > 0 && (
             <Select

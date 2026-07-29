@@ -78,7 +78,7 @@ export default function LiveReadingsChart() {
     });
     yAxis.children.unshift(
       am5.Label.new(root, {
-        text: "Avg energy per meter (kWh)",
+        text: "Avg power per meter (kW)",
         rotation: -90,
         y: am5.p50,
         centerX: am5.p50,
@@ -89,14 +89,14 @@ export default function LiveReadingsChart() {
 
     const series = chart.series.push(
       am5xy.LineSeries.new(root, {
-        name: "Avg energy per meter (kWh)",
+        name: "Avg power per meter (kW)",
         xAxis,
         yAxis,
         valueYField: "value",
         valueXField: "date",
         stroke: am5.color(LINE_COLOR),
         fill: am5.color(LINE_COLOR),
-        tooltip: am5.Tooltip.new(root, { labelText: "Avg: {valueY} kWh / meter" }),
+        tooltip: am5.Tooltip.new(root, { labelText: "Avg: {valueY} kW / meter" }),
       })
     );
     series.strokes.template.setAll({ strokeWidth: 2 });
@@ -151,7 +151,7 @@ export default function LiveReadingsChart() {
         }
 
         const avg =
-          data.reduce((sum, r) => sum + (r.energy ?? 0), 0) / data.length;
+          data.reduce((sum, r) => sum + (r.power ?? 0), 0) / data.length / 1000;
         const value = parseFloat(avg.toFixed(2));
         const date = new Date(data[0].timestamp).getTime();
 
@@ -200,14 +200,14 @@ export default function LiveReadingsChart() {
       <div className={styles.header}>
         <div>
           <div className={styles.titleRow}>
-            <H2>Live Energy Consumption</H2>
+            <H2>Average Power</H2>
             <span className={styles.liveBadge}>
               <span className={styles.liveDot} />
               LIVE
             </span>
           </div>
           <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
-            Average energy per meter (kWh), across all {LIMIT} live meters - one
+            Average power per meter (kW), across all {LIMIT} live meters - one
             point per reading interval, updated every {TICK_MS / 1000}s.
           </Body>
         </div>

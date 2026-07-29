@@ -13,7 +13,7 @@ export const TALK_TRACK = [
           "Network Center: the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status across the service territory.",
           "Customers: profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.",
           "Forecasting: expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.",
-          "AI Assistant: a multi-agent chatbot that answers questions over the data and a knowledge base.",
+          "Grid Support Agent: a multi-agent chatbot that answers questions over the data and a knowledge base.",
         ],
       },
       {
@@ -24,7 +24,7 @@ export const TALK_TRACK = [
           "Go to the Network Center - explore the grid topology, substation health and capacity pressure, all joined on demand with $lookup.",
           "Go to Customers - select a customer to see their tariff estimate, insights and consumption trend.",
           "Go to Forecasting - filter by region/feeder/meter and watch the weather-adjusted aggregation pipeline update with the chart.",
-          "Finish in the AI Assistant - ask a question and show the Agent Graph (how it routed) and the Vector Map (semantic retrieval).",
+          "Finish in the Grid Support Agent - ask a question and show the Agent Graph (how it routed) and the Vector Map (semantic retrieval).",
         ],
       },
     ],
