@@ -36,8 +36,6 @@ export default function NavBar({ collapsed, setCollapsed }) {
         Network Center
       </SideNavItem>
 
-
-
       <SideNavItem
         as={Link}
         href="/customers"
@@ -62,7 +60,7 @@ export default function NavBar({ collapsed, setCollapsed }) {
         active={pathname === "/ai-chatbot"}
         glyph={<Icon glyph="Sparkle" />}
       >
-        AI chatbot
+        Grid Support Agent
       </SideNavItem>
     </SideNav>
   );

@@ -67,7 +67,7 @@ export default function AIChatbotPage() {
       <div className={styles.headerRow}>
         <div>
           <div className={styles.titleRow}>
-            <H2>AI Assistant</H2>
+            <H2>Grid Support Agent</H2>
             <span
               className={styles.infoWrap}
               tabIndex={0}
