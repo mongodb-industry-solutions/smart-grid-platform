@@ -12,8 +12,7 @@ It brings five workloads together over the same smart-meter data:
 - **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status.
 - **Customers** - profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.
 - **Forecasting** - expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.
-- **Grid Support Agent
-** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
+- **Grid Support Agent** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
 
 Every card exposes a `{ }` **"Show document"** button that reveals the real
 documents and aggregation pipelines powering it.

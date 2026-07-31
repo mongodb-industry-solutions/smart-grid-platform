@@ -4,7 +4,7 @@ export const TALK_TRACK = [
     content: [
       {
         heading: "Solution Overview",
-        body: "Smart Grid Intelligent Platform is a utility operations demo built entirely on MongoDB Atlas. It brings four workloads together on one operational data layer: real-time grid monitoring, customer intelligence, demand forecasting, and an AI assistant. All over the same smart-meter data.",
+        body: "Smart Grid Intelligent Platform is a utility operations demo built entirely on MongoDB Atlas. It brings five workloads together on one operational data layer: real-time grid monitoring, grid topology and network operations, customer intelligence, demand forecasting, and a Grid Support Agent. All over the same smart-meter data.",
       },
       {
         heading: "What it shows",
@@ -36,7 +36,7 @@ export const TALK_TRACK = [
         heading: "Reference architecture - Operational Data layer",
         image: {
           src: "/General_Architecture.svg",
-          alt: "Operational Data layer reference architecture: MongoDB Atlas as the operational data layer for the smart grid demo, with four workloads (Monitoring, Network Center, Customers, Forecasting) and an AI assistant.",
+          alt: "Operational Data layer reference architecture: MongoDB Atlas as the operational data layer for the smart grid demo, with five workloads (Monitoring, Network Center, Customers, Forecasting, and Grid Support Agent).",
         },
       },
       {
