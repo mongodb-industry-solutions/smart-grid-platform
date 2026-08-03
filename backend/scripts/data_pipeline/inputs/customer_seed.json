@@ -1,0 +1,200 @@
+[{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807a5"
+  },
+  "dataid": 661,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807a6"
+  },
+  "dataid": 1642,
+  "city": "Phoenix",
+  "state": "Arizona"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807a7"
+  },
+  "dataid": 2335,
+  "city": "Denver",
+  "state": "Colorado"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807a8"
+  },
+  "dataid": 2361,
+  "city": "Phoenix",
+  "state": "Arizona"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807a9"
+  },
+  "dataid": 2818,
+  "city": "Phoenix",
+  "state": "Arizona"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807aa"
+  },
+  "dataid": 3039,
+  "city": "Phoenix",
+  "state": "Arizona"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807ab"
+  },
+  "dataid": 3456,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807ac"
+  },
+  "dataid": 3538,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807ad"
+  },
+  "dataid": 4031,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807ae"
+  },
+  "dataid": 4373,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807af"
+  },
+  "dataid": 4767,
+  "city": "Kansas City",
+  "state": "Missouri"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b0"
+  },
+  "dataid": 5746,
+  "city": "Memphis",
+  "state": "Tennessee"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b1"
+  },
+  "dataid": 6139,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b2"
+  },
+  "dataid": 7536,
+  "city": "Memphis",
+  "state": "Tennessee"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b3"
+  },
+  "dataid": 7719,
+  "city": "Kansas City",
+  "state": "Missouri"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b4"
+  },
+  "dataid": 7800,
+  "city": "Denver",
+  "state": "Colorado"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b5"
+  },
+  "dataid": 7901,
+  "city": "Kansas City",
+  "state": "Missouri"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b6"
+  },
+  "dataid": 7951,
+  "city": "Memphis",
+  "state": "Tennessee"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b7"
+  },
+  "dataid": 8156,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b8"
+  },
+  "dataid": 8386,
+  "city": "Memphis",
+  "state": "Tennessee"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807b9"
+  },
+  "dataid": 8565,
+  "city": "Santa Fe",
+  "state": "New Mexico"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807ba"
+  },
+  "dataid": 9019,
+  "city": "Austin",
+  "state": "Texas"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807bb"
+  },
+  "dataid": 9160,
+  "city": "Santa Fe",
+  "state": "New Mexico"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807bc"
+  },
+  "dataid": 9922,
+  "city": "Denver",
+  "state": "Colorado"
+},
+{
+  "_id": {
+    "$oid": "6a3ab7a1bb689d848a6807bd"
+  },
+  "dataid": 9278,
+  "city": "Austin",
+  "state": "Texas"
+}]
