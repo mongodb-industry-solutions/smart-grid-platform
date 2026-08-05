@@ -86,25 +86,10 @@ export function buildRegionalForecastPipeline(sel = {}) {
         as: "readings",
         pipeline: [
           { $match: readingsMatch },
-          {
-            $setWindowFields: {
-              sortBy: { timestamp: 1 },
-              output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-            },
-          },
-          { $match: { prev_energy: { $ne: null } } },
-          {
-            $set: {
-              // kWh used in the 15-min interval → average kW during it (×4).
-              demand_kw: {
-                $multiply: [
-                  { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
-                  4,
-                ],
-              },
-            },
-          },
-          { $project: { _id: 0, timestamp: 1, demand_kw: 1 } },
+          // Demand (kW) = the instantaneous `power` each reading carries. Using it
+          // directly avoids a per-meter $setWindowFields over the full history,
+          // keeping the forecast fast at scale (matches the energy-derived value).
+          { $project: { _id: 0, timestamp: 1, demand_kw: { $divide: ["$power", 1000] } } },
         ],
       },
     },

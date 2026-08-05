@@ -90,11 +90,14 @@ export function forecastRegion({
   const dowFactor = bucketFactor((t) => dowOf(t), 7);
 
   // Level = mean of the trailing window (recent conditions), fallback to all.
-  const maPoints = Math.max(
-    1,
-    Math.round((maRecentHours * 60) / CADENCE_MINUTES)
-  );
-  const recentMA = mean(values.slice(-maPoints));
+  // Select by real elapsed time, not a fixed point count, so a burst of
+  // high-frequency live readings can't shrink the window to a few seconds.
+  const lastTime = hist[hist.length - 1].t.getTime();
+  const windowStart = lastTime - maRecentHours * 60 * MS_PER_MIN;
+  const recentValues = hist
+    .filter((p) => p.t.getTime() >= windowStart)
+    .map((p) => p.v);
+  const recentMA = recentValues.length ? mean(recentValues) : mean(values);
 
   const expectedAt = (t) =>
     overallMean > 0

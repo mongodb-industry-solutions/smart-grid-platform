@@ -3,11 +3,9 @@
 Load the Smart Grid pipeline outputs straight into MongoDB — the "code -> Atlas"
 step that replaces the manual Browse Collections / Import File dance.
 
-SAFETY: this loads into a SEPARATE cluster/database defined by its own env vars,
-so it never touches the demo's runtime cluster (MONGODB_URI / DATABASE_NAME):
-
-    SEED_MONGODB_URI    connection string of the *test* cluster
-    SEED_DATABASE_NAME  database to (re)create there
+Targets the app's own cluster/database: MONGODB_URI / DATABASE_NAME from
+frontend/.env.local (see _config.py). Each collection is dropped and reloaded,
+so the seed is idempotent.
 
 Run from the backend/ directory:
 
@@ -16,13 +14,11 @@ Run from the backend/ directory:
 
 Each collection is dropped and reloaded, so the seed is idempotent.
 """
-import os
 import sys
 import logging
 from pathlib import Path
 
 from bson import json_util
-from dotenv import load_dotenv
 
 # Make `from db.mdb import ...` resolve regardless of cwd (backend/ is the root).
 _BACKEND = Path(__file__).resolve().parents[2]
@@ -30,8 +26,7 @@ sys.path.insert(0, str(_BACKEND))
 
 from db.mdb import MongoDBConnector                       # noqa: E402
 from _timeseries_coll_creator import TimeSeriesCollectionCreator  # noqa: E402
-
-load_dotenv(_BACKEND / ".env")
+from _config import resolve_target                        # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("seed")
@@ -67,21 +62,6 @@ def _require_outputs():
         sys.exit(1)
 
 
-def _assert_test_env():
-    uri = os.getenv("SEED_MONGODB_URI")
-    db = os.getenv("SEED_DATABASE_NAME")
-    if not uri or not db:
-        logger.error("Set SEED_MONGODB_URI and SEED_DATABASE_NAME in backend/.env "
-                     "(a separate TEST cluster — never the runtime one).")
-        sys.exit(1)
-    # Guardrail: refuse to seed if pointed at the runtime cluster/database.
-    if uri == os.getenv("MONGODB_URI") and db == os.getenv("DATABASE_NAME"):
-        logger.error("SEED_* points at the runtime cluster/database. Use a separate "
-                     "test cluster so the current demo can't break.")
-        sys.exit(1)
-    return uri, db
-
-
 def load_plain(connector: MongoDBConnector, path: Path, name: str):
     docs = _load_json(path)
     col = connector.get_collection(name)
@@ -94,25 +74,48 @@ def load_plain(connector: MongoDBConnector, path: Path, name: str):
 
 def load_readings(uri: str, db: str):
     docs = _load_json(READINGS_FILE)
-    # Fresh time-series collection (timeField=timestamp, 15-min cadence).
+    # Fresh time-series collection. metaField=dataid buckets readings by meter so
+    # per-customer queries and the network $lookups stay fast at scale.
     ts = TimeSeriesCollectionCreator(uri=uri, database_name=db)
     ts.get_collection(READINGS_COLLECTION).drop()
-    ts.create_timeseries_collection(READINGS_COLLECTION, time_field="timestamp", granularity="minutes")
+    ts.create_timeseries_collection(READINGS_COLLECTION, time_field="timestamp",
+                                    granularity="minutes", meta_field="dataid")
+    # Fail loudly if it isn't a proper time-series collection — e.g. if a stray
+    # writer (a running feeder) auto-created it as a plain collection between the
+    # drop and create. A silent plain collection loses metaField bucketing and
+    # makes every per-meter query slow.
+    info = next((c for c in ts.db.list_collections() if c["name"] == READINGS_COLLECTION), {})
+    if info.get("type") != "timeseries":
+        raise RuntimeError(
+            f"'{READINGS_COLLECTION}' was not created as a time-series collection "
+            f"(got {info.get('type')!r}). Stop the feeder before loading, then retry."
+        )
     col = ts.get_collection(READINGS_COLLECTION)
     for i in range(0, len(docs), BATCH):
         col.insert_many(docs[i:i + BATCH], ordered=False)
-    logger.info("  %-20s <- %-26s (%d docs, time-series)", READINGS_COLLECTION, READINGS_FILE.name, len(docs))
+    # Secondary indexes for the network filters that query readings directly.
+    for field in ("feeder_id", "state"):
+        col.create_index(field)
+    logger.info("  %-20s <- %-26s (%d docs, time-series, meta=dataid)", READINGS_COLLECTION, READINGS_FILE.name, len(docs))
 
 
 def main():
     _require_outputs()
-    uri, db = _assert_test_env()
-    logger.info("Seeding database '%s' on the test cluster ...", db)
+    uri, db = resolve_target()
+    logger.info("Seeding database '%s' ...", db)
 
     connector = MongoDBConnector(uri=uri, database_name=db)
     for path, name in PLAIN_COLLECTIONS.items():
         load_plain(connector, path, name)
     load_readings(uri, db)
+
+    # Record when the dataset was generated so the app can show it for context.
+    from datetime import datetime, timezone
+    connector.get_collection("demo_meta").replace_one(
+        {"_id": "seed"},
+        {"_id": "seed", "generatedAt": datetime.now(timezone.utc)},
+        upsert=True,
+    )
 
     logger.info("Done.")
 

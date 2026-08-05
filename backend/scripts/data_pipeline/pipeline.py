@@ -8,7 +8,7 @@
 # 
 # 1. **Filters** by start date + duration (24h, 1 week, ...)
 # 2. **Expands** the customer set (e.g. 25 → 250), new customers reuse only existing city/state pairs
-# 3. **Synthesizes** the full readings schema (appliance breakdown, `has_ev`, `ev_power`, `env_power`), shifts the base year (2018 → 2026), and injects outages (full dropouts + partial brownouts)
+# 3. **Synthesizes** the full readings schema (appliance breakdown, `has_ev`, `ev_power`, `env_power`), rebases the base year to the CURRENT year and anchors the window to "now", and injects outages (full dropouts + partial brownouts)
 # 
 # Output is JSON so `has_ev` (bool) and `timestamp` ($date) keep their real BSON types on Atlas import.
 
@@ -16,7 +16,6 @@
 # Edit these, then Run All.
 
 # In[23]:
-
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
 # Resolve everything relative to this script so it runs from any cwd.
@@ -27,12 +26,15 @@ _OUTPUTS = _os.path.join(_HERE, "outputs")
 _os.makedirs(_OUTPUTS, exist_ok=True)
 
 # ── Config ────────────────────────────────────────────────────────────────────
+import datetime as _dt
+_NOW = _dt.datetime.now(_dt.timezone.utc)   # resolved at run time, never hard-coded
+
 INPUT_CSV        = _os.path.join(_INPUTS, "readings_base.csv.gz")  # base readings (gzip; pandas auto-decompresses)
 LOCATIONS_FILE   = _os.path.join(_INPUTS, "customer_seed.json")  # city/state pairs to reuse
 TOTAL_CUSTOMERS  = 250          # grow customer set to this many (keeps existing 25)
-START            = "2026-01-21T21:15:00Z"  # window start (ISO8601) or None for earliest
-DURATION         = "2d"        # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
-SHIFT_YEAR       = 2026         # rebase timestamps to this year (0 disables)
+START            = None         # None = earliest available slice; ANCHOR_NOW re-pins it to today
+DURATION         = "30d"       # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
+SHIFT_YEAR       = _NOW.year    # rebase timestamps to the CURRENT year (dynamic, not static)
 ANCHOR_NOW       = True          # shift the whole window onto the current clock so the
                                  # data looks like it's being read in real time
 ANCHOR_MODE      = "end"         # "end" -> last reading = now (recent history, best for
@@ -71,7 +73,6 @@ STRESS_LABEL     = "peak_demand_overload"  # e.g. heatwave/cold-snap driven tran
 
 # In[24]:
 
-
 import json, re
 from datetime import timezone
 import numpy as np
@@ -84,7 +85,6 @@ rng = np.random.default_rng(SEED)
 # Parse flexible durations and slice a window.
 
 # In[25]:
-
 
 _DUR_RE = re.compile(r"(?P<val>\d+(?:\.\d+)?)\s*(?P<unit>mo|[smhdwy])", re.IGNORECASE)
 _UNIT = {"s":"seconds","m":"minutes","h":"hours","d":"days","w":"weeks"}
@@ -116,7 +116,6 @@ def filter_time(df, start, duration):
 
 
 # In[26]:
-
 
 df = pd.read_csv(INPUT_CSV)
 if "avg_reading" not in df.columns:
@@ -150,7 +149,6 @@ df.head()
 # Keep the existing customers; add new ones reusing only existing city/state pairs.
 
 # In[27]:
-
 
 import glob, os
 
@@ -202,7 +200,6 @@ def expand_customers(existing_ids, loc_df, total, rng):
 
 # In[28]:
 
-
 loc_df = load_locations(LOCATIONS_FILE)
 customers = expand_customers(df["dataid"].unique(), loc_df, TOTAL_CUSTOMERS, rng)
 
@@ -218,7 +215,6 @@ customers.head()
 # Outages are a random mix of full dropouts and partial brownouts.
 
 # In[29]:
-
 
 def rand(rng, lo, hi, nd=3):
     return round(float(rng.uniform(lo, hi)), nd)
@@ -273,7 +269,6 @@ def make_doc(ts, did, prof, channels, amps, pf, freq, v1, v2, cumulative):
 
 
 # In[30]:
-
 
 def synthesize(df, customers, rng):
     # Year already shifted up-front, before filtering.
@@ -385,7 +380,6 @@ docs[0]
 
 # In[31]:
 
-
 def load_network_assets(path):
     """Read the canonical network/asset collection and resolve each transformer's
     full ancestry (feeder -> substation -> utility) via parent_asset_id, plus the
@@ -454,7 +448,6 @@ network_df.head()
 # 
 
 # In[32]:
-
 
 _net_lookup = network_df.set_index("dataid")[["utility_id","substation_id","feeder_id","transformer_id"]].to_dict("index")
 
@@ -578,7 +571,6 @@ grid_events = simulate_grid_stress(docs, network_df, rng)
 
 # In[33]:
 
-
 mism = sum(1 for x in docs if abs(sum(x[k] for k in
     ["hvac_power","heating_power","kitchen_power","laundry_power","ev_power","env_power"])
     - x["power"]) > 0.01)
@@ -594,7 +586,6 @@ print("first timestamp       :", docs[0]["timestamp"])
 # (individual 15-min readings), plus % of customers affected and the longest outage.
 
 # In[34]:
-
 
 import pandas as pd
 
@@ -667,7 +658,6 @@ outage_summary
 
 # In[35]:
 
-
 import math
 
 def _sanitize(o):
@@ -716,16 +706,3 @@ print(f"  2. Select {OUT_JSON}          -> readings collection (has_ev bool + ti
       "stressed readings carry grid_event_id)")
 print(f"  3. Select {NETWORK_OUT_JSON}   -> network_map collection (join on dataid)")
 print(f"  4. Select {OUT_CUSTOMERS_JSON} -> customers collection (join on dataid)")
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-

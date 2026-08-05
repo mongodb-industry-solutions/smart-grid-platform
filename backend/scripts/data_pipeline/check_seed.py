@@ -1,26 +1,17 @@
 #!/usr/bin/env python
 """
-Sanity-check the seeded data on the SEED_* (test) cluster. Run after load_to_mongo.py:
+Sanity-check the seeded data. Run after load_to_mongo.py:
 
     cd backend
     uv run scripts/data_pipeline/check_seed.py
 
 Every line prints its expectation; anything off is easy to spot.
 """
-import os
-import sys
-from pathlib import Path
-
-from dotenv import load_dotenv
 from pymongo import MongoClient
 
-_BACKEND = Path(__file__).resolve().parents[2]
-load_dotenv(_BACKEND / ".env")
+from _config import resolve_target
 
-uri, dbname = os.getenv("SEED_MONGODB_URI"), os.getenv("SEED_DATABASE_NAME")
-if not uri or not dbname:
-    sys.exit("Set SEED_MONGODB_URI and SEED_DATABASE_NAME in backend/.env")
-
+uri, dbname = resolve_target()
 db = MongoClient(uri)[dbname]
 R = db["readings"]
 

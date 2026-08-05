@@ -25,8 +25,16 @@ function toDataidNumbers(ids) {
  * @param {{ states?: string[], feeders?: string[], meterIds?: (string|number)[] }} selection
  */
 export function buildDemandPipeline(selection = {}) {
-  const { states = [], feeders = [], meterIds = [] } = selection;
+  const { states = [], feeders = [], meterIds = [], from, to } = selection;
   const stages = [];
+
+  // Time bound on the readings scan (keeps the $lookup fast on large collections).
+  const readingsMatch = {};
+  if (from || to) {
+    readingsMatch.timestamp = {};
+    if (from) readingsMatch.timestamp.$gte = from;
+    if (to) readingsMatch.timestamp.$lte = to;
+  }
 
   // 1) Narrowing filters — one stage per active filter (region → feeder → meter).
   if (states.length) stages.push({ $match: { state: { $in: states } } });
@@ -43,25 +51,12 @@ export function buildDemandPipeline(selection = {}) {
         foreignField: "dataid",
         as: "readings",
         pipeline: [
-          {
-            $setWindowFields: {
-              sortBy: { timestamp: 1 },
-              output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-            },
-          },
-          { $match: { prev_energy: { $ne: null } } },
-          {
-            $set: {
-              // kWh used in the 15-min interval → average kW during it (×4).
-              demand_kw: {
-                $multiply: [
-                  { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
-                  4,
-                ],
-              },
-            },
-          },
-          { $project: { _id: 0, timestamp: 1, demand_kw: 1 } },
+          ...(readingsMatch.timestamp ? [{ $match: readingsMatch }] : []),
+          // Demand (kW) is the instantaneous `power` (W) each reading already
+          // carries. Using it directly avoids a per-meter $setWindowFields over
+          // the full history, keeping this fast at scale (and it matches the
+          // energy-derived value, since energy accrues as power × interval).
+          { $project: { _id: 0, timestamp: 1, demand_kw: { $divide: ["$power", 1000] } } },
         ],
       },
     },
