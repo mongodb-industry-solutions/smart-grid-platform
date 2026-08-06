@@ -84,14 +84,6 @@ export async function POST(request) {
   }
   const withFeeder = body.feeder !== false; // default: start the live feeder
 
-  // "Start Demo" is the app's intended data-provisioning UX in every environment
-  // (this is a demo), so it's enabled by default. It spawns local processes and
-  // drops/reloads collections, so locked-down deployments can turn it off with
-  // DISABLE_DEMO_SETUP=true.
-  if (process.env.DISABLE_DEMO_SETUP === "true") {
-    return Response.json({ error: "Demo setup is disabled on this deployment." }, { status: 403 });
-  }
-
   // Reject cross-site browser requests (CSRF-style drive-by triggers).
   if (!sameOriginOk(request)) {
     return Response.json({ error: "Cross-origin request rejected." }, { status: 403 });

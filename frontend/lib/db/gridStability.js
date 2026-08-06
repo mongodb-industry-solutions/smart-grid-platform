@@ -1,17 +1,15 @@
-const READINGS_COLLECTION    = process.env.READINGS_COLLECTION_NAME    || "readings";
-const NETWORK_MAP_COLLECTION = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
-const NETWORK_COLLECTION     = process.env.NETWORK_COLLECTION_NAME     || "network";
+const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
+const NETWORK_COLLECTION  = process.env.NETWORK_COLLECTION_NAME  || "network";
 
 /**
  * Returns feeder load vs capacity for the Nth distinct timestamp in readings.
  *
  * Pipeline:
  *   1. Find the Nth distinct timestamp (periodIndex).
- *   2. Match all readings at that exact timestamp (all meters).
- *   3. Join meter_network_map on dataid → feeder_id.
- *   4. Group by feeder_id, sum avg_reading → total_load.
- *   5. Join network on feeder_id = asset_id → capacity_kw.
- *   6. Compute utilization_pct = total_load / capacity_kw × 100.
+ *   2. Match all readings at that exact timestamp (all meters) and group by the
+ *      feeder_id denormalized on each reading, summing avg_reading → total_load.
+ *   3. Join network on feeder_id = asset_id → capacity_kw.
+ *   4. Compute utilization_pct = total_load / capacity_kw × 100.
  *
  * @param {import("mongodb").Db} db
  * @param {number} periodIndex
@@ -32,28 +30,20 @@ export async function getGridStability(db, periodIndex = 0) {
 
   const ts = periodDoc._id;
 
-  // Steps 2–6 — feeder aggregation for this snapshot
+  // Steps 2–4 — feeder aggregation for this snapshot
   const feeders = await col.aggregate([
-    { $match: { timestamp: ts } },
+    { $match: { timestamp: ts, feeder_id: { $ne: null } } },
 
-    {
-      $lookup: {
-        from:         NETWORK_MAP_COLLECTION,
-        localField:   "dataid",
-        foreignField: "dataid",
-        as:           "map",
-      },
-    },
-    { $unwind: "$map" },
-
+    // feeder_id is denormalized on each reading, so group directly — no join needed.
     {
       $group: {
-        _id:         "$map.feeder_id",
+        _id:         "$feeder_id",
         total_load:  { $sum: "$avg_reading" },
         meter_count: { $sum: 1 },
       },
     },
 
+    // Join the feeder's network asset to compare load against its rated capacity.
     {
       $lookup: {
         from:         NETWORK_COLLECTION,

@@ -1,4 +1,4 @@
-# Demo setup endpoint — security notes
+# Demo setup endpoint - security notes
 
 Technical reference for the `/api/demo/*` routes that power the **Start Demo**
 modal. These endpoints are unusual for a web app: they spawn local processes and
@@ -13,7 +13,7 @@ safeguards in place, for reviewers and for the next team.
 | `/api/demo/start` | POST | **Privileged.** Spawns `uv run pipeline.py`, `uv run load_to_mongo.py`, `node seedKnowledgeBase.mjs`, and (optionally) the feeder. **Drops and reloads** the operational collections. |
 | `/api/demo/stop` | POST | Stops the live feeder process. |
 
-`/api/demo/start` is the sensitive one — it both **destroys/regenerates data** and
+`/api/demo/start` is the sensitive one - it both **destroys/regenerates data** and
 **runs OS processes**.
 
 ## Threat model
@@ -29,18 +29,25 @@ safeguards in place, for reviewers and for the next team.
   (progress + absolute paths). It contains no secrets; connection strings and API
   keys are never logged.
 
-### What an attacker COULD do without safeguards
+### Threats - and how they're mitigated
 
-- **Data destruction / disruption.** Trigger a regeneration that drops and
-  reloads collections — disruptive during a live demo (though the data is fully
-  regenerable, so there is no permanent loss).
-- **Denial of service.** Repeatedly trigger the ~2–3 minute generation to burn
-  CPU/IO, or spawn a long-running process.
-- **Cross-site drive-by.** A malicious page could POST to the endpoint from a
-  visitor's browser (CSRF-style), since there's no per-user auth.
+Without any controls an unauthenticated caller could do the following; each is
+already addressed (numbers reference the safeguards below):
 
-Overall severity: **moderate** for a demo (no breach, no RCE, regenerable data),
-but worth hardening because the endpoint runs processes and mutates the database.
+- **Data destruction / disruption** - regenerate/drop collections mid-demo.
+  *Mitigated by* SSO on the hosted demo (authenticated users only), the cooldown
+  (#4), and the concurrency lock (#3). The data is regenerable, so there's no
+  permanent loss.
+- **Denial of service** - repeatedly trigger the ~2–3 min generation to burn
+  CPU/IO. *Mitigated by* the cooldown / rate-limit (#4), the concurrency lock
+  (#3, one run at a time), and the per-step timeout (#5) - and behind SSO only
+  authenticated users can reach it at all.
+- **Cross-site drive-by (CSRF)** - a malicious page POSTing from a visitor's
+  browser. *Mitigated by* the same-origin guard (#2); behind SSO the endpoint
+  isn't reachable cross-site anyway.
+
+Residual severity: **low** on the maintained (SSO-gated) deployment; **moderate**
+only for a public self-hosted copy that adds no authentication of its own.
 
 ## Safeguards in place
 
@@ -64,7 +71,7 @@ handling in `frontend/lib/demo/feeder.js`).
 4. **Cooldown / rate-limit.** Regeneration is refused with `429` if the last run
    (tracked in `demo_meta.generatedAt`) was more recent than
    `DEMO_REGEN_COOLDOWN_MINUTES` (default **60**). Since the data is anchored to
-   "now" at generation time, there's no reason to rebuild more often — this blocks
+   "now" at generation time, there's no reason to rebuild more often - this blocks
    both accidental double-clicks and abusive repeats.
 
 5. **Per-step process timeout.** Each spawned step is killed (`SIGKILL`) if it
@@ -77,36 +84,39 @@ handling in `frontend/lib/demo/feeder.js`).
    orphaned feeder can't run forever). `stopFeeder` terminates the detached
    process group (POSIX) with a Windows-safe fallback.
 
-7. **Kill switch.** `DISABLE_DEMO_SETUP=true` disables `/api/demo/start` entirely
-   (`403`) for deployments that must lock it down.
-
 ## Configuration
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
-| `DISABLE_DEMO_SETUP` | unset | `true` fully disables `/api/demo/start`. |
 | `DEMO_REGEN_COOLDOWN_MINUTES` | `60` | Minimum minutes between regenerations; `0` disables the cooldown (useful while developing). |
 | `DEMO_STEP_TIMEOUT_MS` | `600000` | Max runtime per spawned step before it's killed. |
 
 ## Deployment guidance
 
-- **Internal demo behind SSO (e.g. Kanopy):** the platform's authentication
-  already gates the whole app, so the endpoint inherits that protection. The
-  safeguards above are defense-in-depth. This is the recommended posture.
-- **Public / unauthenticated exposure:** the endpoint remains destructive-by-DoS.
-  Add real authentication (a shared-secret token header, or an auth proxy) in
-  addition to the safeguards, or set `DISABLE_DEMO_SETUP=true` and seed the data
-  out-of-band via the CLI (`make seed_data`).
+This repo has two very different audiences, with different risk profiles:
+
+- **The maintained demo (MongoDB-hosted, behind SSO).** The platform's
+  authentication (e.g. Kanopy SSO) gates the whole app, so the setup endpoint is
+  only reachable by authenticated users - it inherits that protection, and the
+  safeguards above are defense-in-depth. This is the deployed posture.
+- **A cloned copy (someone using this repo as a base).** The project is open and
+  reproducible: a third party runs it against **their own** Atlas cluster and
+  credentials. None of MongoDB's infrastructure, credentials, or SSO are involved,
+  so there is **no exposure on our side** - the cloner owns their environment. If
+  they deploy their copy publicly and unauthenticated, it's their responsibility
+  to add real authentication (a shared-secret token, or an auth proxy) on top of
+  the built-in safeguards, or to seed the data via the CLI (`make seed_data`)
+  instead of exposing the setup routine.
 
 ## Residual risk & possible follow-ups
 
 The safeguards mitigate accidental and drive-by abuse; they are **not**
-authentication. If the app is ever exposed publicly without an auth proxy,
-consider adding:
+authentication. The maintained demo relies on SSO for that. A self-hosted copy
+exposed publicly without an auth proxy should consider adding:
 
-- **Shared-secret token** — require an `x-demo-token` header validated against an
+- **Shared-secret token** - require an `x-demo-token` header validated against an
   env secret (the modal includes it).
-- **Auth / SSO integration** — gate `/api/demo/*` behind the deployment's identity
+- **Auth / SSO integration** - gate `/api/demo/*` behind the deployment's identity
   provider.
-- **Output sanitization** — strip absolute filesystem paths from the streamed logs
+- **Output sanitization** - strip absolute filesystem paths from the streamed logs
   (minor information-disclosure hardening).
