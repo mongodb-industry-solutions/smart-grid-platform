@@ -32,7 +32,9 @@ logger = logging.getLogger("feeder")
 
 READINGS = "readings"
 MAP = "meter_network_map"
-NET_FIELDS = ["utility_id", "substation_id", "feeder_id", "transformer_id"]
+# Grid hierarchy + region denormalized onto each live reading (matches the
+# pipeline), so demand/forecast run without a $lookup back into meter_network_map.
+NET_FIELDS = ["utility_id", "substation_id", "feeder_id", "transformer_id", "state", "city"]
 
 
 def _rand(rng, lo, hi, nd=3):

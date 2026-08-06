@@ -1,6 +1,5 @@
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
 
-const NETWORK_MAP_COLLECTION = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
 const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
 // Bound the history each request scans so the readings $lookup stays fast on
 // large (multi-week) collections. 14 days is plenty for a per-hour demand curve.
@@ -44,7 +43,7 @@ export async function getDemandForecast(db, selection = {}) {
   }
   const pipeline = buildDemandPipeline({ ...selection, from });
   const rows = await db
-    .collection(NETWORK_MAP_COLLECTION)
+    .collection(READINGS_COLLECTION)
     .aggregate(pipeline)
     .toArray();
 

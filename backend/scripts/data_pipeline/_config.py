@@ -15,9 +15,11 @@ ENV_FILE = _REPO / "frontend" / ".env.local"
 
 
 def resolve_target():
-    """Return (uri, database_name) from frontend/.env.local (or the process env).
-    Exits with a clear message if either is unset."""
-    load_dotenv(ENV_FILE)
+    """Return (uri, database_name) from frontend/.env.local. Uses override=True so
+    this file is authoritative even if another import (e.g. db.mdb's load_dotenv,
+    which reads a stray backend/.env) already populated MONGODB_URI/DATABASE_NAME
+    with different values."""
+    load_dotenv(ENV_FILE, override=True)
     uri = os.getenv("MONGODB_URI")
     db = os.getenv("DATABASE_NAME")
     if not uri or not db:

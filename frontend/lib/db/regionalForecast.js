@@ -85,7 +85,7 @@ export async function getRegionalForecast(db, opts = {}) {
   });
 
   const rows = await db
-    .collection(NETWORK_MAP_COLLECTION)
+    .collection(READINGS_COLLECTION)
     .aggregate(pipeline, { allowDiskUse: true })
     .toArray();
 

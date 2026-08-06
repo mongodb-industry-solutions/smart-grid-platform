@@ -449,7 +449,12 @@ network_df.head()
 
 # In[32]:
 
-_net_lookup = network_df.set_index("dataid")[["utility_id","substation_id","feeder_id","transformer_id"]].to_dict("index")
+# Denormalize the grid hierarchy AND the region (state/city) onto every reading,
+# so the demand/forecast analytics run as single-collection $match+$group with no
+# $lookup back into meter_network_map (data accessed together, stored together).
+_net_lookup = network_df.set_index("dataid")[
+    ["utility_id","substation_id","feeder_id","transformer_id","state","city"]
+].to_dict("index")
 
 for d in docs:
     info = _net_lookup.get(d["dataid"])
@@ -458,6 +463,8 @@ for d in docs:
         d["substation_id"]  = info["substation_id"]
         d["feeder_id"]      = info["feeder_id"]
         d["transformer_id"] = info["transformer_id"]
+        d["state"]          = info["state"]
+        d["city"]           = info["city"]
 
 def _doc_ts(d):
     t = d["timestamp"]
