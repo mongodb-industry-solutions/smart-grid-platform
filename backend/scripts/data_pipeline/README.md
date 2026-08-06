@@ -63,8 +63,8 @@ to disable.
 readings coexist with 15-min history — kW is derived from the real `dt` (not a
 fixed ×4), monthly kWh from an energy-per-hour rate, and the consumption chart
 buckets to 15 min so live data rolls up instead of flooding the axis. At ~1s the
-collection grows by (250 × 3600) ≈ 900k docs/hour — use `--retain-hours` or a
-TTL for long-running demos.
+collection grows by (250 × 3600) ≈ 900k docs/hour — use `--retain-days` (or a
+TTL) for long-running demos.
 
 ## Data lineage → MongoDB collections
 

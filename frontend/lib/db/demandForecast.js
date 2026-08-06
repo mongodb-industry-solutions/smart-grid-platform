@@ -1,7 +1,7 @@
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
 
 const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
-// Bound the history each request scans so the readings $lookup stays fast on
+// Bound the history each request scans so the aggregation stays fast on
 // large (multi-week) collections. 14 days is plenty for a per-hour demand curve.
 const DEMAND_LOOKBACK_DAYS = 14;
 

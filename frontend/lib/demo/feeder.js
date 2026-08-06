@@ -36,8 +36,13 @@ export function stopFeeder() {
   const p = slot().proc;
   if (!isFeederRunning()) return { stopped: false };
   try {
-    // Negative pid kills the detached process group.
-    process.kill(-p.pid, "SIGINT");
+    if (process.platform !== "win32") {
+      // Negative pid kills the detached process group (POSIX only).
+      process.kill(-p.pid, "SIGINT");
+    } else {
+      // Windows has no process groups via negative pids; best-effort stop.
+      p.kill("SIGINT");
+    }
   } catch {
     try {
       p.kill("SIGINT");

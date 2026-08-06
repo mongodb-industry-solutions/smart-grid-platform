@@ -23,8 +23,10 @@ function toDataidNumbers(ids) {
 export function buildDemandPipeline(selection = {}) {
   const { states = [], feeders = [], meterIds = [], from, to } = selection;
 
-  // All filters map to fields already on each reading — no join needed.
-  const match = {};
+  // All filters map to fields already on each reading — no join needed. The
+  // voltage != null guard excludes partial "heartbeat"/sim docs that would
+  // otherwise inflate demand at the current timestamp.
+  const match = { voltage: { $ne: null } };
   if (states.length) match.state = { $in: states };
   if (feeders.length) match.feeder_id = { $in: feeders };
   if (meterIds.length) match.dataid = { $in: toDataidNumbers(meterIds) };

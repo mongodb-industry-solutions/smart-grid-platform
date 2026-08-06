@@ -127,6 +127,11 @@ browser session.)
 > Atlas builds search indexes asynchronously, so the AI assistant's sources may
 > take an extra minute to appear.
 
+> **Security note:** Start Demo runs behind the `/api/demo/start` endpoint, which
+> spawns processes and reloads collections. It ships with same-origin, cooldown,
+> timeout, and kill-switch safeguards — see [DEMO_SECURITY.md](DEMO_SECURITY.md)
+> for the threat model and how to lock it down for public deployments.
+
 ### Alternative: load the data from the CLI
 
 Prefer the terminal, or automating a headless setup? Do exactly what the modal
@@ -176,8 +181,15 @@ in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it.
 | `VOYAGE_API_KEY` | `frontend/.env.local` | Yes | Voyage AI key for the Vector Map. |
 | `ANTHROPIC_MODEL` | `frontend/.env.local` | No | Override the default model (`claude-haiku-4-5`). |
 | `GROVE_API_KEY` / `GROVE_ANTHROPIC_URL` | `frontend/.env.local` | No | MongoDB-internal Grove gateway (used instead of `ANTHROPIC_API_KEY` when set). |
+| `DISABLE_DEMO_SETUP` | `frontend/.env.local` | No | Set to `true` to fully disable the **Start Demo** / `/api/demo/start` endpoint (locked-down deployments). |
+| `DEMO_REGEN_COOLDOWN_MINUTES` | `frontend/.env.local` | No | Minimum minutes between regenerations (default `60`; `0` disables the cooldown). |
+| `DEMO_STEP_TIMEOUT_MS` | `frontend/.env.local` | No | Max ms a spawned setup step may run before it's killed (default `600000` = 10 min). |
 
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
+
+The `DEMO_*` / `DISABLE_DEMO_SETUP` variables control the data-provisioning
+endpoint — see [DEMO_SECURITY.md](DEMO_SECURITY.md) for the full threat model and
+the safeguards in place.
 
 There is a **single config file** - `frontend/.env.local`. The data pipeline
 (backend) reads the same `MONGODB_URI` / `DATABASE_NAME` from it, so there's
