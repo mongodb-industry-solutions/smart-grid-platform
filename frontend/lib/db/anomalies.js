@@ -15,6 +15,12 @@ const DEFAULT_METRICS = [
 // mean/std are trustworthy enough to flag anomalies.
 const MIN_BASELINE = 3;
 
+// Native reading cadence (ms) and how many periods before the latest the walk
+// starts, so periodIndex 0 lands on RECENT data (which has baseline history)
+// rather than the oldest period (no prior baseline → nothing to flag).
+const CADENCE_MS = 15 * 60 * 1000;
+const START_BACK = 48;
+
 // Default sigma multiple above which a metric is flagged as anomalous.
 const DEFAULT_THRESHOLD = 3;
 
@@ -55,20 +61,23 @@ export async function getAnomalies(
   // Only allow known metric fields (avoids injecting arbitrary field names).
   const monitored = metrics.filter((m) => DEFAULT_METRICS.includes(m));
 
-  // Resolve which reading is "under test": the Nth distinct timestamp when a
-  // periodIndex is given (so the view advances over time like the live chart),
-  // otherwise the latest timestamp overall.
-  const tsDoc = await readings
-    .aggregate([
-      { $match: { voltage: { $ne: null } } },
-      { $group: { _id: "$timestamp" } },
-      { $sort: { _id: periodIndex == null ? -1 : 1 } },
-      ...(periodIndex == null ? [] : [{ $skip: periodIndex }]),
-      { $limit: 1 },
-    ])
-    .next();
-  if (!tsDoc) return [];
-  const targetTs = tsDoc._id;
+  // Resolve which reading is "under test". Anchor to the latest period (indexed,
+  // fast) and, when a periodIndex is given, walk forward from START_BACK periods
+  // ago on the uniform cadence grid — clamped to the latest — so the view advances
+  // over recent data like the live chart instead of starting 30 days back.
+  const latestDoc = await readings.findOne(
+    { voltage: { $ne: null } },
+    { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  if (!latestDoc) return [];
+  const latest = new Date(latestDoc.timestamp).getTime();
+  let targetTs;
+  if (periodIndex == null) {
+    targetTs = new Date(latest);
+  } else {
+    const t = Math.min(latest, latest - (START_BACK - periodIndex) * CADENCE_MS);
+    targetTs = new Date(t);
+  }
 
   // One descriptor per metric, built from the latest reading and the baseline.
   const metricDescriptors = monitored.map((metric) => ({
@@ -79,10 +88,17 @@ export async function getAnomalies(
     timestamp: "$latest.timestamp",
   }));
 
+  // Baseline window: only the recent history up to the reading under test. This
+  // bounds the per-meter $push so the aggregation stays fast on large collections
+  // — a few days of readings is plenty for a mean/std baseline.
+  const BASELINE_LOOKBACK_MS = 2 * 86_400_000;
+  const windowStart = new Date(new Date(targetTs).getTime() - BASELINE_LOOKBACK_MS);
+
   const pipeline = [
     // Ignore partial "heartbeat" docs (only power/energy at a current timestamp)
-    // so a meter's latest reading under test is always a real reading.
-    { $match: { voltage: { $ne: null } } },
+    // so a meter's latest reading under test is always a real reading. Bounded to
+    // the baseline window (and never past the reading under test).
+    { $match: { voltage: { $ne: null }, timestamp: { $gte: windowStart, $lte: targetTs } } },
     { $sort: { dataid: 1, timestamp: 1 } },
 
     // Collect every reading per meter in chronological order.

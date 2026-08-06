@@ -12,7 +12,7 @@ It brings five workloads together over the same smart-meter data:
 - **Network Center** - the grid topology (utility → substation → feeder → transformer), substation health, capacity pressure, and outage status.
 - **Customers** - profile, latest reading, tariff recommendation, insights, appliance breakdown, usage segment, and consumption trend.
 - **Forecasting** - expected demand and peak timing per region, weather-adjusted with external data, plus the exact aggregation pipeline behind it.
-- **AI Assistant** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
+- **Grid Support Agent** - a LangGraph multi-agent chatbot that answers questions over the data and a knowledge base using hybrid search.
 
 Every card exposes a `{ }` **"Show document"** button that reveals the real
 documents and aggregation pipelines powering it.
@@ -52,11 +52,9 @@ Before you begin, ensure you have the following:
 
 - **Node.js 22** or higher
 - A **MongoDB Atlas** account with a cluster (**M10 or higher** - required for Atlas Vector Search with automated embeddings)
-- The **[MongoDB Database Tools](https://www.mongodb.com/docs/database-tools/)** (`mongorestore`) - on macOS: `brew install mongodb/brew/mongodb-database-tools`
+- **Python 3.13** and **[uv](https://docs.astral.sh/uv/)** - used by the data pipeline that generates and loads the operational collections
 - An **Anthropic API key** (the AI assistant uses Claude)
 - A **Voyage AI API key** (used by the Vector Map visualization)
-
-<!-- > Optional: the repository includes a FastAPI backend scaffold (Python 3.13 + [uv](https://docs.astral.sh/uv/)). The demo runs entirely on the Next.js frontend and Atlas, so the backend is **not required**. -->
 
 ## Run it Locally
 
@@ -67,11 +65,14 @@ git clone https://github.com/mongodb-industry-solutions/smart-grid-platform.git
 cd smart-meter
 ```
 
-### 2. Install frontend dependencies
+### 2. Install dependencies
+
+The app (frontend) and the data pipeline (backend). The pipeline runs via `uv`,
+which the **Start Demo** button also uses, so install both up front:
 
 ```bash
-cd frontend
-npm install
+cd frontend && npm install
+cd ../backend && uv sync          # data-pipeline deps (pandas, pymongo, ...)
 ```
 
 ### 3. Configure environment variables
@@ -98,33 +99,7 @@ VOYAGE_API_KEY=<YOUR_VOYAGE_API_KEY>
 If you need help getting your Atlas connection string, see
 [Connect to your cluster](https://www.mongodb.com/docs/atlas/tutorial/connect-to-your-cluster/).
 
-### 4. Load the data
-
-The demo runs on five operational collections (`readings`, `network`,
-`meter_network_map`, `customer_db`, `tariff_catalog`) plus the AI knowledge base
-(`kb_articles`).
-
-**a. Restore the operational collections** from the committed `dump/` directory
-into your own cluster (the script reads `MONGODB_URI` / `DATABASE_NAME` from
-`frontend/.env.local`). From the **repo root**:
-
-```bash
-./scripts/restore-data.sh
-# or: make restore_data
-```
-
-**b. Seed the AI knowledge base.** This loads the articles and creates the Atlas
-Vector Search (automated Voyage AI embeddings) and full-text search indexes used
-for hybrid retrieval. From the `frontend` folder:
-
-```bash
-node --env-file=.env.local scripts/seedKnowledgeBase.mjs
-```
-
-> Atlas builds search indexes asynchronously - allow about a minute before
-> querying the assistant.
-
-### 5. Start the frontend
+### 4. Start the app
 
 From the `frontend` folder:
 
@@ -132,8 +107,49 @@ From the `frontend` folder:
 npm run dev
 ```
 
-The application is now available at **http://localhost:3000**. Explore the
-Monitoring, Network Center, Customers, Forecasting, and AI Assistant views.
+The app is now available at **http://localhost:3000**.
+
+### 5. Generate the data - **Start Demo**
+
+On first load, a **Start Demo** modal appears. Click **Start Demo** and it does
+the whole setup for you, no terminal needed:
+
+- generates the dataset in code - 30 days of 15-minute readings for 250 meters,
+  **dated to today** - and loads it into Atlas as a time-series collection with indexes,
+- seeds the AI knowledge base (with the Atlas Vector + full-text search indexes),
+- starts the **live feeder** so the dashboards stream in real time.
+
+It takes a couple of minutes; when it finishes, click **Enter the demo** and
+explore Monitoring, Network Center, Customers, Forecasting, and the Grid Support
+Agent. (The modal shows when the data was last generated and appears once per
+browser session.)
+
+> Atlas builds search indexes asynchronously, so the AI assistant's sources may
+> take an extra minute to appear.
+
+### Alternative: load the data from the CLI
+
+Prefer the terminal, or automating a headless setup? Do exactly what the modal
+does, by hand (full details in the
+[data pipeline README](backend/scripts/data_pipeline/README.md)). From the
+`backend` folder:
+
+```bash
+uv run scripts/data_pipeline/pipeline.py         # generate 30 days of history (dated to today)
+uv run scripts/data_pipeline/load_to_mongo.py    # load it into Atlas
+uv run scripts/data_pipeline/feeder.py           # stream live readings on top (leave running)
+# or, generate + load in one step from the repo root: make seed_data
+```
+
+The feeder keeps streaming (that's what makes the dashboards move) until you stop
+it with `Ctrl+C`; it has built-in guards so it can't overflow the collection or
+run forever (`--retain-days`, default 35; `--max-hours`, default 12). Tune the
+window and meter count in the `Config` block of `pipeline.py` (`DURATION`,
+`TOTAL_CUSTOMERS`). Then seed the knowledge base, from the `frontend` folder:
+
+```bash
+node --env-file=.env.local scripts/seedKnowledgeBase.mjs
+```
 
 <!-- ### (Optional) Run the backend
 
@@ -154,8 +170,8 @@ in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it.
 
 | Variable | Where | Required | Description |
 | --- | --- | --- | --- |
-| `MONGODB_URI` | `frontend/.env.local` | Yes | Atlas connection string. |
-| `DATABASE_NAME` | `frontend/.env.local` | Yes | Target database name. |
+| `MONGODB_URI` | `frontend/.env.local` | Yes | Atlas connection string. Used by the app **and** the data pipeline. |
+| `DATABASE_NAME` | `frontend/.env.local` | Yes | Target database name. Used by the app **and** the data pipeline. |
 | `ANTHROPIC_API_KEY` | `frontend/.env.local` | Yes* | Claude API key for the AI assistant. |
 | `VOYAGE_API_KEY` | `frontend/.env.local` | Yes | Voyage AI key for the Vector Map. |
 | `ANTHROPIC_MODEL` | `frontend/.env.local` | No | Override the default model (`claude-haiku-4-5`). |
@@ -163,18 +179,30 @@ in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it.
 
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
 
+There is a **single config file** - `frontend/.env.local`. The data pipeline
+(backend) reads the same `MONGODB_URI` / `DATABASE_NAME` from it, so there's
+nothing to keep in sync.
+
 ## Load / refresh the data (maintainers)
 
-To refresh the committed `dump/` from a source cluster, run from the repo root:
+The operational data is **generated in code**. The pipeline lives in
+[`backend/scripts/data_pipeline/`](backend/scripts/data_pipeline/) (see its
+[README](backend/scripts/data_pipeline/README.md) for the full data lineage and
+options) and its committed inputs (`inputs/readings_base.csv.gz`, `network.json`,
+`customer_seed.json`, `tariff_catalog.json`) are the source of truth:
 
-```bash
-./scripts/dump-data.sh
-# or: make dump_data
-```
+- `pipeline.py` - filters/expands/synthesizes the dataset (window, meter count,
+  outages, grid-stress events, and the "anchor to now" real-time offset are
+  configurable in its `Config` block).
+- `load_to_mongo.py` - loads the outputs into Atlas (`readings` as a time-series
+  collection with `metaField=dataid`, plus secondary indexes).
+- `feeder.py` - live stream on top of the seeded history (the default demo runs with it on).
+- `check_seed.py` - post-load sanity checks.
 
-Then commit the updated `dump/` directory. The knowledge base is not dumped - it
-is (re)created by `frontend/scripts/seedKnowledgeBase.mjs`, which also builds the
-search indexes.
+To change the dataset, edit the inputs or the `Config` block, then re-run
+`pipeline.py` + `load_to_mongo.py` (or `make seed_data`). The AI knowledge base
+is separate - it is (re)created by `frontend/scripts/seedKnowledgeBase.mjs`,
+which also builds the search indexes.
 
 <!-- ## Run with Docker
 
@@ -193,9 +221,12 @@ make clean
 ### Frontend
 
 - **`Set ANTHROPIC_API_KEY ...`** - the AI assistant has no LLM credentials. Set `ANTHROPIC_API_KEY` (or `GROVE_API_KEY`) in `frontend/.env.local` and restart `npm run dev`.
-- **Empty dashboards** - the data hasn't been loaded. Run `./scripts/restore-data.sh` and the knowledge-base seed.
+- **Empty dashboards** - the data hasn't been loaded. Click **Start Demo** on the home screen, or run `make seed_data` (`pipeline.py` + `load_to_mongo.py`) plus the knowledge-base seed.
+- **Old timestamps / dashboards look static** - the "real-time" window is anchored when you run `pipeline.py`. Re-run `pipeline.py` + `load_to_mongo.py` to re-anchor to now, or run `feeder.py` for a live stream.
 - **AI assistant returns no sources** - the Atlas search indexes are still building, or the cluster tier is below M10 (required for Vector Search with automated embeddings).
 
 ### Data tools
 
-- **`mongorestore: command not found`** - install the MongoDB Database Tools (`brew install mongodb/brew/mongodb-database-tools`).
+- **`uv: command not found`** - install uv (see [uv docs](https://docs.astral.sh/uv/getting-started/installation/)); it runs the data pipeline and the live feeder.
+- **`Set MONGODB_URI and DATABASE_NAME ...`** - the pipeline has no target. Set both in `frontend/.env.local` (the pipeline reads the same file the app does).
+- **`No seeded readings found`** (feeder) - run `pipeline.py` + `load_to_mongo.py` before starting `feeder.py`.

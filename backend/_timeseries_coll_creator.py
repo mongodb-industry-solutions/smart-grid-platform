@@ -25,7 +25,7 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
     def __init__(self, uri=None, database_name=None, appname=None):
         super().__init__(uri, database_name, appname)
 
-    def create_timeseries_collection(self, collection_name: str, time_field: str, granularity: str = "minutes", expire_after_seconds=None):
+    def create_timeseries_collection(self, collection_name: str, time_field: str, granularity: str = "minutes", expire_after_seconds=None, meta_field: str = None):
         """
         Create a time series collection if it doesn't exist.
 
@@ -34,6 +34,9 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
             time_field (str): Time field.
             granularity (str, optional): Granularity. Defaults to "minutes".
             expire_after_seconds (int, optional): Document expiration time in seconds. Defaults to None.
+            meta_field (str, optional): Metadata field constant per series (e.g. an
+                id). Lets MongoDB bucket and index by series, greatly speeding up
+                per-series queries/lookups. Defaults to None.
         """
         codec_options = CodecOptions(
             datetime_conversion=DatetimeConversion.DATETIME_AUTO)
@@ -43,11 +46,11 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
             return
 
         try:
+            timeseries_opts = {'timeField': time_field, 'granularity': granularity}
+            if meta_field is not None:
+                timeseries_opts['metaField'] = meta_field
             collection_options = {
-                'timeseries': {
-                    'timeField': time_field,
-                    'granularity': granularity
-                },
+                'timeseries': timeseries_opts,
                 'codec_options': codec_options
             }
             if expire_after_seconds is not None:

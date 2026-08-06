@@ -3,13 +3,12 @@
 // the pipeline in the PipelineCard). Mirrors lib/const/demandPipeline.js, but
 // groups to the raw per-period series per region (no $hour rollup) so a JS
 // seasonal model can build a distinct historical + forecast line per region.
-const READINGS_COLLECTION =
-  process.env.NEXT_PUBLIC_READINGS_COLLECTION_NAME ||
-  process.env.READINGS_COLLECTION_NAME ||
-  "readings";
+//
+// Runs directly on `readings` (the grid hierarchy + region are denormalized onto
+// every reading), so there is NO $lookup — just a single-collection $match + $group.
 
 // A "region" is a node in the grid hierarchy. The chosen granularity only
-// changes which meter_network_map field we group demand by (and which id we
+// changes which (denormalized) reading field we group demand by (and which id we
 // look capacity up on in the `network` collection).
 export const LEVEL_FIELD = {
   utility: "utility_id",
@@ -29,10 +28,9 @@ export function toDataidNumbers(ids) {
 }
 
 /**
- * Coincident demand per region per 15-min period. Runs on meter_network_map:
- * narrows by parent scope → chosen level → optional meters, then $lookups each
- * meter's readings, derives interval demand_kw from the cumulative energy
- * register, and sums it per {region, period}.
+ * Coincident demand per region per period. Runs on `readings`: narrows by parent
+ * scope → chosen level → optional meters (all denormalized reading fields), then
+ * sums the instantaneous demand per {region, period}.
  *
  * @param {Object} sel
  * @param {"utility"|"substation"|"feeder"} [sel.level="feeder"]
@@ -54,73 +52,32 @@ export function buildRegionalForecastPipeline(sel = {}) {
   const field = regionFieldFor(level);
   const { states = [], utilities = [], substations = [] } = parentScope;
 
-  const stages = [];
-
-  // 1) Narrowing $match stages (parent scope → chosen level → meters).
-  if (states.length) stages.push({ $match: { state: { $in: states } } });
-  if (utilities.length)
-    stages.push({ $match: { utility_id: { $in: utilities } } });
-  if (substations.length)
-    stages.push({ $match: { substation_id: { $in: substations } } });
-  if (regionIds.length) stages.push({ $match: { [field]: { $in: regionIds } } });
-  if (meterIds.length)
-    stages.push({ $match: { dataid: { $in: toDataidNumbers(meterIds) } } });
-
-  // Time-window + real-reading guard, pushed into the $lookup for index use.
-  // voltage != null excludes partial "heartbeat"/sim docs that would corrupt
-  // the energy delta (see the readings-data-window note).
-  const readingsMatch = { voltage: { $ne: null } };
+  // voltage != null excludes partial "heartbeat"/sim docs that would corrupt the
+  // demand series (see the readings-data-window note). Every other filter maps to
+  // a field already on the reading, so no join is needed.
+  const match = { voltage: { $ne: null } };
+  if (states.length) match.state = { $in: states };
+  if (utilities.length) match.utility_id = { $in: utilities };
+  if (substations.length) match.substation_id = { $in: substations };
+  if (regionIds.length) match[field] = { $in: regionIds };
+  if (meterIds.length) match.dataid = { $in: toDataidNumbers(meterIds) };
   if (from || to) {
-    readingsMatch.timestamp = {};
-    if (from) readingsMatch.timestamp.$gte = from;
-    if (to) readingsMatch.timestamp.$lte = to;
+    match.timestamp = {};
+    if (from) match.timestamp.$gte = from;
+    if (to) match.timestamp.$lte = to;
   }
 
-  // 2) Pull each matched meter's readings and derive interval demand.
-  stages.push(
-    {
-      $lookup: {
-        from: READINGS_COLLECTION,
-        localField: "dataid",
-        foreignField: "dataid",
-        as: "readings",
-        pipeline: [
-          { $match: readingsMatch },
-          {
-            $setWindowFields: {
-              sortBy: { timestamp: 1 },
-              output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-            },
-          },
-          { $match: { prev_energy: { $ne: null } } },
-          {
-            $set: {
-              // kWh used in the 15-min interval → average kW during it (×4).
-              demand_kw: {
-                $multiply: [
-                  { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
-                  4,
-                ],
-              },
-            },
-          },
-          { $project: { _id: 0, timestamp: 1, demand_kw: 1 } },
-        ],
-      },
-    },
-    { $unwind: "$readings" },
-
-    // 3) Coincident regional demand at each period.
+  return [
+    { $match: match },
+    // Coincident regional demand at each period (kW = instantaneous power).
     {
       $group: {
-        _id: { region: `$${field}`, period: "$readings.timestamp" },
-        demand_kw: { $sum: "$readings.demand_kw" },
+        _id: { region: `$${field}`, period: "$timestamp" },
+        demand_kw: { $sum: { $divide: ["$power", 1000] } },
       },
     },
-    { $sort: { "_id.region": 1, "_id.period": 1 } }
-  );
-
-  return stages;
+    { $sort: { "_id.region": 1, "_id.period": 1 } },
+  ];
 }
 
 /**

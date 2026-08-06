@@ -189,8 +189,8 @@ export async function getCustomerDetail(db, dataid) {
   };
 }
 
-// 15-minute readings → number of intervals in a ~30-day month.
-const INTERVALS_PER_MONTH = 4 * 24 * 30;
+// Hours in a ~30-day month, used to extrapolate an observed energy rate.
+const HOURS_PER_MONTH = 24 * 30;
 
 // Friendly headline for a rate type (neutral label for unknown types).
 function planTypeLabel(rateType) {
@@ -207,21 +207,22 @@ function periodRate(period) {
   return tier.rate + (tier.adj ?? 0);
 }
 
-// Estimates monthly kWh from a meter's cumulative `energy` readings: average
-// per-interval consumption extrapolated to a month.
+// Estimates monthly kWh from a meter's cumulative `energy` readings. Uses the
+// observed energy-per-hour rate (total consumed / elapsed hours) extrapolated to
+// a month, so it's correct at ANY cadence — 15-min history and 1-second live
+// readings alike (averaging per-interval would collapse when cadences mix).
 function estimateMonthlyKwh(rows) {
   if (rows.length < 2) return null;
   let total = 0;
-  let count = 0;
   for (let i = 1; i < rows.length; i += 1) {
     const delta = rows[i].energy - rows[i - 1].energy;
-    if (delta > 0) {
-      total += delta;
-      count += 1;
-    }
+    if (delta > 0) total += delta;
   }
-  if (!count) return 0;
-  return (total / count) * INTERVALS_PER_MONTH;
+  const hours =
+    (new Date(rows[rows.length - 1].timestamp) - new Date(rows[0].timestamp)) /
+    3_600_000;
+  if (hours <= 0) return 0;
+  return (total / hours) * HOURS_PER_MONTH;
 }
 
 // Cost of `kwh` under a set of tiered bands ({ max, rate, adj }).
@@ -664,9 +665,23 @@ export async function getConsumptionTrend(db, dataid, regionFilter = null) {
     .map((c) => c.dataid);
   const ids = [...new Set([dataid, ...regionDataids].filter((v) => v != null))];
 
+  // Only the recent window — the dataset spans weeks, but the trend chart should
+  // show a readable slice (a saturated axis of thousands of points is unusable).
+  const TREND_LOOKBACK_MS = 2 * 86_400_000;
+  const latest = await readings.findOne(
+    { dataid },
+    { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  const windowStart = latest?.timestamp
+    ? new Date(new Date(latest.timestamp).getTime() - TREND_LOOKBACK_MS)
+    : null;
+
   const rows = await readings
     .find(
-      { dataid: { $in: ids } },
+      {
+        dataid: { $in: ids },
+        ...(windowStart ? { timestamp: { $gte: windowStart } } : {}),
+      },
       { projection: { _id: 0, dataid: 1, timestamp: 1, energy: 1 } }
     )
     .sort({ dataid: 1, timestamp: 1 })
@@ -679,16 +694,26 @@ export async function getConsumptionTrend(db, dataid, regionFilter = null) {
     byMeter.get(row.dataid).push(row);
   }
 
-  // Per meter: map of timestamp -> consumption for that interval.
+  // Per meter: map of 15-min bucket -> summed consumption. Bucketing to a fixed
+  // display cadence keeps the chart stable no matter the raw reading cadence:
+  // 1-second live readings roll up into the current 15-min bucket instead of
+  // flooding the axis with thousands of near-zero points.
+  const DISPLAY_BUCKET_MS = 15 * 60 * 1000;
+  const bucketOf = (ts) =>
+    new Date(
+      Math.floor(new Date(ts).getTime() / DISPLAY_BUCKET_MS) * DISPLAY_BUCKET_MS
+    ).toISOString();
+
   const consumptionByMeter = new Map();
   const allTimestamps = new Set();
   for (const [id, list] of byMeter) {
     const map = new Map();
     for (let i = 1; i < list.length; i += 1) {
-      const ts = new Date(list[i].timestamp).toISOString();
       const consumption = list[i].energy - list[i - 1].energy;
-      map.set(ts, consumption > 0 ? consumption : 0);
-      allTimestamps.add(ts);
+      if (!(consumption > 0)) continue;
+      const bucket = bucketOf(list[i].timestamp);
+      map.set(bucket, (map.get(bucket) ?? 0) + consumption);
+      allTimestamps.add(bucket);
     }
     consumptionByMeter.set(id, map);
   }
