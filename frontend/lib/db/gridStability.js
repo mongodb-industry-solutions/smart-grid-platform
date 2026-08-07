@@ -2,10 +2,11 @@ const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
 const NETWORK_COLLECTION  = process.env.NETWORK_COLLECTION_NAME  || "network";
 
 /**
- * Returns feeder load vs capacity for the Nth distinct timestamp in readings.
+ * Returns feeder load vs capacity for one reading period.
  *
  * Pipeline:
- *   1. Find the Nth distinct timestamp (periodIndex).
+ *   1. Locate the period arithmetically off the latest reading (15-min grid):
+ *      periodIndex 0 = START_BACK periods ago, walking toward now (clamped).
  *   2. Match all readings at that exact timestamp (all meters) and group by the
  *      feeder_id denormalized on each reading, summing avg_reading → total_load.
  *   3. Join network on feeder_id = asset_id → capacity_kw.
@@ -31,8 +32,11 @@ export async function getGridStability(db, periodIndex = 0) {
   );
   if (!latestDoc) return { feeders: [], summary: null };
 
+  // Sanitize periodIndex (a bad query param like ?periodIndex=foo → NaN would
+  // otherwise produce an invalid Date that matches nothing).
+  const idx = Number.isFinite(periodIndex) ? Math.max(0, Math.floor(periodIndex)) : 0;
   const latest = new Date(latestDoc.timestamp).getTime();
-  const ts = new Date(Math.min(latest, latest - (START_BACK - periodIndex) * CADENCE_MS));
+  const ts = new Date(Math.min(latest, latest - (START_BACK - idx) * CADENCE_MS));
 
   // Steps 2–4 — feeder aggregation for this snapshot
   const feeders = await col.aggregate([

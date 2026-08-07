@@ -217,10 +217,11 @@ export function buildWeatherForecastPipeline(sel = {}) {
         raw: { $push: { hour: "$_id", v: "$energy_kwh", n: "$n" } },
       },
     },
-    // The only under-counted hours are the first (loses one interval to $shift)
-    // and the last (truncated / still in progress). Drop exactly those two, which
-    // is cadence-agnostic — comparing interval counts would wrongly nuke every
-    // 15-min history hour once high-frequency live readings inflate the max.
+    // The only under-counted hours are the window's first and last (partial:
+    // the window rarely starts/ends exactly on an hour boundary). Drop exactly
+    // those two — cadence-agnostic, unlike comparing interval counts, which would
+    // wrongly nuke every 15-min history hour once high-frequency live readings
+    // inflate the max.
     {
       $set: {
         series: {
