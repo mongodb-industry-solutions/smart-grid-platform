@@ -196,18 +196,11 @@ export function buildWeatherForecastPipeline(sel = {}) {
 
   return [
     { $match: match },
-    // 1) Per-meter interval consumption from the cumulative energy register.
-    {
-      $setWindowFields: {
-        partitionBy: "$dataid",
-        sortBy: { timestamp: 1 },
-        output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-      },
-    },
-    { $match: { prev_energy: { $ne: null } } },
+    // 1) Per-meter interval consumption is precomputed on each reading
+    //    (`interval_kwh`), so no per-meter $setWindowFields/$shift is needed.
     {
       $set: {
-        interval_kwh: { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
+        interval_kwh: { $max: [{ $ifNull: ["$interval_kwh", 0] }, 0] },
         hour: { $dateTrunc: { date: "$timestamp", unit: "hour" } },
       },
     },

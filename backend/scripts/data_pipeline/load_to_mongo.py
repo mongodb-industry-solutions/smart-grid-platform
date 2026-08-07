@@ -93,9 +93,11 @@ def load_readings(uri: str, db: str):
     col = ts.get_collection(READINGS_COLLECTION)
     for i in range(0, len(docs), BATCH):
         col.insert_many(docs[i:i + BATCH], ordered=False)
-    # Secondary indexes for the network filters that query readings directly.
-    for field in ("feeder_id", "state"):
-        col.create_index(field)
+    # Compound indexes so region drill-downs (by feeder/state) seek directly to a
+    # region within a time range, instead of scanning the whole time window and
+    # filtering in memory. (timestamp is already indexed on its own.)
+    col.create_index([("feeder_id", 1), ("timestamp", 1)])
+    col.create_index([("state", 1), ("timestamp", 1)])
     logger.info("  %-20s <- %-26s (%d docs, time-series, meta=dataid)", READINGS_COLLECTION, READINGS_FILE.name, len(docs))
 
 

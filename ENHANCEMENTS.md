@@ -13,10 +13,11 @@ the right next steps as the dataset grows or the demo is pushed harder.
 The network **demand** and **forecast** cards, and some monitoring panels, compute
 their numbers by scanning and `$group`-ing the `readings` time-series **on every
 request**. With 30 days of 15-minute data that's ~720k documents; with a live
-feeder or a longer window it grows into the millions. Even after the optimizations
-already in place (below), these endpoints land around **2–3 s** - fine for a demo,
-but it scales linearly with history and won't hold up under a real load or a much
-longer window.
+feeder or a longer window it grows into the millions. After the optimizations
+below these endpoints run in roughly **0.6–1.2 s** at 720k - fine for the demo -
+but the cost still scales with history, so a much larger window or higher load
+will degrade it. Pre-aggregated rollups turn these into near-constant-time reads
+(**<100 ms**) regardless of how much history accumulates.
 
 ### What's already been done (so you don't redo it)
 
@@ -33,7 +34,18 @@ longer window.
   principle.
 - **Demand is derived from the instantaneous `power` field**, not a per-meter
   `$setWindowFields`/`$shift` over cumulative energy - much cheaper.
+- **Per-interval consumption is precomputed** (`interval_kwh` on every reading,
+  written by `pipeline.py`/`feeder.py`), so consumption-trend, tariff, and the
+  weather forecast **sum a field** instead of diffing consecutive `energy`
+  readings (no `$setWindowFields`/`$shift` at query time).
 - **Bounded lookback windows** (7–14 days) on the heavy aggregates.
+- **ESR-ordered compound indexes** for region drill-downs -
+  `{feeder_id: 1, timestamp: 1}` and `{state: 1, timestamp: 1}` (Equality → Range),
+  plus `{dataid: 1, timestamp: 1}` from the metaField for per-meter/customer reads.
+  Confirmed `IXSCAN` (no `COLLSCAN`) via `explain`.
+- **Anomalies use `$group` accumulators** (`$avg`/`$stdDevSamp` + the test value via
+  `$max`/`$cond`) instead of `$push`-ing whole documents into per-meter arrays -
+  same result, no array materialization (`lib/db/anomalies.js`).
 
 Rollups are the next step beyond all of that.
 
@@ -136,9 +148,72 @@ The weather-adjusted forecast pulls temperatures from Open-Meteo's **archive** A
 (`lib/weather/openMeteo.js`), which only covers dates up to *today*. Because the
 dataset is anchored to "now", the forecast **horizon** (dates past now) has no
 archive temperature, so the temp line stops at the present. The history window is
-covered, which is what the degree-day sensitivity fit needs — but if you want the
+covered, which is what the degree-day sensitivity fit needs - but if you want the
 projected part of the chart to also show temperature, fetch the horizon from
 Open-Meteo's **forecast** endpoint (`api.open-meteo.com/v1/forecast`, with
 `past_days` for the recent overlap) and merge it with the archive series. Keep the
 "never request future dates from the archive" guard in `lib/db/weatherForecast.js`
-either way — a future `end_date` errors the whole archive request.
+either way - a future `end_date` errors the whole archive request.
+
+---
+
+## 5. Extract the live feeder into its own API (separate repo, reusable across Energy demos)
+
+### The problem
+
+Today the feeder is a Python script (`feeder.py`) that the Next.js app **spawns
+as a detached OS process** from `/api/demo/start` and tracks in memory
+(`globalThis` in `lib/demo/feeder.js`). It's also **coupled to this repo**, so any
+other Energy demo that wants a live smart-meter stream would have to copy the code.
+That's convenient for a single local dev box but limiting:
+
+- **State doesn't survive an app restart.** The in-memory handle is lost, so a
+  restart orphans the running feeder (it keeps writing, but the app can no longer
+  see or stop it - only its `--max-hours` guard eventually ends it).
+- **It doesn't work across instances or serverless.** Each app instance has its
+  own `globalThis`, and managed/serverless hosting can't reliably spawn and track
+  local processes.
+- **It isn't reusable.** The streaming logic lives inside smart-grid-platform; other demos
+  can't consume it without duplicating it.
+
+### The idea
+
+Pull the feeder out into **its own standalone repository and API** - a small,
+independently deployed streaming service that owns the data-generation loop and
+its state. The smart-grid demo (and any other Energy demo) becomes a **client**
+of it.
+
+- Expose `POST /feeder/start`, `POST /feeder/stop`, `GET /feeder/status`.
+- **Parameterize it** so it isn't smart-grid-specific: the caller supplies the
+  target connection/database/collection, cadence (`tick`, `interval`), retention,
+  and dataset shape. That's what lets it serve multiple demos, each pointed at its
+  own cluster.
+- Run the loop as a managed background task inside the service (not a detached
+  child process), and persist its state (running flag, sim clock) in its own store
+  or the target DB, so status is authoritative and survives restarts / instances.
+
+In this repo, `/api/demo/*` become **thin HTTP clients** of that service -
+`lib/demo/feeder.js` (spawn + `globalThis` tracking) goes away. `demo/start` still
+orchestrates generate → load → seed KB, then calls the feeder service to start
+streaming.
+
+### Why it's worth it
+
+- **Reusable across Energy demos** - a shared "live smart-meter / telemetry
+  stream" capability that any demo consumes by pointing it at their own cluster,
+  instead of copy-pasting `feeder.py`.
+- **Independent maintenance & versioning** - the feeder evolves and deploys on its
+  own cadence, decoupled from the smart-grid-platform app's release cycle.
+- **Robust lifecycle & deploys anywhere** - one authoritative owner; no orphans;
+  works on serverless/multi-instance hosting where spawning local processes doesn't.
+- **Cleaner separation** - data generation is a shared platform service, not
+  something the web tier shells out to.
+
+### How to approach it
+
+Lift `feeder.py` + its state management into the new repo behind the three
+endpoints, keep the API contract stable and **generic** (no smart-grid
+assumptions in the payloads), then swap this demo's subprocess handling for HTTP
+calls. Trade-off: it adds a service to run and an API contract to keep stable
+across consumers - worth it once more than one demo needs the stream, or the demo
+is deployed and must survive restarts.

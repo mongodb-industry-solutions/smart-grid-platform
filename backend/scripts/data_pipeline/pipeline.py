@@ -255,10 +255,15 @@ def outage_length(rng):
     """How many consecutive intervals the outage lasts."""
     return int(rng.integers(OUTAGE_MIN_LEN, OUTAGE_MAX_LEN+1))
 
-def make_doc(ts, did, prof, channels, amps, pf, freq, v1, v2, cumulative):
+def make_doc(ts, did, prof, channels, amps, pf, freq, v1, v2, cumulative, interval_kwh):
     avg = round((v1+v2)/2,3)
     return {"avg_reading":float(avg),"current":float(amps),"dataid":int(did),
-            "energy":float(cumulative),"env_power":float(channels["env_power"]),
+            "energy":float(cumulative),
+            # Precomputed consumption for THIS interval (energy − previous energy),
+            # so consumption/tariff/weather queries sum a field instead of diffing
+            # consecutive cumulative readings at query time.
+            "interval_kwh":float(interval_kwh),
+            "env_power":float(channels["env_power"]),
             "ev_power":float(channels["ev_power"]),"frequency":float(freq),
             "has_ev":bool(prof["has_ev"]),"heating_power":float(channels["heating_power"]),
             "hvac_power":float(channels["hvac_power"]),"kitchen_power":float(channels["kitchen_power"]),
@@ -300,6 +305,7 @@ def synthesize(df, customers, rng):
     for _, c in customers.iterrows():
         did = int(c["dataid"]); prof = customer_profile(rng)
         cumulative = prof["energy0"]; src = real.get(did)
+        prev_cum = cumulative  # energy at the previous interval, for interval_kwh
         outage_remaining = 0   # intervals left in the current sustained outage
         outage_active = None   # "full" or "partial" while an outage persists
 
@@ -362,7 +368,12 @@ def synthesize(df, customers, rng):
             if not is_real or not have["energy"]:
                 cumulative = round(cumulative + (channels["power"]/1000)*0.25, 5)
 
-            docs.append(make_doc(ts,did,prof,channels,amps,pf,freq,v1,v2,cumulative))
+            # Consumption this interval = rise in the cumulative register (clamped
+            # so source gaps/resets never yield a negative).
+            interval_kwh = round(max(0.0, cumulative - prev_cum), 5)
+            prev_cum = cumulative
+
+            docs.append(make_doc(ts,did,prof,channels,amps,pf,freq,v1,v2,cumulative,interval_kwh))
     return docs
 
 docs = synthesize(df, customers, rng)

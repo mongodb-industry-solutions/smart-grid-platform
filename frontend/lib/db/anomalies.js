@@ -79,61 +79,47 @@ export async function getAnomalies(
     targetTs = new Date(t);
   }
 
-  // One descriptor per metric, built from the latest reading and the baseline.
+  // One descriptor per metric, reading the per-meter stats computed in $group.
   const metricDescriptors = monitored.map((metric) => ({
     metric,
-    value: `$latest.${metric}`,
-    mean: { $avg: `$baseline.${metric}` },
-    std: { $stdDevSamp: `$baseline.${metric}` },
-    timestamp: "$latest.timestamp",
+    value: `$test_${metric}`,
+    mean: `$mean_${metric}`,
+    std: `$std_${metric}`,
+    timestamp: targetTs,
   }));
 
-  // Baseline window: only the recent history up to the reading under test. This
-  // bounds the per-meter $push so the aggregation stays fast on large collections
-  // — a few days of readings is plenty for a mean/std baseline.
+  // Per-meter accumulators: mean/std of each metric over the baseline window plus
+  // the value of the reading under test (the row at targetTs). Using $group
+  // accumulators — instead of $push-ing whole docs and re-scanning arrays — keeps
+  // this fast on large collections. (The test row is included in the mean/std; at
+  // ~1 of hundreds of points its effect is negligible.)
+  const isTest = { $eq: ["$timestamp", targetTs] };
+  const groupStage = {
+    _id: "$dataid",
+    n: { $sum: 1 },
+    hasTest: { $max: { $cond: [isTest, 1, 0] } },
+  };
+  for (const m of monitored) {
+    groupStage[`mean_${m}`] = { $avg: `$${m}` };
+    groupStage[`std_${m}`] = { $stdDevSamp: `$${m}` };
+    groupStage[`test_${m}`] = { $max: { $cond: [isTest, `$${m}`, null] } };
+  }
+
+  // Baseline window: only the recent history up to the reading under test — a few
+  // days is plenty for a mean/std baseline, and it bounds the scan.
   const BASELINE_LOOKBACK_MS = 2 * 86_400_000;
   const windowStart = new Date(new Date(targetTs).getTime() - BASELINE_LOOKBACK_MS);
 
   const pipeline = [
-    // Ignore partial "heartbeat" docs (only power/energy at a current timestamp)
-    // so a meter's latest reading under test is always a real reading. Bounded to
-    // the baseline window (and never past the reading under test).
+    // Real readings within the baseline window, up to (and including) the test row.
+    // voltage != null excludes partial "heartbeat" docs.
     { $match: { voltage: { $ne: null }, timestamp: { $gte: windowStart, $lte: targetTs } } },
-    { $sort: { dataid: 1, timestamp: 1 } },
 
-    // Collect every reading per meter in chronological order.
-    { $group: { _id: "$dataid", readings: { $push: "$$ROOT" } } },
+    // Per-meter mean/std + the test row's values, without materializing arrays.
+    { $group: groupStage },
 
-    // The reading under test is the one at the target timestamp; the baseline is
-    // that meter's other readings (its history).
-    {
-      $set: {
-        latest: {
-          $arrayElemAt: [
-            {
-              $filter: {
-                input: "$readings",
-                as: "r",
-                cond: { $eq: ["$$r.timestamp", targetTs] },
-              },
-            },
-            0,
-          ],
-        },
-        baseline: {
-          $filter: {
-            input: "$readings",
-            as: "r",
-            cond: { $ne: ["$$r.timestamp", targetTs] },
-          },
-        },
-      },
-    },
-    { $set: { baselineCount: { $size: "$baseline" } } },
-
-    // Only meters that actually have a reading at the target timestamp, with
-    // enough baseline readings to form a trustworthy mean/std.
-    { $match: { latest: { $ne: null }, baselineCount: { $gte: MIN_BASELINE } } },
+    // Only meters with a reading at the target timestamp and enough baseline points.
+    { $match: { hasTest: 1, n: { $gte: MIN_BASELINE + 1 } } },
 
     // Fan out into one row per monitored metric.
     { $set: { metrics: metricDescriptors } },

@@ -56,7 +56,7 @@ derived from consecutive-reading differences stays correct at any cadence.
 
 **Built-in overflow guards** (so it can never grow unbounded or run forever):
 `--retain-days` (default 35) prunes readings older than a rolling window each
-tick, and `--max-hours` (default 12) auto-stops the process. Set either to `0`
+tick, and `--max-hours` (default 2) auto-stops the process. Set either to `0`
 to disable.
 
 **Frontend note:** the analytics were made cadence-agnostic so 1-second live

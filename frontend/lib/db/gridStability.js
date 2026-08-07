@@ -14,21 +14,25 @@ const NETWORK_COLLECTION  = process.env.NETWORK_COLLECTION_NAME  || "network";
  * @param {import("mongodb").Db} db
  * @param {number} periodIndex
  */
+// Readings are on a uniform 15-min grid, so a period is located arithmetically
+// off the latest timestamp (indexed) instead of scanning every distinct timestamp.
+const CADENCE_MS = 15 * 60 * 1000;
+const START_BACK = 48; // periodIndex 0 starts ~12h ago, then walks toward "now".
+
 export async function getGridStability(db, periodIndex = 0) {
   const col = db.collection(READINGS_COLLECTION);
 
-  // Step 1 — resolve the timestamp for this period
-  const periodDoc = await col.aggregate([
-    { $match: { voltage: { $ne: null } } },
-    { $group: { _id: "$timestamp" } },
-    { $sort:  { _id: 1 } },
-    { $skip:  periodIndex },
-    { $limit: 1 },
-  ]).next();
+  // Step 1 — resolve the timestamp for this period. Anchor to the latest reading
+  // (uses the timestamp index — fast) and walk forward from START_BACK periods
+  // ago, clamped to the latest, so the card shows recent data (not 30 days old).
+  const latestDoc = await col.findOne(
+    { voltage: { $ne: null } },
+    { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  if (!latestDoc) return { feeders: [], summary: null };
 
-  if (!periodDoc) return { feeders: [], summary: null };
-
-  const ts = periodDoc._id;
+  const latest = new Date(latestDoc.timestamp).getTime();
+  const ts = new Date(Math.min(latest, latest - (START_BACK - periodIndex) * CADENCE_MS));
 
   // Steps 2–4 — feeder aggregation for this snapshot
   const feeders = await col.aggregate([

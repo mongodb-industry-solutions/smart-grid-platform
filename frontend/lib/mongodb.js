@@ -10,6 +10,10 @@ function createMongoClient() {
   const uri = process.env.MONGODB_URI;
   const options = {
     appName: "smartmeters",
+    // Client-side operation timeout (CSOT): the server aborts ANY query/aggregation
+    // that runs longer than this, so a slow or runaway query can't hang a request.
+    // Our heaviest analytics run in ~1-2s; 20s is safe headroom. Tune via env.
+    timeoutMS: Number(process.env.MONGODB_TIMEOUT_MS) || 20_000,
     serverApi: {
       version: ServerApiVersion.v1,
       strict: false,

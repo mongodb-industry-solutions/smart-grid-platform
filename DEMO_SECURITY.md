@@ -84,11 +84,18 @@ handling in `frontend/lib/demo/feeder.js`).
    orphaned feeder can't run forever). `stopFeeder` terminates the detached
    process group (POSIX) with a Windows-safe fallback.
 
+7. **Query timeout (app-wide).** The MongoDB client sets a per-operation timeout
+   (`timeoutMS`, `MONGODB_TIMEOUT_MS`, default 20 s) in `lib/mongodb.js`, so the
+   server aborts any query/aggregation that runs too long. This isn't specific to
+   the setup endpoint — it protects **every** request (including this endpoint's
+   cooldown check) from a slow or runaway query hanging the app.
+
 ## Configuration
 
 | Variable | Default | Purpose |
 | --- | --- | --- |
 | `DEMO_REGEN_COOLDOWN_MINUTES` | `60` | Minimum minutes between regenerations; `0` disables the cooldown (useful while developing). |
+| `MONGODB_TIMEOUT_MS` | `20000` | Per-operation MongoDB timeout; any query exceeding it is aborted (app-wide). |
 | `DEMO_STEP_TIMEOUT_MS` | `600000` | Max runtime per spawned step before it's killed. |
 
 ## Deployment guidance

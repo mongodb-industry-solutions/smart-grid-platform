@@ -91,8 +91,10 @@ def make_reading(did, st, ts, dt_hours, rng):
     amps = _rand(rng, 0.5, 30.0); pf = _rand(rng, 0.85, 0.99); freq = _rand(rng, 59.95, 60.05)
     total_power = round(avg * amps * pf, 3)
     ch = split_power(total_power, st["profile"], ts.hour, st["has_ev"], rng)
-    st["energy"] = round(st["energy"] + (ch["power"] / 1000) * dt_hours, 6)  # cumulative kWh
+    interval_kwh = round((ch["power"] / 1000) * dt_hours, 6)  # consumption this interval
+    st["energy"] = round(st["energy"] + interval_kwh, 6)  # cumulative kWh
     doc = {"avg_reading": avg, "current": amps, "dataid": int(did), "energy": st["energy"],
+           "interval_kwh": interval_kwh,
            "env_power": ch["env_power"], "ev_power": ch["ev_power"], "frequency": freq,
            "has_ev": st["has_ev"], "heating_power": ch["heating_power"], "hvac_power": ch["hvac_power"],
            "kitchen_power": ch["kitchen_power"], "laundry_power": ch["laundry_power"], "power": ch["power"],
@@ -112,9 +114,9 @@ def main():
     ap.add_argument("--retain-days", type=float, default=35.0,
                     help="prune readings older than this many simulated days each tick "
                          "(default 35 — keeps the ~30-day history bounded; 0 disables)")
-    ap.add_argument("--max-hours", type=float, default=12.0,
+    ap.add_argument("--max-hours", type=float, default=2.0,
                     help="auto-stop after this many real hours so an orphaned feeder can't "
-                         "run indefinitely (default 12; 0 disables)")
+                         "run indefinitely (default 2; 0 disables)")
     args = ap.parse_args()
 
     uri, dbname = resolve_target()

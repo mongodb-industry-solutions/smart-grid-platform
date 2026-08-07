@@ -147,7 +147,7 @@ uv run scripts/data_pipeline/feeder.py           # stream live readings on top (
 
 The feeder keeps streaming (that's what makes the dashboards move) until you stop
 it with `Ctrl+C`; it has built-in guards so it can't overflow the collection or
-run forever (`--retain-days`, default 35; `--max-hours`, default 12). Tune the
+run forever (`--retain-days`, default 35; `--max-hours`, default 2). Tune the
 window and meter count in the `Config` block of `pipeline.py` (`DURATION`,
 `TOTAL_CUSTOMERS`). Then seed the knowledge base, from the `frontend` folder:
 
@@ -182,6 +182,7 @@ in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it.
 | `GROVE_API_KEY` / `GROVE_ANTHROPIC_URL` | `frontend/.env.local` | No | MongoDB-internal Grove gateway (used instead of `ANTHROPIC_API_KEY` when set). |
 | `DEMO_REGEN_COOLDOWN_MINUTES` | `frontend/.env.local` | No | Minimum minutes between Start Demo regenerations (default `60`; `0` disables the cooldown). |
 | `DEMO_STEP_TIMEOUT_MS` | `frontend/.env.local` | No | Max ms a Start Demo setup step may run before it's killed (default `600000` = 10 min). |
+| `MONGODB_TIMEOUT_MS` | `frontend/.env.local` | No | Per-operation MongoDB timeout — any query/aggregation exceeding it is aborted so it can't hang a request (default `20000` = 20 s). |
 
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
 
