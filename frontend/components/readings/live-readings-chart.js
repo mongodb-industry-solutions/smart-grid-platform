@@ -128,6 +128,7 @@ export default function LiveReadingsChart() {
     let periodIndex = 0;
     let active = true;
     let prevDate = null;
+    let lastPushedDate = null;
     let baseIntervalSet = false;
     let id;
     series.data.setAll([]);
@@ -154,6 +155,15 @@ export default function LiveReadingsChart() {
           data.reduce((sum, r) => sum + (r.power ?? 0), 0) / data.length / 1000;
         const value = parseFloat(avg.toFixed(2));
         const date = new Date(data[0].timestamp).getTime();
+
+        // Caught up to the live feed: the same period repeats until the feeder
+        // appends a newer one. Skip duplicates so points don't stack.
+        if (date === lastPushedDate) {
+          periodIndex += 1;
+          setError("");
+          return;
+        }
+        lastPushedDate = date;
 
         // Match the axis grid to the real cadence between readings.
         if (!baseIntervalSet && prevDate != null && date > prevDate) {

@@ -154,8 +154,13 @@ export async function getWeatherForecast(db, opts = {}) {
   const { from, to } = await resolveWindow(db, meterIds, lookbackDays);
 
   // Fetch weather (external — can't run in Mongo) covering the history window
-  // plus the forecast horizon (~2 days past `to`), then inject it as an array.
-  const weatherEnd = to ? new Date(to.getTime() + 2 * 86_400_000) : new Date();
+  // (plus a little of the forecast horizon). The archive API only has data up to
+  // "today", so never request future dates — a future end_date errors the WHOLE
+  // request and we'd get no temperatures at all (chart shows a flat/empty temp
+  // line). Cap the end at now.
+  const weatherEnd = to
+    ? new Date(Math.min(to.getTime() + 2 * 86_400_000, Date.now()))
+    : new Date();
   const temps = from
     ? await fetchHourlyTempsF({
         lat: selected.lat,

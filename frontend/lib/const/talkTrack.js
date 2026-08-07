@@ -53,8 +53,8 @@ export const TALK_TRACK = [
       {
         heading: "Collections",
         body: [
-          "readings - 15-min smart-meter readings (voltage, current, power, energy, power factor, appliance sub-loads).",
-          "customer_db - customer records; tariff_catalog - rate plans (tiered / TOU) with tier bands.",
+          "readings - 15-min smart-meter readings (voltage, current, power, energy, power factor, appliance sub-loads, precomputed interval_kwh), each carrying its grid context (feeder/substation/utility).",
+          "customer_db - customer location records; tariff_catalog - rate plans (tiered / TOU) with tier bands.",
           "meter_network_map + network - grid topology (meter → feeder → substation → transformer, with capacities).",
           "kb_articles - energy/tariff knowledge base for the AI assistant (Atlas Vector Search + full-text).",
           "agent_checkpoints - LangGraph conversation memory for the AI assistant.",
@@ -64,8 +64,8 @@ export const TALK_TRACK = [
         heading: "Aggregations doing the work",
         body: [
           "Outages: $match + $facet + $setWindowFields/$shift (gaps-and-islands) for the longest continuous outage.",
-          "Grid stability: $lookup readings → meter_network_map → network, $group load, compute utilization vs capacity_kw.",
-          "Network Center: same topology join across the utility → substation → feeder → transformer hierarchy to score substation health and outage status.",
+          "Grid stability: $group readings by their (denormalized) feeder_id, $lookup network for capacity, compute utilization vs capacity_kw.",
+          "Network Center: rolls feeder load up the utility → substation → feeder → transformer hierarchy to score substation health and outage status.",
           "Anomalies: per-meter baseline mean/$stdDevSamp, flag readings beyond N sigma.",
           "Forecasting: $group by region and hour with $avg/$stdDevSamp, enriched with external weather data (heating/cooling degree days) for peak demand and timing.",
           "AI retrieval: $vectorSearch + $search fused with Reciprocal Rank Fusion (hybrid search).",

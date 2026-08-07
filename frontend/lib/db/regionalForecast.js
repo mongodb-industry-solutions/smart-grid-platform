@@ -63,7 +63,10 @@ export async function getRegionalForecast(db, opts = {}) {
     parentScope = {},
     meterIds = [],
     horizonHours = 24,
-    lookbackDays = null,
+    // Bound the history each request scans. 7 days covers the hour-of-day shape
+    // (and a first pass at day-of-week) while keeping the response under ~2s on
+    // large (multi-week) collections. Callers can widen it via opts.lookbackDays.
+    lookbackDays = 7,
   } = opts;
 
   const { from, to } = await resolveWindow(db, {
@@ -82,7 +85,7 @@ export async function getRegionalForecast(db, opts = {}) {
   });
 
   const rows = await db
-    .collection(NETWORK_MAP_COLLECTION)
+    .collection(READINGS_COLLECTION)
     .aggregate(pipeline, { allowDiskUse: true })
     .toArray();
 

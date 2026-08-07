@@ -29,7 +29,7 @@ export const FORECAST_HOURS = 24; // hours projected ahead
 // are a fixed historical dataset, so an over-long window just captures whatever
 // exists. NOTE: this widens the baseline/fit only — the recent-level anchor
 // still uses just the last PAST_HOURS.
-export const DEFAULT_LOOKBACK_DAYS = 30;
+export const DEFAULT_LOOKBACK_DAYS = 10;
 
 // Weekday/weekend level factors are clamped to this range so a day-type with
 // only a handful of hours in the 2-day window can't swing the forecast wildly.
@@ -40,12 +40,6 @@ const DAY_TYPE_CLAMP = [0.7, 1.3];
 // horizon. This removes the visible step when the line switches from actual to
 // forecast; TAU (hours) sets how fast it relaxes toward the pure model.
 const SEAM_DECAY_TAU = 4;
-
-// A full hour has (meters × 4) 15-min intervals. The first hour loses one
-// interval per meter to the $shift, and the final hour is truncated wherever
-// the readings end — both undercount their energy and would show up as spikes.
-// Drop any hour with fewer than this fraction of the busiest hour's intervals.
-const FULL_HOUR_MIN_FRACTION = 0.9;
 
 // dataid is stored as a number; customer lists may arrive as text.
 export function toDataidNumbers(ids) {
@@ -202,18 +196,11 @@ export function buildWeatherForecastPipeline(sel = {}) {
 
   return [
     { $match: match },
-    // 1) Per-meter interval consumption from the cumulative energy register.
-    {
-      $setWindowFields: {
-        partitionBy: "$dataid",
-        sortBy: { timestamp: 1 },
-        output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-      },
-    },
-    { $match: { prev_energy: { $ne: null } } },
+    // 1) Per-meter interval consumption is precomputed on each reading
+    //    (`interval_kwh`), so no per-meter $setWindowFields/$shift is needed.
     {
       $set: {
-        interval_kwh: { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
+        interval_kwh: { $max: [{ $ifNull: ["$interval_kwh", 0] }, 0] },
         hour: { $dateTrunc: { date: "$timestamp", unit: "hour" } },
       },
     },
@@ -230,15 +217,18 @@ export function buildWeatherForecastPipeline(sel = {}) {
         raw: { $push: { hour: "$_id", v: "$energy_kwh", n: "$n" } },
       },
     },
-    { $set: { maxN: { $max: "$raw.n" } } },
+    // The only under-counted hours are the first (loses one interval to $shift)
+    // and the last (truncated / still in progress). Drop exactly those two, which
+    // is cadence-agnostic — comparing interval counts would wrongly nuke every
+    // 15-min history hour once high-frequency live readings inflate the max.
     {
       $set: {
         series: {
-          $filter: {
-            input: "$raw",
-            as: "r",
-            cond: { $gte: ["$$r.n", { $multiply: ["$maxN", FULL_HOUR_MIN_FRACTION] }] },
-          },
+          $cond: [
+            { $gt: [{ $size: "$raw" }, 2] },
+            { $slice: ["$raw", 1, { $subtract: [{ $size: "$raw" }, 2] }] },
+            "$raw",
+          ],
         },
       },
     },

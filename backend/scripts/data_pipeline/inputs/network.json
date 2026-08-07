@@ -1,0 +1,2198 @@
+[{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb1f"
+  },
+  "asset_id": "transformer_austin_north_01_01",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Transformer 01-01",
+  "parent_asset_id": "feeder_austin_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7281,
+      30.2802
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb29"
+  },
+  "asset_id": "transformer_austin_south_02_02",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Transformer 02-02",
+  "parent_asset_id": "feeder_austin_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7131,
+      30.263199999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2a"
+  },
+  "asset_id": "utility_denver",
+  "asset_type": "utility",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9903,
+      39.7392
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2b"
+  },
+  "asset_id": "substation_denver_north",
+  "asset_type": "substation",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Substation",
+  "parent_asset_id": "utility_denver",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.0703,
+      39.7992
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2e"
+  },
+  "asset_id": "transformer_denver_north_01_01",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Transformer 01-01",
+  "parent_asset_id": "feeder_denver_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9753,
+      39.752199999999995
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb30"
+  },
+  "asset_id": "feeder_denver_north_02",
+  "asset_type": "feeder",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Feeder 02",
+  "parent_asset_id": "substation_denver_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.1003,
+      39.8192
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb37"
+  },
+  "asset_id": "transformer_denver_south_02_01",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Transformer 02-01",
+  "parent_asset_id": "feeder_denver_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.96530000000001,
+      39.7322
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3f"
+  },
+  "asset_id": "feeder_san_antonio_north_02",
+  "asset_type": "feeder",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Feeder 02",
+  "parent_asset_id": "substation_san_antonio_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.6036,
+      29.504099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb42"
+  },
+  "asset_id": "feeder_san_antonio_south_01",
+  "asset_type": "feeder",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Feeder 01",
+  "parent_asset_id": "substation_san_antonio_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.3936,
+      29.3541
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb47"
+  },
+  "asset_id": "transformer_san_antonio_south_02_02",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Transformer 02-02",
+  "parent_asset_id": "feeder_san_antonio_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.4636,
+      29.420099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4e"
+  },
+  "asset_id": "feeder_kansas_city_north_02",
+  "asset_type": "feeder",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Feeder 02",
+  "parent_asset_id": "substation_kansas_city_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.6886,
+      39.179700000000004
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb53"
+  },
+  "asset_id": "transformer_kansas_city_south_01_02",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Transformer 01-02",
+  "parent_asset_id": "feeder_kansas_city_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.55859999999998,
+      39.0957
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb65"
+  },
+  "asset_id": "transformer_santa_fe_south_02_02",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Transformer 02-02",
+  "parent_asset_id": "feeder_santa_fe_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9078,
+      35.683
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb67"
+  },
+  "asset_id": "substation_memphis_north",
+  "asset_type": "substation",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Substation",
+  "parent_asset_id": "utility_memphis",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.1289,
+      35.209500000000006
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb69"
+  },
+  "asset_id": "feeder_memphis_north_01",
+  "asset_type": "feeder",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Feeder 01",
+  "parent_asset_id": "substation_memphis_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0989,
+      35.22950000000001
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6d"
+  },
+  "asset_id": "transformer_memphis_north_02_01",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Transformer 02-01",
+  "parent_asset_id": "feeder_memphis_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.02390000000001,
+      35.1625
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6e"
+  },
+  "asset_id": "transformer_memphis_north_02_02",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Transformer 02-02",
+  "parent_asset_id": "feeder_memphis_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0189,
+      35.1655
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6f"
+  },
+  "asset_id": "feeder_memphis_south_01",
+  "asset_type": "feeder",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Feeder 01",
+  "parent_asset_id": "substation_memphis_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -89.94890000000001,
+      35.0795
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb70"
+  },
+  "asset_id": "transformer_memphis_south_01_01",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Transformer 01-01",
+  "parent_asset_id": "feeder_memphis_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0339,
+      35.142500000000005
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb72"
+  },
+  "asset_id": "feeder_memphis_south_02",
+  "asset_type": "feeder",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Feeder 02",
+  "parent_asset_id": "substation_memphis_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.00890000000001,
+      35.0795
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb75"
+  },
+  "asset_id": "utility_phoenix",
+  "asset_type": "utility",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.074,
+      33.4484
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb79"
+  },
+  "asset_id": "transformer_phoenix_north_01_01",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Transformer 01-01",
+  "parent_asset_id": "feeder_phoenix_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.059,
+      33.4614
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7d"
+  },
+  "asset_id": "transformer_phoenix_north_02_02",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Transformer 02-02",
+  "parent_asset_id": "feeder_phoenix_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.044,
+      33.4644
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb81"
+  },
+  "asset_id": "feeder_phoenix_south_02",
+  "asset_type": "feeder",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Feeder 02",
+  "parent_asset_id": "substation_phoenix_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.034,
+      33.3784
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb1d"
+  },
+  "asset_id": "substation_austin_south",
+  "asset_type": "substation",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Substation",
+  "parent_asset_id": "utility_austin",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.6731,
+      30.2172
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb20"
+  },
+  "asset_id": "transformer_austin_north_01_02",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Transformer 01-02",
+  "parent_asset_id": "feeder_austin_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.72309999999999,
+      30.2832
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb21"
+  },
+  "asset_id": "feeder_austin_north_02",
+  "asset_type": "feeder",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Feeder 02",
+  "parent_asset_id": "substation_austin_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.8531,
+      30.347199999999997
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb23"
+  },
+  "asset_id": "transformer_austin_north_02_02",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Transformer 02-02",
+  "parent_asset_id": "feeder_austin_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7131,
+      30.2832
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb24"
+  },
+  "asset_id": "feeder_austin_south_01",
+  "asset_type": "feeder",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Feeder 01",
+  "parent_asset_id": "substation_austin_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.6431,
+      30.1972
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb26"
+  },
+  "asset_id": "transformer_austin_south_01_02",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Transformer 01-02",
+  "parent_asset_id": "feeder_austin_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.72309999999999,
+      30.263199999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2c"
+  },
+  "asset_id": "substation_denver_south",
+  "asset_type": "substation",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Substation",
+  "parent_asset_id": "utility_denver",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.92030000000001,
+      39.6892
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2d"
+  },
+  "asset_id": "feeder_denver_north_01",
+  "asset_type": "feeder",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Feeder 01",
+  "parent_asset_id": "substation_denver_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.0403,
+      39.8192
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb35"
+  },
+  "asset_id": "transformer_denver_south_01_02",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Transformer 01-02",
+  "parent_asset_id": "feeder_denver_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9703,
+      39.7352
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb39"
+  },
+  "asset_id": "utility_san_antonio",
+  "asset_type": "utility",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.4936,
+      29.4241
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3b"
+  },
+  "asset_id": "substation_san_antonio_south",
+  "asset_type": "substation",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Substation",
+  "parent_asset_id": "utility_san_antonio",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.42360000000001,
+      29.3741
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb43"
+  },
+  "asset_id": "transformer_san_antonio_south_01_01",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Transformer 01-01",
+  "parent_asset_id": "feeder_san_antonio_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.4786,
+      29.417099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb44"
+  },
+  "asset_id": "transformer_san_antonio_south_01_02",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Transformer 01-02",
+  "parent_asset_id": "feeder_san_antonio_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.47359999999999,
+      29.420099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb45"
+  },
+  "asset_id": "feeder_san_antonio_south_02",
+  "asset_type": "feeder",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Feeder 02",
+  "parent_asset_id": "substation_san_antonio_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.45360000000001,
+      29.3541
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb46"
+  },
+  "asset_id": "transformer_san_antonio_south_02_01",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio South Transformer 02-01",
+  "parent_asset_id": "feeder_san_antonio_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.46860000000001,
+      29.417099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb49"
+  },
+  "asset_id": "substation_kansas_city_north",
+  "asset_type": "substation",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Substation",
+  "parent_asset_id": "utility_kansas_city",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.65859999999999,
+      39.1597
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4f"
+  },
+  "asset_id": "transformer_kansas_city_north_02_01",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Transformer 02-01",
+  "parent_asset_id": "feeder_kansas_city_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5536,
+      39.1127
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb50"
+  },
+  "asset_id": "transformer_kansas_city_north_02_02",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Transformer 02-02",
+  "parent_asset_id": "feeder_kansas_city_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5486,
+      39.1157
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb51"
+  },
+  "asset_id": "feeder_kansas_city_south_01",
+  "asset_type": "feeder",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Feeder 01",
+  "parent_asset_id": "substation_kansas_city_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.4786,
+      39.0297
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb52"
+  },
+  "asset_id": "transformer_kansas_city_south_01_01",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Transformer 01-01",
+  "parent_asset_id": "feeder_kansas_city_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5636,
+      39.0927
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb55"
+  },
+  "asset_id": "transformer_kansas_city_south_02_01",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Transformer 02-01",
+  "parent_asset_id": "feeder_kansas_city_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5536,
+      39.0927
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb56"
+  },
+  "asset_id": "transformer_kansas_city_south_02_02",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Transformer 02-02",
+  "parent_asset_id": "feeder_kansas_city_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5486,
+      39.0957
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5b"
+  },
+  "asset_id": "transformer_santa_fe_north_01_01",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Transformer 01-01",
+  "parent_asset_id": "feeder_santa_fe_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9228,
+      35.699999999999996
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5d"
+  },
+  "asset_id": "feeder_santa_fe_north_02",
+  "asset_type": "feeder",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Feeder 02",
+  "parent_asset_id": "substation_santa_fe_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -106.0478,
+      35.767
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb60"
+  },
+  "asset_id": "feeder_santa_fe_south_01",
+  "asset_type": "feeder",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Feeder 01",
+  "parent_asset_id": "substation_santa_fe_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.8378,
+      35.617
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb61"
+  },
+  "asset_id": "transformer_santa_fe_south_01_01",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Transformer 01-01",
+  "parent_asset_id": "feeder_santa_fe_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9228,
+      35.68
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb62"
+  },
+  "asset_id": "transformer_santa_fe_south_01_02",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Transformer 01-02",
+  "parent_asset_id": "feeder_santa_fe_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.91779999999999,
+      35.683
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb64"
+  },
+  "asset_id": "transformer_santa_fe_south_02_01",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Transformer 02-01",
+  "parent_asset_id": "feeder_santa_fe_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9128,
+      35.68
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb71"
+  },
+  "asset_id": "transformer_memphis_south_01_02",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Transformer 01-02",
+  "parent_asset_id": "feeder_memphis_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0289,
+      35.145500000000006
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb77"
+  },
+  "asset_id": "substation_phoenix_south",
+  "asset_type": "substation",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Substation",
+  "parent_asset_id": "utility_phoenix",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.004,
+      33.3984
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb78"
+  },
+  "asset_id": "feeder_phoenix_north_01",
+  "asset_type": "feeder",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Feeder 01",
+  "parent_asset_id": "substation_phoenix_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.124,
+      33.528400000000005
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7a"
+  },
+  "asset_id": "transformer_phoenix_north_01_02",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Transformer 01-02",
+  "parent_asset_id": "feeder_phoenix_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.05399999999999,
+      33.4644
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7f"
+  },
+  "asset_id": "transformer_phoenix_south_01_01",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Transformer 01-01",
+  "parent_asset_id": "feeder_phoenix_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.059,
+      33.4414
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb80"
+  },
+  "asset_id": "transformer_phoenix_south_01_02",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Transformer 01-02",
+  "parent_asset_id": "feeder_phoenix_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.05399999999999,
+      33.4444
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb82"
+  },
+  "asset_id": "transformer_phoenix_south_02_01",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Transformer 02-01",
+  "parent_asset_id": "feeder_phoenix_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.049,
+      33.4414
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb1b"
+  },
+  "asset_id": "utility_austin",
+  "asset_type": "utility",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7431,
+      30.2672
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb1c"
+  },
+  "asset_id": "substation_austin_north",
+  "asset_type": "substation",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Substation",
+  "parent_asset_id": "utility_austin",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.8231,
+      30.327199999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb1e"
+  },
+  "asset_id": "feeder_austin_north_01",
+  "asset_type": "feeder",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Feeder 01",
+  "parent_asset_id": "substation_austin_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7931,
+      30.347199999999997
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb25"
+  },
+  "asset_id": "transformer_austin_south_01_01",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Transformer 01-01",
+  "parent_asset_id": "feeder_austin_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7281,
+      30.260199999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb2f"
+  },
+  "asset_id": "transformer_denver_north_01_02",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Transformer 01-02",
+  "parent_asset_id": "feeder_denver_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9703,
+      39.755199999999995
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb31"
+  },
+  "asset_id": "transformer_denver_north_02_01",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Transformer 02-01",
+  "parent_asset_id": "feeder_denver_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.96530000000001,
+      39.752199999999995
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb32"
+  },
+  "asset_id": "transformer_denver_north_02_02",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver North Transformer 02-02",
+  "parent_asset_id": "feeder_denver_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9603,
+      39.755199999999995
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb34"
+  },
+  "asset_id": "transformer_denver_south_01_01",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Transformer 01-01",
+  "parent_asset_id": "feeder_denver_south_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9753,
+      39.7322
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb36"
+  },
+  "asset_id": "feeder_denver_south_02",
+  "asset_type": "feeder",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Feeder 02",
+  "parent_asset_id": "substation_denver_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.95030000000001,
+      39.6692
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3a"
+  },
+  "asset_id": "substation_san_antonio_north",
+  "asset_type": "substation",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Substation",
+  "parent_asset_id": "utility_san_antonio",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.5736,
+      29.484099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3d"
+  },
+  "asset_id": "transformer_san_antonio_north_01_01",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Transformer 01-01",
+  "parent_asset_id": "feeder_san_antonio_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.4786,
+      29.4371
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3e"
+  },
+  "asset_id": "transformer_san_antonio_north_01_02",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Transformer 01-02",
+  "parent_asset_id": "feeder_san_antonio_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.47359999999999,
+      29.4401
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb41"
+  },
+  "asset_id": "transformer_san_antonio_north_02_02",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Transformer 02-02",
+  "parent_asset_id": "feeder_san_antonio_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.4636,
+      29.4401
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4a"
+  },
+  "asset_id": "substation_kansas_city_south",
+  "asset_type": "substation",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Substation",
+  "parent_asset_id": "utility_kansas_city",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5086,
+      39.0497
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4d"
+  },
+  "asset_id": "transformer_kansas_city_north_01_02",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Transformer 01-02",
+  "parent_asset_id": "feeder_kansas_city_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.55859999999998,
+      39.1157
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb54"
+  },
+  "asset_id": "feeder_kansas_city_south_02",
+  "asset_type": "feeder",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City South Feeder 02",
+  "parent_asset_id": "substation_kansas_city_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5386,
+      39.0297
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb59"
+  },
+  "asset_id": "substation_santa_fe_south",
+  "asset_type": "substation",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Substation",
+  "parent_asset_id": "utility_santa_fe",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.8678,
+      35.637
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5f"
+  },
+  "asset_id": "transformer_santa_fe_north_02_02",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Transformer 02-02",
+  "parent_asset_id": "feeder_santa_fe_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9078,
+      35.702999999999996
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb68"
+  },
+  "asset_id": "substation_memphis_south",
+  "asset_type": "substation",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Substation",
+  "parent_asset_id": "utility_memphis",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -89.97890000000001,
+      35.099500000000006
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6a"
+  },
+  "asset_id": "transformer_memphis_north_01_01",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Transformer 01-01",
+  "parent_asset_id": "feeder_memphis_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0339,
+      35.1625
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7c"
+  },
+  "asset_id": "transformer_phoenix_north_02_01",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Transformer 02-01",
+  "parent_asset_id": "feeder_phoenix_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.049,
+      33.4614
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb83"
+  },
+  "asset_id": "transformer_phoenix_south_02_02",
+  "asset_type": "transformer",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Transformer 02-02",
+  "parent_asset_id": "feeder_phoenix_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.044,
+      33.4444
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb22"
+  },
+  "asset_id": "transformer_austin_north_02_01",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin North Transformer 02-01",
+  "parent_asset_id": "feeder_austin_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7181,
+      30.2802
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb27"
+  },
+  "asset_id": "feeder_austin_south_02",
+  "asset_type": "feeder",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Feeder 02",
+  "parent_asset_id": "substation_austin_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7031,
+      30.1972
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb28"
+  },
+  "asset_id": "transformer_austin_south_02_01",
+  "asset_type": "transformer",
+  "city": "Austin",
+  "state": "TX",
+  "name": "Austin South Transformer 02-01",
+  "parent_asset_id": "feeder_austin_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -97.7181,
+      30.260199999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb33"
+  },
+  "asset_id": "feeder_denver_south_01",
+  "asset_type": "feeder",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Feeder 01",
+  "parent_asset_id": "substation_denver_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.89030000000001,
+      39.6692
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb38"
+  },
+  "asset_id": "transformer_denver_south_02_02",
+  "asset_type": "transformer",
+  "city": "Denver",
+  "state": "CO",
+  "name": "Denver South Transformer 02-02",
+  "parent_asset_id": "feeder_denver_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -104.9603,
+      39.7352
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb3c"
+  },
+  "asset_id": "feeder_san_antonio_north_01",
+  "asset_type": "feeder",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Feeder 01",
+  "parent_asset_id": "substation_san_antonio_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.5436,
+      29.504099999999998
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb40"
+  },
+  "asset_id": "transformer_san_antonio_north_02_01",
+  "asset_type": "transformer",
+  "city": "San Antonio",
+  "state": "TX",
+  "name": "San Antonio North Transformer 02-01",
+  "parent_asset_id": "feeder_san_antonio_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -98.46860000000001,
+      29.4371
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb48"
+  },
+  "asset_id": "utility_kansas_city",
+  "asset_type": "utility",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5786,
+      39.0997
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4b"
+  },
+  "asset_id": "feeder_kansas_city_north_01",
+  "asset_type": "feeder",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Feeder 01",
+  "parent_asset_id": "substation_kansas_city_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.62859999999999,
+      39.179700000000004
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb4c"
+  },
+  "asset_id": "transformer_kansas_city_north_01_01",
+  "asset_type": "transformer",
+  "city": "Kansas City",
+  "state": "MO",
+  "name": "Kansas City North Transformer 01-01",
+  "parent_asset_id": "feeder_kansas_city_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -94.5636,
+      39.1127
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb57"
+  },
+  "asset_id": "utility_santa_fe",
+  "asset_type": "utility",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9378,
+      35.687
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb58"
+  },
+  "asset_id": "substation_santa_fe_north",
+  "asset_type": "substation",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Substation",
+  "parent_asset_id": "utility_santa_fe",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -106.0178,
+      35.747
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5a"
+  },
+  "asset_id": "feeder_santa_fe_north_01",
+  "asset_type": "feeder",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Feeder 01",
+  "parent_asset_id": "substation_santa_fe_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9878,
+      35.767
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5c"
+  },
+  "asset_id": "transformer_santa_fe_north_01_02",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Transformer 01-02",
+  "parent_asset_id": "feeder_santa_fe_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.91779999999999,
+      35.702999999999996
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb5e"
+  },
+  "asset_id": "transformer_santa_fe_north_02_01",
+  "asset_type": "transformer",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe North Transformer 02-01",
+  "parent_asset_id": "feeder_santa_fe_north_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.9128,
+      35.699999999999996
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb63"
+  },
+  "asset_id": "feeder_santa_fe_south_02",
+  "asset_type": "feeder",
+  "city": "Santa Fe",
+  "state": "NM",
+  "name": "Santa Fe South Feeder 02",
+  "parent_asset_id": "substation_santa_fe_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -105.8978,
+      35.617
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb66"
+  },
+  "asset_id": "utility_memphis",
+  "asset_type": "utility",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis Utility",
+  "parent_asset_id": null,
+  "capacity_kw": 48000,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0489,
+      35.1495
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6b"
+  },
+  "asset_id": "transformer_memphis_north_01_02",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Transformer 01-02",
+  "parent_asset_id": "feeder_memphis_north_01",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0289,
+      35.1655
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb6c"
+  },
+  "asset_id": "feeder_memphis_north_02",
+  "asset_type": "feeder",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis North Feeder 02",
+  "parent_asset_id": "substation_memphis_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.1589,
+      35.22950000000001
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb73"
+  },
+  "asset_id": "transformer_memphis_south_02_01",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Transformer 02-01",
+  "parent_asset_id": "feeder_memphis_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.02390000000001,
+      35.142500000000005
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb74"
+  },
+  "asset_id": "transformer_memphis_south_02_02",
+  "asset_type": "transformer",
+  "city": "Memphis",
+  "state": "TN",
+  "name": "Memphis South Transformer 02-02",
+  "parent_asset_id": "feeder_memphis_south_02",
+  "capacity_kw": 1500,
+  "voltage_kv": 0.48,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -90.0189,
+      35.145500000000006
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb76"
+  },
+  "asset_id": "substation_phoenix_north",
+  "asset_type": "substation",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Substation",
+  "parent_asset_id": "utility_phoenix",
+  "capacity_kw": 24000,
+  "voltage_kv": 69,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.154,
+      33.5084
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7b"
+  },
+  "asset_id": "feeder_phoenix_north_02",
+  "asset_type": "feeder",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix North Feeder 02",
+  "parent_asset_id": "substation_phoenix_north",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -112.184,
+      33.528400000000005
+    ]
+  }
+},
+{
+  "_id": {
+    "$oid": "6a43f5a0fc0d1c3b5276bb7e"
+  },
+  "asset_id": "feeder_phoenix_south_01",
+  "asset_type": "feeder",
+  "city": "Phoenix",
+  "state": "AZ",
+  "name": "Phoenix South Feeder 01",
+  "parent_asset_id": "substation_phoenix_south",
+  "capacity_kw": 6000,
+  "voltage_kv": 13.8,
+  "status": "active",
+  "location": {
+    "type": "Point",
+    "coordinates": [
+      -111.974,
+      33.3784
+    ]
+  }
+}]

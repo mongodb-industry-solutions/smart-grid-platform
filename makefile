@@ -22,10 +22,14 @@ uv_sync:
 uv_update:
 	cd backend && uv lock --upgrade
 
-# Export the operational collections into ./dump (maintainers only; needs cluster access).
-dump_data:
-	./scripts/dump-data.sh
+# Generate the operational dataset and load it into Atlas (reads MONGODB_URI/DATABASE_NAME from frontend/.env.local).
+seed_data:
+	cd backend && uv run scripts/data_pipeline/pipeline.py && uv run scripts/data_pipeline/load_to_mongo.py
 
-# Restore the operational collections from ./dump into your own cluster.
-restore_data:
-	./scripts/restore-data.sh
+# Sanity-check the seeded data.
+check_seed:
+	cd backend && uv run scripts/data_pipeline/check_seed.py
+
+# Stream live readings on top of the seeded history (Ctrl+C to stop).
+feeder:
+	cd backend && uv run scripts/data_pipeline/feeder.py

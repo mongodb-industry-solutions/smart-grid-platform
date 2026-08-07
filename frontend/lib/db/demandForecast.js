@@ -1,6 +1,9 @@
 import { buildDemandPipeline } from "@/lib/const/demandPipeline";
 
-const NETWORK_MAP_COLLECTION = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
+const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
+// Bound the history each request scans so the aggregation stays fast on
+// large (multi-week) collections. 14 days is plenty for a per-hour demand curve.
+const DEMAND_LOOKBACK_DAYS = 14;
 
 export { buildDemandPipeline };
 
@@ -28,9 +31,19 @@ const round = (v) => Math.round(v * 100) / 100;
  * @param {{ states?: string[], feeders?: string[], meterIds?: (string|number)[] }} selection
  */
 export async function getDemandForecast(db, selection = {}) {
-  const pipeline = buildDemandPipeline(selection);
+  // Anchor to the latest reading (the dataset lives in the past) and look back.
+  let from = selection.from ? new Date(selection.from) : null;
+  if (!from) {
+    const last = await db
+      .collection(READINGS_COLLECTION)
+      .findOne({}, { projection: { timestamp: 1 }, sort: { timestamp: -1 } });
+    if (last?.timestamp) {
+      from = new Date(new Date(last.timestamp).getTime() - DEMAND_LOOKBACK_DAYS * 86_400_000);
+    }
+  }
+  const pipeline = buildDemandPipeline({ ...selection, from });
   const rows = await db
-    .collection(NETWORK_MAP_COLLECTION)
+    .collection(READINGS_COLLECTION)
     .aggregate(pipeline)
     .toArray();
 

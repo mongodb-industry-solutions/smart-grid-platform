@@ -1,59 +1,53 @@
-const READINGS_COLLECTION    = process.env.READINGS_COLLECTION_NAME    || "readings";
-const NETWORK_MAP_COLLECTION = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
-const NETWORK_COLLECTION     = process.env.NETWORK_COLLECTION_NAME     || "network";
+const READINGS_COLLECTION = process.env.READINGS_COLLECTION_NAME || "readings";
+const NETWORK_COLLECTION  = process.env.NETWORK_COLLECTION_NAME  || "network";
 
 /**
  * Returns feeder load vs capacity for the Nth distinct timestamp in readings.
  *
  * Pipeline:
  *   1. Find the Nth distinct timestamp (periodIndex).
- *   2. Match all readings at that exact timestamp (all meters).
- *   3. Join meter_network_map on dataid → feeder_id.
- *   4. Group by feeder_id, sum avg_reading → total_load.
- *   5. Join network on feeder_id = asset_id → capacity_kw.
- *   6. Compute utilization_pct = total_load / capacity_kw × 100.
+ *   2. Match all readings at that exact timestamp (all meters) and group by the
+ *      feeder_id denormalized on each reading, summing avg_reading → total_load.
+ *   3. Join network on feeder_id = asset_id → capacity_kw.
+ *   4. Compute utilization_pct = total_load / capacity_kw × 100.
  *
  * @param {import("mongodb").Db} db
  * @param {number} periodIndex
  */
+// Readings are on a uniform 15-min grid, so a period is located arithmetically
+// off the latest timestamp (indexed) instead of scanning every distinct timestamp.
+const CADENCE_MS = 15 * 60 * 1000;
+const START_BACK = 48; // periodIndex 0 starts ~12h ago, then walks toward "now".
+
 export async function getGridStability(db, periodIndex = 0) {
   const col = db.collection(READINGS_COLLECTION);
 
-  // Step 1 — resolve the timestamp for this period
-  const periodDoc = await col.aggregate([
-    { $match: { voltage: { $ne: null } } },
-    { $group: { _id: "$timestamp" } },
-    { $sort:  { _id: 1 } },
-    { $skip:  periodIndex },
-    { $limit: 1 },
-  ]).next();
+  // Step 1 — resolve the timestamp for this period. Anchor to the latest reading
+  // (uses the timestamp index — fast) and walk forward from START_BACK periods
+  // ago, clamped to the latest, so the card shows recent data (not 30 days old).
+  const latestDoc = await col.findOne(
+    { voltage: { $ne: null } },
+    { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  if (!latestDoc) return { feeders: [], summary: null };
 
-  if (!periodDoc) return { feeders: [], summary: null };
+  const latest = new Date(latestDoc.timestamp).getTime();
+  const ts = new Date(Math.min(latest, latest - (START_BACK - periodIndex) * CADENCE_MS));
 
-  const ts = periodDoc._id;
-
-  // Steps 2–6 — feeder aggregation for this snapshot
+  // Steps 2–4 — feeder aggregation for this snapshot
   const feeders = await col.aggregate([
-    { $match: { timestamp: ts } },
+    { $match: { timestamp: ts, feeder_id: { $ne: null } } },
 
-    {
-      $lookup: {
-        from:         NETWORK_MAP_COLLECTION,
-        localField:   "dataid",
-        foreignField: "dataid",
-        as:           "map",
-      },
-    },
-    { $unwind: "$map" },
-
+    // feeder_id is denormalized on each reading, so group directly — no join needed.
     {
       $group: {
-        _id:         "$map.feeder_id",
+        _id:         "$feeder_id",
         total_load:  { $sum: "$avg_reading" },
         meter_count: { $sum: 1 },
       },
     },
 
+    // Join the feeder's network asset to compare load against its rated capacity.
     {
       $lookup: {
         from:         NETWORK_COLLECTION,

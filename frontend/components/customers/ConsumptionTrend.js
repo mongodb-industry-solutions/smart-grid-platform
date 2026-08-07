@@ -39,7 +39,7 @@ function formatTime(iso) {
 
 // Renders each legend entry as a swatch of its actual line style (solid or
 // dashed) instead of a plain colored dot, so the line pattern itself is the label.
-function renderLineLegend({ payload }) {
+function renderLineLegend({ payload = [] }) {
   return (
     <ul
       style={{
