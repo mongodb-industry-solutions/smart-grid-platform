@@ -213,8 +213,13 @@ function periodRate(period) {
 // history and 1-second live readings alike.
 function estimateMonthlyKwh(rows) {
   if (rows.length < 2) return null;
+  // Sum the intervals strictly inside [first, last] — skip rows[0], whose
+  // interval_kwh belongs to the interval before the window start, so the
+  // numerator lines up with the elapsed-hours denominator below.
   let total = 0;
-  for (const r of rows) if (r.interval_kwh > 0) total += r.interval_kwh;
+  for (let i = 1; i < rows.length; i += 1) {
+    if (rows[i].interval_kwh > 0) total += rows[i].interval_kwh;
+  }
   const hours =
     (new Date(rows[rows.length - 1].timestamp) - new Date(rows[0].timestamp)) /
     3_600_000;
@@ -500,7 +505,7 @@ export async function getCustomerInsights(db, dataid) {
   const readings = db.collection(READINGS_COLLECTION_NAME);
 
   const rows = await readings
-    .find({ dataid }, { projection: { _id: 0, timestamp: 1, energy: 1 } })
+    .find({ dataid }, { projection: { _id: 0, timestamp: 1, interval_kwh: 1 } })
     .sort({ timestamp: 1 })
     .toArray();
   if (!rows.length) return null;
