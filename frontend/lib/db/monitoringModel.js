@@ -220,11 +220,19 @@ export async function getMonitoringComponentModel(db, component) {
           collection: READINGS,
           type: "aggregate",
           pipeline: [
+            { $match: { voltage: { $ne: null } } },
             { $sort: { dataid: 1, timestamp: 1 } },
-            { $group: { _id: "$dataid", readings: { $push: "$$ROOT" } } },
-            { $set: { latest: { $last: "$readings" }, baseline: { $slice: ["$readings", 0, { $subtract: [{ $size: "$readings" }, 1] }] } } },
-            { $set: { mean: { $avg: "$baseline.power" }, std: { $stdDevSamp: "$baseline.power" } } },
-            { $set: { sigma: { $divide: [{ $abs: { $subtract: ["$latest.power", "$mean"] } }, "$std"] } } },
+            // Per-meter baseline mean/std + the latest value, via $group
+            // accumulators — no $push of whole documents into per-meter arrays.
+            {
+              $group: {
+                _id: "$dataid",
+                mean: { $avg: "$power" },
+                std: { $stdDevSamp: "$power" },
+                latest: { $last: "$power" },
+              },
+            },
+            { $set: { sigma: { $divide: [{ $abs: { $subtract: ["$latest", "$mean"] } }, "$std"] } } },
             { $match: { sigma: { $ne: null } } },
             { $sort: { sigma: -1 } },
           ],
