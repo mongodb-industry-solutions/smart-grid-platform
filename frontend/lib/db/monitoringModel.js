@@ -232,7 +232,17 @@ export async function getMonitoringComponentModel(db, component) {
                 latest: { $last: "$power" },
               },
             },
-            { $set: { sigma: { $divide: [{ $abs: { $subtract: ["$latest", "$mean"] } }, "$std"] } } },
+            {
+              $set: {
+                sigma: {
+                  $cond: [
+                    { $gt: ["$std", 0] },
+                    { $divide: [{ $abs: { $subtract: ["$latest", "$mean"] } }, "$std"] },
+                    null, // std == 0 → no meaningful deviation (avoids Infinity)
+                  ],
+                },
+              },
+            },
             { $match: { sigma: { $ne: null } } },
             { $sort: { sigma: -1 } },
           ],

@@ -46,6 +46,21 @@ export default function AddOutageModal({ open, onClose, onOutageAdded }) {
     }
   }, [open]);
 
+  // While open: lock body scroll and close on Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [open, onClose]);
+
   // Load the customer list once the modal opens (dataid + city/state).
   useEffect(() => {
     if (!open || customers.length) return;
@@ -55,7 +70,12 @@ export default function AddOutageModal({ open, onClose, onOutageAdded }) {
       .then((d) => {
         if (active) setCustomers(d.customers ?? []);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) {
+          setErrorMsg("Failed to load customers. Please try again.");
+          setPhase("error");
+        }
+      });
     return () => {
       active = false;
     };

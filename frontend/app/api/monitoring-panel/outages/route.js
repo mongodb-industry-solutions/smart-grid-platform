@@ -28,15 +28,23 @@ function sameOriginOk(request) {
   const origin = request.headers.get("origin");
   if (!origin) return true;
   try {
-    return new URL(origin).host === request.headers.get("host");
+    return new URL(origin).origin === request.nextUrl.origin;
   } catch {
     return false;
   }
 }
 
 // Injects a full outage for one meter: appends a reading with zeroed electrical
-// values (power <= 0) at "now", carrying the meter's grid context so the map and
-// outage summaries pick it up as a real outage.
+// values (power <= 0) at the meter's latest reading period, carrying its grid
+// context so the map and outage summaries pick it up as a real outage.
+//
+// We append rather than update the meter's existing latest reading: `readings`
+// is a time-series collection, and this Atlas server only allows updates/deletes
+// filtered on the metaField (`dataid`) alone — never on `timestamp`. So there is
+// no way to target and overwrite a single measurement; the outage lives as an
+// extra doc at the same period. The only affected aggregations are doc-count ones
+// (grid-stability meter_count, recent-readings), where the impact is +1 for that
+// one meter — cosmetic and acceptable for a demo injection.
 export async function POST(request) {
   if (!sameOriginOk(request)) {
     return NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 });
