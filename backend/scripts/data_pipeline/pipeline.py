@@ -39,7 +39,9 @@ ANCHOR_NOW       = True          # shift the whole window onto the current clock
                                  # data looks like it's being read in real time
 ANCHOR_MODE      = "end"         # "end" -> last reading = now (recent history, best for
                                  # dashboards); "start" -> first reading = now (future window)
-OUTAGE_MODE      = "both"       # "none" | "full" | "partial" | "both"
+OUTAGE_MODE      = "none"       # "none" | "full" | "partial" | "both"  (no scattered
+                                # random outages — keep the baseline sparse so a
+                                # manually-added outage stands out on the map)
 OUTAGE_TARGET_PCT = 0.10        # target fraction of customers that see >=1 outage
                                 # (auto-computes OUTAGE_RATE from the window size).
                                 # Set to None to use OUTAGE_RATE directly instead.
@@ -60,13 +62,15 @@ NETWORK_ASSETS_JSON = _os.path.join(_INPUTS, "network.json")
 
 # --- Grid stress simulation ("recreate stressful behaviour" for a utility) ---
 STRESS_ENABLED       = True     # inject correlated cascading outages, not just independent ones
-STRESS_COVER_ALL_UTILITIES = True  # one event per utility, spread across time, instead of
-                                    # clustering every event onto one random substation/area
-STRESS_EVENTS_PER_UTILITY  = 1  # only used when STRESS_COVER_ALL_UTILITIES is False
+STRESS_COVER_ALL_UTILITIES = False  # False = only a few total events (sparse baseline);
+                                    # True = one event per utility (every city affected)
+STRESS_EVENTS_PER_UTILITY  = 2  # when COVER_ALL is False: how many DISTINCT utilities
+                                # (= cities / clusters) get a stress event
 STRESS_SCOPE     = "feeder" # "feeder" (localized, realistic) or "substation" (bigger blast radius)
 STRESS_START     = None     # ISO ts to force every event there, or None to spread them out
 STRESS_DURATION  = "3h"     # how long each event lasts
-STRESS_SEVERITY  = 0.5      # fraction of METERS in scope that go down for the whole event
+STRESS_SEVERITY  = 0.25     # fraction of METERS in scope that go down for the whole event
+                            # (kept low so each cluster shows only ~1-2 outages)
 STRESS_FULL_FRAC = 0.4      # of those affected meters, fraction that trip fully (rest brownout)
 STRESS_LABEL     = "peak_demand_overload"  # e.g. heatwave/cold-snap driven transformer overload
 
@@ -507,10 +511,20 @@ def simulate_grid_stress(docs, network_df, rng):
             units = grp[scope_col].unique().tolist()
             targets.append(units[int(rng.integers(0, len(units)))])
     else:
-        units = network_df[scope_col].unique().tolist()
-        if not units:
+        # Pick STRESS_EVENTS_PER_UTILITY DISTINCT utilities (→ distinct cities /
+        # clusters) and one scope-unit (feeder) in each, so the sparse baseline
+        # spreads across separate clusters instead of piling onto one city.
+        utils = network_df["utility_id"].dropna().unique().tolist()
+        if not utils:
             return []
-        targets = [units[int(rng.integers(0, len(units)))] for _ in range(STRESS_EVENTS_PER_UTILITY)]
+        k = min(STRESS_EVENTS_PER_UTILITY, len(utils))
+        chosen = rng.choice(utils, size=k, replace=False)
+        targets = []
+        for uid in chosen:
+            grp = network_df[network_df["utility_id"] == uid]
+            units = grp[scope_col].unique().tolist()
+            if units:
+                targets.append(units[int(rng.integers(0, len(units)))])
 
     dur = parse_duration(STRESS_DURATION)
     span_start, span_end = all_ts[0], all_ts[-1]

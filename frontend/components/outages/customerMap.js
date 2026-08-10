@@ -8,8 +8,10 @@ import { feature } from "topojson-client";
 import statesTopo from "us-atlas/states-10m.json";
 import { H2, Body, Error as ErrorText } from "@leafygreen-ui/typography";
 import { palette } from "@leafygreen-ui/palette";
+import Button from "@leafygreen-ui/button";
 import { useCustomerLocations } from "./useCustomerLocations";
 import { useNotifications } from "@/components/notifications/NotificationsContext";
+import AddOutageModal from "./AddOutageModal";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
 import styles from "../../style/outages/panel.module.css";
 
@@ -26,14 +28,6 @@ const OUTAGE_COLOR = "#D9534F";
 // counts get proportionally fewer. Each ring extends RING_STEP beyond the last.
 const MAX_LAYERS = 5;
 const RING_STEP = 0.45;
-
-// Cities whose outages "arrive" live during the demo, one after another. Every
-// other city's outages are shown immediately.
-const NEW_OUTAGE_CITIES = ["Kansas City", "Phoenix"];
-const FIRST_DELAY_MS = 4000; // before the first new outage pops in
-const GAP_MS = 10000; // spacing between each new outage
-const RAMP_MS = 900; // grow-in animation per new outage
-const easeOut = (t) => 1 - Math.pow(1 - t, 3);
 
 // Keeps only the continental US: drops Alaska (02), Hawaii (15) and the
 // territories (FIPS >= 60) so the map has no insets.
@@ -202,67 +196,63 @@ export default function CustomerMap() {
   const { markers, maxCount } = useMemo(() => buildMarkers(locations), [locations]);
   const { addAlert, reset } = useNotifications();
 
+  const [outageOpen, setOutageOpen] = useState(false);
+
+  // After an outage is injected, wait ~1s, then fire the notification and nudge
+  // the map to refetch so the new red marker appears.
+  const handleOutageAdded = (r) => {
+    setTimeout(() => {
+      addAlert({
+        city: r.city,
+        state: r.state,
+        substation: r.substation_id,
+        feeder: r.feeder_id,
+        transformer: r.transformer_id,
+        severity: "high",
+        title: `Outage — ${r.city}, ${r.state}`,
+      });
+      window.dispatchEvent(new Event("outage:added"));
+    }, 1000);
+  };
+
   // Restart the demo cleanly each time the map mounts (fresh page load or
   // navigating back to Monitoring), so alerts don't accumulate across visits.
   useEffect(() => {
     reset();
   }, [reset]);
 
-  // The "new" cities (Denver, Phoenix) arrive one after another, each growing in
-  // and firing a notification. Everything else is shown immediately.
-  const [newReveal, setNewReveal] = useState({});
-  const scheduledRef = useRef(false);
   const seededRef = useRef(false);
 
-  // Seed the notification center with the existing outages (all other cities),
-  // silently, so it looks realistic before the "new" ones roll in.
+  // Seed the notification center (silently) with the current outages, so the bell
+  // reflects the outage cities on load.
   useEffect(() => {
     if (seededRef.current || markers.length === 0) return;
     seededRef.current = true;
     markers
-      .filter((m) => m.outages > 0 && !NEW_OUTAGE_CITIES.includes(m.city))
+      .filter((m) => m.outages > 0)
       .sort((a, b) => a.outages - b.outages) // prepended, so worst ends up on top
       .forEach((m) => addAlert(alertFor(m), { silent: true }));
-  }, [markers.length, addAlert]);
-  useEffect(() => {
-    if (scheduledRef.current || markers.length === 0) return;
-    scheduledRef.current = true;
-    const timers = [];
-    let rafs = [];
-
-    NEW_OUTAGE_CITIES.forEach((city, i) => {
-      const marker = markers.find((m) => m.city === city);
-      if (!marker || !marker.outages) return;
-
-      const delay = FIRST_DELAY_MS + i * GAP_MS;
-      timers.push(
-        setTimeout(() => {
-          addAlert(alertFor(marker));
-
-          const start = performance.now();
-          const step = (now) => {
-            const t = Math.min(1, (now - start) / RAMP_MS);
-            setNewReveal((prev) => ({ ...prev, [city]: t }));
-            if (t < 1) rafs.push(requestAnimationFrame(step));
-          };
-          rafs.push(requestAnimationFrame(step));
-        }, delay)
-      );
-    });
-
-    return () => {
-      timers.forEach(clearTimeout);
-      rafs.forEach(cancelAnimationFrame);
-    };
-    // Depend on the city count (stable across polls) so the 5s refetch doesn't
-    // reset the scheduled reveals.
   }, [markers.length, addAlert]);
 
   return (
     <div className={styles.widget}>
       <div className={styles.header}>
         <H2>Customers & Outages by Location</H2>
+        <Button
+          size="small"
+          variant="danger"
+          style={{ marginLeft: "auto", alignSelf: "center", whiteSpace: "nowrap", flexShrink: 0 }}
+          onClick={() => setOutageOpen(true)}
+        >
+          + Add outage
+        </Button>
       </div>
+
+      <AddOutageModal
+        open={outageOpen}
+        onClose={() => setOutageOpen(false)}
+        onOutageAdded={handleOutageAdded}
+      />
 
       <div className={styles.card}>
         <ShowDocButton scope="monitoring" component="customer-map" />
@@ -295,10 +285,7 @@ export default function CustomerMap() {
           ))}
 
           {markers.map((marker) => {
-            // "New" cities grow in on their schedule; the rest show at once.
-            const isNew = NEW_OUTAGE_CITIES.includes(marker.city);
-            const progress = isNew ? newReveal[marker.city] ?? 0 : 1;
-            const shownOutages = Math.round(marker.outages * easeOut(progress));
+            const shownOutages = marker.outages;
             const outageRadius = getRadius(shownOutages, maxCount);
             const outageLayers = getLayerCount(shownOutages, maxCount);
 
