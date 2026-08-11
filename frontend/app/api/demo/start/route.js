@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 import getMongoClientPromise from "@/lib/mongodb";
-import { BACKEND_DIR, FRONTEND_DIR, startFeeder, stopFeeder } from "@/lib/demo/feeder";
+import { FRONTEND_DIR, backendUrl, startFeeder, stopFeeder } from "@/lib/demo/feeder";
 import { sameOriginOk } from "@/lib/http/sameOrigin";
 
 // Long-running: generate + load can take a couple of minutes.
@@ -41,6 +41,39 @@ function runStep(cmd, args, cwd, onData) {
         : reject(new Error(`${cmd} ${args.join(" ")} exited with code ${code}`));
     });
   });
+}
+
+// Run a Python pipeline step on the backend, streaming its output line-by-line
+// via onData. The backend streams raw log lines and ends with a `__DONE__:<code>`
+// sentinel; a non-zero code (or a missing sentinel) rejects.
+async function runBackendStep(path, onData) {
+  const res = await fetch(backendUrl(path), { method: "POST" });
+  if (res.status === 409) throw new Error("A pipeline step is already running on the backend.");
+  if (!res.body) throw new Error(`backend ${path} failed: HTTP ${res.status}`);
+
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  let exitCode = null;
+
+  const handleLine = (line) => {
+    const m = line.match(/^__DONE__:(\d+)$/);
+    if (m) exitCode = Number(m[1]);
+    else if (line) onData(line + "\n");
+  };
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split("\n");
+    buffer = lines.pop(); // keep the trailing partial line
+    lines.forEach(handleLine);
+  }
+  if (buffer) handleLine(buffer);
+
+  if (exitCode === null) throw new Error(`backend ${path} ended without a status.`);
+  if (exitCode !== 0) throw new Error(`backend ${path} exited with code ${exitCode}.`);
 }
 
 // Guard against overlapping regenerations (two of them racing the drop+create of
@@ -108,12 +141,12 @@ export async function POST(request) {
         // Stop any running feeder FIRST. Otherwise its inserts race the loader's
         // drop+create of the readings time-series collection and can re-create it
         // as a plain collection (losing metaField/bucketing → slow queries).
-        stopFeeder();
+        await stopFeeder();
         send("step", { step: "generate", message: "Generating the dataset (current dates)…" });
-        await runStep("uv", ["run", "scripts/data_pipeline/pipeline.py"], BACKEND_DIR, log);
+        await runBackendStep("/demo/generate", log);
 
         send("step", { step: "load", message: "Loading collections into Atlas…" });
-        await runStep("uv", ["run", "scripts/data_pipeline/load_to_mongo.py"], BACKEND_DIR, log);
+        await runBackendStep("/demo/load", log);
 
         // Best-effort: the operational demo still works without it, but the AI
         // agent / vector map need the knowledge base.
@@ -131,7 +164,7 @@ export async function POST(request) {
 
         if (withFeeder) {
           send("step", { step: "feeder", message: "Starting the live feeder…" });
-          const res = startFeeder();
+          const res = await startFeeder();
           log(res.alreadyRunning ? "feeder already running\n" : `feeder started (pid ${res.pid})\n`);
         }
 

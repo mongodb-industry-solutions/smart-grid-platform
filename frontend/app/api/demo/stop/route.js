@@ -6,5 +6,5 @@ export async function POST(request) {
   if (!sameOriginOk(request)) {
     return Response.json({ error: "Cross-origin request rejected." }, { status: 403 });
   }
-  return Response.json(stopFeeder());
+  return Response.json(await stopFeeder());
 }

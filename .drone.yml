@@ -57,8 +57,10 @@ steps:
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-backend.industrysolutions.staging.corp.mongodb.com"
+        # Internal-only: the frontend reaches the backend via the cluster Service
+        # (BACKEND_URL), so it needs no public ingress. This keeps the demo pipeline
+        # endpoints (generate/load/feeder) off the public internet.
+        - "ingress.enabled=false"
         - "mesh.enabled=true"
         # Backend resources (reduced defaults for demos - increase if OOMKilled)
         - "resources.limits.cpu=500m"
@@ -157,8 +159,10 @@ steps:
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend-prod"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-backend.industrysolutions.prod.corp.mongodb.com"
+        # Internal-only: the frontend reaches the backend via the cluster Service
+        # (BACKEND_URL), so it needs no public ingress. This keeps the demo pipeline
+        # endpoints (generate/load/feeder) off the public internet.
+        - "ingress.enabled=false"
         - "mesh.enabled=true"
         # Backend resources (production - slightly higher for reliability)
         - "resources.limits.cpu=500m"

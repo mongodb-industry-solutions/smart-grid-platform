@@ -11,7 +11,7 @@ env:
   # AWS region for IRSA (no credentials needed)
   AWS_REGION: us-east-1
   # Backend API URL for frontend to connect to backend health check
-  BACKEND_URL: http://smart-meter-backend-web-app:80
+  BACKEND_URL: http://smart-meter-backend-prod-web-app:80
 
 ## Single Pod Containers
 envSecrets:
