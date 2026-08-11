@@ -14,23 +14,15 @@ const TITLES = {
 };
 
 // The feeder load-vs-capacity pipeline that powers the Network Center — mirrors
-// lib/db/gridStability.js. Joins readings → meter_network_map → network to
-// compute per-feeder utilization against each asset's rated capacity_kw.
+// lib/db/gridStability.js. Groups readings by their denormalized feeder_id, then
+// joins the `network` asset for each feeder's rated capacity_kw (no meter_network_map
+// join needed, since feeder_id lives on every reading).
 function gridStabilityPipeline(ts) {
   return [
-    { $match: { timestamp: ts } },
-    {
-      $lookup: {
-        from: NETWORK_MAP,
-        localField: "dataid",
-        foreignField: "dataid",
-        as: "map",
-      },
-    },
-    { $unwind: "$map" },
+    { $match: { timestamp: ts, feeder_id: { $ne: null } } },
     {
       $group: {
-        _id: "$map.feeder_id",
+        _id: "$feeder_id",
         total_load: { $sum: "$avg_reading" },
         meter_count: { $sum: 1 },
       },
@@ -116,7 +108,6 @@ export async function getNetworkComponentModel(db, component) {
       component,
       collections: [
         await sample(READINGS, { timestamp: -1 }),
-        await sample(NETWORK_MAP),
         await sample(NETWORK),
       ],
       operations: [

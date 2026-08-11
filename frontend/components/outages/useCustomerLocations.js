@@ -35,9 +35,15 @@ export function useCustomerLocations() {
     fetchLocations();
     const intervalId = setInterval(fetchLocations, TICK_MS);
 
+    // Refresh right away when an outage is added (instead of waiting for the poll),
+    // so the new red dot appears within ~1s.
+    const onOutageAdded = () => fetchLocations();
+    window.addEventListener("outage:added", onOutageAdded);
+
     return () => {
       isActive = false;
       clearInterval(intervalId);
+      window.removeEventListener("outage:added", onOutageAdded);
     };
   }, []);
 

@@ -6,7 +6,6 @@ import {
 import { buildWeatherForecastPipeline } from "@/lib/const/weatherForecastPipeline";
 
 const READINGS = process.env.READINGS_COLLECTION_NAME || "readings";
-const NETWORK_MAP = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
 const NETWORK = process.env.NETWORK_COLLECTION_NAME || "network";
 const CUSTOMERS = process.env.CUSTOMERS_COLLECTION_NAME || "customer_db";
 
@@ -40,11 +39,11 @@ export async function getForecastComponentModel(db, component) {
     return {
       title: TITLES.demand,
       component,
-      collections: [await sample(NETWORK_MAP), await sample(READINGS, { timestamp: -1 })],
+      collections: [await sample(READINGS, { timestamp: -1 })],
       operations: [
         {
           title: "Expected demand by region per hour",
-          collection: NETWORK_MAP,
+          collection: READINGS,
           type: "aggregate",
           pipeline: buildDemandPipeline({}),
         },
@@ -57,14 +56,13 @@ export async function getForecastComponentModel(db, component) {
       title: TITLES.capacity,
       component,
       collections: [
-        await sample(NETWORK_MAP),
         await sample(READINGS, { timestamp: -1 }),
         await sample(NETWORK),
       ],
       operations: [
         {
           title: "Coincident demand per region per period",
-          collection: NETWORK_MAP,
+          collection: READINGS,
           type: "aggregate",
           pipeline: buildRegionalForecastPipeline({ level: "feeder" }),
         },
@@ -82,11 +80,11 @@ export async function getForecastComponentModel(db, component) {
     return {
       title: TITLES.peak,
       component,
-      collections: [await sample(NETWORK_MAP), await sample(READINGS, { timestamp: -1 })],
+      collections: [await sample(READINGS, { timestamp: -1 })],
       operations: [
         {
           title: "Coincident demand per region per period (peak hour per region)",
-          collection: NETWORK_MAP,
+          collection: READINGS,
           type: "aggregate",
           pipeline: buildRegionalForecastPipeline({ level: "feeder" }),
         },

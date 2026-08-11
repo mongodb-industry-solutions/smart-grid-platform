@@ -125,7 +125,7 @@ export async function getComponentModel(db, component, dataid) {
             { $limit: 1 },
           ],
         },
-        { title: "Readings for monthly estimate", collection: READINGS, type: "find", filter: { dataid }, projection: { _id: 0, timestamp: 1, energy: 1 } },
+        { title: "Readings for monthly estimate", collection: READINGS, type: "find", filter: { dataid }, projection: { _id: 0, timestamp: 1, interval_kwh: 1 } },
       ];
       break;
     }
@@ -160,7 +160,7 @@ export async function getComponentModel(db, component, dataid) {
     case "tariff": {
       collections = [await doc.reading(), await doc.tariff()];
       operations = [
-        { title: "Customer readings", collection: READINGS, type: "find", filter: { dataid }, projection: { _id: 0, timestamp: 1, energy: 1, power: 1, power_factor: 1 } },
+        { title: "Customer readings", collection: READINGS, type: "find", filter: { dataid }, projection: { _id: 0, timestamp: 1, interval_kwh: 1, power: 1, power_factor: 1 } },
         { title: "Matched tariff", collection: TARIFFS, type: "findOne", filter: { location_label: locationLabel } },
       ];
       break;
@@ -171,7 +171,7 @@ export async function getComponentModel(db, component, dataid) {
       collections = [doc.customer(), await doc.reading()];
       operations = [
         { title: "Customers (to resolve regions)", collection: CUSTOMERS, type: "find", filter: {}, projection: { _id: 0, dataid: 1, city: 1, state: 1 } },
-        { title: "Readings for this region", collection: READINGS, type: "find", filter: { dataid: { $in: regionIds } }, projection: { _id: 0, dataid: 1, timestamp: 1, energy: 1 } },
+        { title: "Readings for this region", collection: READINGS, type: "find", filter: { dataid: { $in: regionIds } }, projection: { _id: 0, dataid: 1, timestamp: 1, interval_kwh: 1 } },
       ];
       break;
     }
