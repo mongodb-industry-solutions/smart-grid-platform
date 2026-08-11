@@ -1,6 +1,7 @@
 import { spawn } from "node:child_process";
 import getMongoClientPromise from "@/lib/mongodb";
 import { BACKEND_DIR, FRONTEND_DIR, startFeeder, stopFeeder } from "@/lib/demo/feeder";
+import { sameOriginOk } from "@/lib/http/sameOrigin";
 
 // Long-running: generate + load can take a couple of minutes.
 export const maxDuration = 600;
@@ -46,18 +47,6 @@ function runStep(cmd, args, cwd, onData) {
 // the readings collection is exactly what corrupts it). Survives dev hot-reload.
 function isRunning() {
   return globalThis.__demoStarting === true;
-}
-
-// Same-origin guard: block cross-site browser POSTs. Requests with no Origin
-// header (curl/automation) are allowed; a present-but-mismatched Origin is rejected.
-function sameOriginOk(request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  try {
-    return new URL(origin).host === request.headers.get("host");
-  } catch {
-    return false;
-  }
 }
 
 // Remaining cooldown in ms (0 = allowed), based on the last recorded generation.
