@@ -152,15 +152,3 @@ Run without a browser; complements the UI cases.
 | API-03 | P1 | Add outage - bad input | POST with a non-numeric/missing `dataid`, then an unknown meter. | **400** "A numeric dataid is required."; **404** "No readings found…"; no doc inserted. |
 | API-04 | P1 | Demo start guards | POST `/api/demo/start` within cooldown, then twice concurrently. | **429** (cooldown "~N min") and **409** (in-progress lock). |
 
----
-
-## 12. Suggested suite ordering
-
-1. **Smoke (P0 only):** `DEMO-04/05`, `NAV-01/02`, `MON-01`, `OUT-01`, `NET-01`,
-   `CUS-01`, `FOR-01`, `AGT-01`, `DOC-01`, `API-01/02`. Green smoke = the demo is
-   presentable.
-2. **Core (P0 + P1):** everything in this document.
-
-**Recommended tooling:** Playwright for browser flows (native SSE support +
-network interception for Start Demo and the guard cases), plus a thin API-level
-layer for the `API-*` cases.
