@@ -79,4 +79,5 @@ TTL) for long-running demos.
 This pipeline is the **single source of truth** for the operational data — there
 is no prebuilt dump. `load_to_mongo.py` seeds Atlas directly (`readings` as a
 time-series collection with `metaField=dataid` + indexes), and the app's **Start
-Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you.
+Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you (via the
+backend service, which hosts these scripts — the frontend just orchestrates it).

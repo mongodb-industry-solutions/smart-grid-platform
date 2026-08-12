@@ -33,7 +33,11 @@ INPUT_CSV        = _os.path.join(_INPUTS, "readings_base.csv.gz")  # base readin
 LOCATIONS_FILE   = _os.path.join(_INPUTS, "customer_seed.json")  # city/state pairs to reuse
 TOTAL_CUSTOMERS  = 250          # grow customer set to this many (keeps existing 25)
 START            = None         # None = earliest available slice; ANCHOR_NOW re-pins it to today
-DURATION         = "30d"       # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
+DURATION         = "6d"        # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
+                               # 6d keeps enough history for forecasting / consumption
+                               # trend while keeping the generator's peak memory small —
+                               # it builds all readings in RAM before loading, so a
+                               # demo-sized pod (512Mi) won't OOM.
 SHIFT_YEAR       = _NOW.year    # rebase timestamps to the CURRENT year (dynamic, not static)
 ANCHOR_NOW       = True          # shift the whole window onto the current clock so the
                                  # data looks like it's being read in real time
