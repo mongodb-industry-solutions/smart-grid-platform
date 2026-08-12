@@ -142,18 +142,24 @@ want to *keep* long history queryable without bloating the hot path.
 
 ---
 
-## 4. Weather temperature for the forecast horizon
+## 4. Weather temperature source (archive + sim-clock shift)
 
 The weather-adjusted forecast pulls temperatures from Open-Meteo's **archive** API
-(`lib/weather/openMeteo.js`), which only covers dates up to *today*. Because the
-dataset is anchored to "now", the forecast **horizon** (dates past now) has no
-archive temperature, so the temp line stops at the present. The history window is
-covered, which is what the degree-day sensitivity fit needs - but if you want the
-projected part of the chart to also show temperature, fetch the horizon from
-Open-Meteo's **forecast** endpoint (`api.open-meteo.com/v1/forecast`, with
-`past_days` for the recent overlap) and merge it with the archive series. Keep the
-"never request future dates from the archive" guard in `lib/db/weatherForecast.js`
-either way - a future `end_date` errors the whole archive request.
+(`lib/weather/openMeteo.js`), which only covers dates up to *today*. Two things
+push the readings' timestamps past that: the dataset is anchored to "now", and the
+live feeder advances a **simulated clock** ahead of wall-clock time, so `to` and
+the forecast horizon can sit days/weeks in the future - where the archive has no
+data, which would blank the temperature line.
+
+`lib/db/weatherForecast.js` handles this by **shifting** the requested window back
+onto real dates the archive covers, fetching there, then re-keying the temps
+forward onto the sim hours (`shiftHourKey`). This keeps the line populated across
+both history and the horizon regardless of how far the feeder has drifted. It
+trades exact calendar temperature for continuity - fine here, since the demo
+readings aren't weather-driven. If you ever want *true* calendar temperatures for
+the near-future horizon instead, fetch it from Open-Meteo's **forecast** endpoint
+(`api.open-meteo.com/v1/forecast`, up to ~16 days ahead) and merge - but that
+still can't cover a sim clock that has run far past +16 days.
 
 ---
 

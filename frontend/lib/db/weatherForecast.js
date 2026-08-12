@@ -5,6 +5,7 @@ import {
   HEATING_BASE_F,
   COOLING_BASE_F,
   DEFAULT_LOOKBACK_DAYS,
+  FORECAST_HOURS,
 } from "@/lib/const/weatherForecastPipeline";
 import { getCityCoordinates } from "@/lib/const/cityCoordinates";
 import { fetchHourlyTempsF } from "@/lib/weather/openMeteo";
@@ -18,6 +19,14 @@ const NETWORK_COLLECTION = process.env.NETWORK_COLLECTION_NAME || "network";
 
 // A customer region id is its "City, State" label (stable, human-readable).
 const regionId = (city, state) => `${city}, ${state}`;
+
+// Shift a "YYYY-MM-DDTHH" UTC hour key forward by `ms`. Used to map real-weather
+// hours onto the simulated (feeder-advanced) future hours the readings carry, so
+// the injected temperatures line up with the sim timestamps in the pipeline.
+function shiftHourKey(key, ms) {
+  if (!ms) return key;
+  return new Date(new Date(`${key}:00:00Z`).getTime() + ms).toISOString().slice(0, 13);
+}
 
 /**
  * Customer regions (city/state) that we can forecast — i.e. that have known
@@ -153,23 +162,27 @@ export async function getWeatherForecast(db, opts = {}) {
 
   const { from, to } = await resolveWindow(db, meterIds, lookbackDays);
 
-  // Fetch weather (external — can't run in Mongo) covering the history window
-  // (plus a little of the forecast horizon). The archive API only has data up to
-  // "today", so never request future dates — a future end_date errors the WHOLE
-  // request and we'd get no temperatures at all (chart shows a flat/empty temp
-  // line). Cap the end at now.
-  const weatherEnd = to
-    ? new Date(Math.min(to.getTime() + 2 * 86_400_000, Date.now()))
-    : new Date();
-  const temps = from
-    ? await fetchHourlyTempsF({
-        lat: selected.lat,
-        lon: selected.lon,
-        startDate: from,
-        endDate: weatherEnd,
-      }).catch(() => new Map())
-    : new Map();
-  const tempArray = [...temps].map(([k, t]) => ({ k, t }));
+  // Fetch weather (external — can't run in Mongo) covering the history window plus
+  // the forecast horizon. Two constraints collide: the archive API only has data
+  // up to ~now (a future date range yields no temps → blank line), while the live
+  // feeder advances the readings' *sim* clock ahead of real time, so `to` and the
+  // horizon can sit days/weeks in the future. So we shift the requested window
+  // back onto real dates the archive covers, fetch there, then re-key the temps
+  // FORWARD onto the sim hours so they line up with the readings. With no drift
+  // (fresh seed / no feeder) the shift is 0 and this is a plain real-window fetch.
+  const HOUR_MS = 3_600_000;
+  let tempArray = [];
+  if (from && to) {
+    const simEnd = to.getTime() + FORECAST_HOURS * HOUR_MS; // history + horizon
+    const shiftMs = Math.max(0, Math.ceil((simEnd - Date.now()) / HOUR_MS) * HOUR_MS);
+    const temps = await fetchHourlyTempsF({
+      lat: selected.lat,
+      lon: selected.lon,
+      startDate: new Date(from.getTime() - shiftMs),
+      endDate: new Date(simEnd - shiftMs), // ≤ now, so the archive has it
+    }).catch(() => new Map());
+    tempArray = [...temps].map(([k, t]) => ({ k: shiftHourKey(k, shiftMs), t }));
+  }
 
   const pipeline = buildWeatherForecastPipeline({ meterIds, from, to, tempArray });
   const capacityPipeline = buildRegionCapacityPipeline({
