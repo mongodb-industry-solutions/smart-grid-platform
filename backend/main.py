@@ -20,6 +20,9 @@ BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Kill a pipeline step if it hangs (mirrors the old frontend STEP_TIMEOUT).
 STEP_TIMEOUT_S = (int(os.getenv("DEMO_STEP_TIMEOUT_MS", str(10 * 60 * 1000)))) / 1000
+# Emit a keepalive at least this often so a silent step doesn't let the client's
+# streaming fetch time out and abort with "terminated".
+HEARTBEAT_S = 10
 
 app.add_middleware(
     CORSMiddleware,
@@ -54,19 +57,20 @@ async def _stream_cmd(args):
     deadline = time.monotonic() + STEP_TIMEOUT_S
     try:
         while True:
-            remaining = deadline - time.monotonic()
-            if remaining <= 0:
+            if time.monotonic() >= deadline:
                 proc.kill()
                 yield "[[step timed out]]\n"
                 yield "__DONE__:124\n"
                 return
             try:
-                line = await asyncio.wait_for(proc.stdout.readline(), timeout=remaining)
+                # Short read timeout so we can emit a heartbeat during silent steps.
+                line = await asyncio.wait_for(proc.stdout.readline(), timeout=HEARTBEAT_S)
             except asyncio.TimeoutError:
-                proc.kill()
-                yield "[[step timed out]]\n"
-                yield "__DONE__:124\n"
-                return
+                # No output for a while (e.g. the silent load step). Emit a keepalive
+                # so the client's streaming fetch doesn't abort ("terminated") — the
+                # frontend ignores __PING__ lines.
+                yield "__PING__\n"
+                continue
             if not line:
                 break
             yield line.decode(errors="replace")

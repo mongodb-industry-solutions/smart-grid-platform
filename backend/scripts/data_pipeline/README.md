@@ -70,7 +70,7 @@ TTL) for long-running demos.
 
 | Output (`outputs/`)        | Collection          | Notes                                  |
 | -------------------------- | ------------------- | -------------------------------------- |
-| `readings_final.json`      | `readings`          | time-series; carries `grid_event_id`   |
+| `readings_final.jsonl`     | `readings`          | time-series (JSON Lines, streamed); carries `grid_event_id` |
 | `network_map.json`         | `meter_network_map` | meter → transformer/feeder/substation  |
 | `customers_expanded.json`  | `customer_db`       | seed 25 expanded to `TOTAL_CUSTOMERS`  |
 | `inputs/network.json`      | `network`           | canonical topology (input, seeded as-is) |

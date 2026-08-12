@@ -223,41 +223,39 @@ is deployed and must survive restarts.
 
 ---
 
-## 6. Scale the dataset back up (chunked/streamed loading + memory)
+## 6. Scale the dataset back up (streamed loading + memory)
 
-### The problem
+### Background
 
-The generator (`pipeline.py`) builds **every reading as a dict in a Python list in
-RAM** before the loader writes it to Atlas. That list is the peak-memory driver: at
-the default **6 days** × 15-min × 250 meters (~145k readings) it fits comfortably
-in a demo-sized pod. The window was deliberately trimmed from 30 days to 6 so the
-backend pod (512Mi) doesn't get **OOMKilled** during Start Demo - a longer window
-(more history for forecasting / trend) would blow past that limit as the in-memory
-list grows roughly linearly (~1.5–2 GB at 30 days).
+The generator (`pipeline.py`) builds every reading as a dict in a Python list in
+RAM (`docs`), because the post-processing steps (grid topology assignment, grid
+stress, outage summary) operate on the whole set. That list is the peak-memory
+driver. The window is trimmed to **6 days** × 15-min × 250 meters (~145k readings)
+so the backend pod (512Mi) doesn't get **OOMKilled** during Start Demo.
 
-So today "more history" and "small pod" are in tension. Two ways to get both back.
+### What's already been done (streamed I/O)
 
-### Option A - Chunked / streamed loading (fixes it at the root)
+Readings are exported and loaded as a stream, so neither side holds the full set
+beyond the generator's working list:
 
-Don't hold the whole dataset in memory. Generate and insert in **batches**: build N
-readings (e.g. 10–50k), `insert_many` them, drop the reference, repeat. Peak memory
-becomes the batch size, not the full window, so you can raise `DURATION` back to 30
-days (or more) on the same 512Mi pod. Concretely:
+- `pipeline.py` writes readings to **JSON Lines** (`readings_final.jsonl`), one
+  sanitized doc per line, streamed.
+- `load_to_mongo.py` **streams** that file line-by-line and `insert_many`s in
+  batches (`BATCH`), so it never holds all readings at once (and emits steady
+  progress, which also keeps the streaming HTTP response alive).
 
-- Have `pipeline.py` **yield** batches (a generator) instead of returning one big
-  list, and have `load_to_mongo.py` consume and insert them incrementally.
-- Keep the time-series drop+create and index creation exactly as-is; only the
-  document loading loop changes.
-- Bonus: `insert_many(ordered=False)` in batches is also faster to load.
+This keeps the load step flat in memory and the export peak low.
 
-Trade-off: a modest refactor of the generate→load handoff (they currently pass a
-materialized dataset). This is the **recommended** path if the demo needs a bigger
-window.
+### If you need a bigger window (more history)
 
-### Option B - Just raise the pod memory
+`pipeline.py` still holds the single `docs` list during generation (the
+post-processing needs it), so memory still scales with `DURATION`. To go well
+beyond 6 days you have two levers:
 
-If you want more data **now** without touching the pipeline, bump the backend's
-`resources.limits.memory` in `.drone.yml` (the `deploy-backend-*` steps) - roughly
-`1Gi` for ~14 days, `2Gi` for ~30 days - and raise `DURATION` in `pipeline.py`
-accordingly. Simplest, but it just moves the ceiling instead of removing it, and a
-heavier pod costs more. Fine as a stopgap; Option A is the durable fix.
+- **Stream generation too (durable fix).** Make `synthesize` (and the grid
+  topology / stress / summary passes) operate per-meter and append each meter's
+  readings to the JSONL file as they're produced, so `docs` never holds the whole
+  set. More involved because a few passes currently scan all readings at once.
+- **Raise the pod memory (stopgap).** Bump the backend's `resources.limits.memory`
+  in `.drone.yml` (`deploy-backend-*`) - roughly `1Gi` for ~14 days, `2Gi` for ~30
+  days - and raise `DURATION` accordingly. Simplest, but it just moves the ceiling.
