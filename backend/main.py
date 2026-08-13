@@ -76,8 +76,13 @@ async def _stream_cmd(args):
                 continue
             if not line:
                 break
-            yield line.decode(errors="replace")
+            text = line.decode(errors="replace")
+            # Echo to the pod's stdout too, so the step's output (and any error)
+            # shows up in `kubectl logs` — not only in the streamed response.
+            print(text, end="", flush=True)
+            yield text
         code = await proc.wait()
+        print(f"[demo] {' '.join(args)} exited with code {code}", flush=True)
         yield f"__DONE__:{code}\n"
     finally:
         if proc.returncode is None:
