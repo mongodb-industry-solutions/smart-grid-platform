@@ -57,6 +57,7 @@ async function runBackendStep(path, onData) {
   let exitCode = null;
 
   const handleLine = (line) => {
+    if (line === "__PING__") return; // backend keepalive during silent steps
     const m = line.match(/^__DONE__:(\d+)$/);
     if (m) exitCode = Number(m[1]);
     else if (line) onData(line + "\n");

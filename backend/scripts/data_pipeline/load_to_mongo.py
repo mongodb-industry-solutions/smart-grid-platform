@@ -42,7 +42,7 @@ PLAIN_COLLECTIONS = {
     INPUTS / "network.json": "network",  # canonical topology, seeded as-is
     INPUTS / "tariff_catalog.json": "tariff_catalog",  # static tariffs, seeded as-is
 }
-READINGS_FILE = OUTPUTS / "readings_final.json"
+READINGS_FILE = OUTPUTS / "readings_final.jsonl"  # JSON Lines: streamed, not read whole
 READINGS_COLLECTION = "readings"
 BATCH = 5000
 
@@ -52,6 +52,16 @@ def _load_json(path: Path):
     land as real BSON dates rather than strings."""
     with open(path) as f:
         return json_util.loads(f.read())
+
+
+def _iter_jsonl(path: Path):
+    """Yield one parsed EJSON doc per line of a JSON Lines file, so the whole
+    readings dataset is never held in memory at once (keeps the loader small)."""
+    with open(path) as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                yield json_util.loads(line)
 
 
 def _require_outputs():
@@ -73,7 +83,6 @@ def load_plain(connector: MongoDBConnector, path: Path, name: str):
 
 
 def load_readings(uri: str, db: str):
-    docs = _load_json(READINGS_FILE)
     # Fresh time-series collection. metaField=dataid buckets readings by meter so
     # per-customer queries and the network $lookups stay fast at scale.
     ts = TimeSeriesCollectionCreator(uri=uri, database_name=db)
@@ -91,14 +100,26 @@ def load_readings(uri: str, db: str):
             f"(got {info.get('type')!r}). Stop the feeder before loading, then retry."
         )
     col = ts.get_collection(READINGS_COLLECTION)
-    for i in range(0, len(docs), BATCH):
-        col.insert_many(docs[i:i + BATCH], ordered=False)
+    # Stream the JSONL file and insert in batches so the whole dataset is never in
+    # memory (the readings are the big collection). Also gives steady progress
+    # output, which keeps the streaming HTTP response alive during the load.
+    total, batch = 0, []
+    for doc in _iter_jsonl(READINGS_FILE):
+        batch.append(doc)
+        if len(batch) >= BATCH:
+            col.insert_many(batch, ordered=False)
+            total += len(batch)
+            batch.clear()
+            logger.info("    readings %d", total)
+    if batch:
+        col.insert_many(batch, ordered=False)
+        total += len(batch)
     # Compound indexes so region drill-downs (by feeder/state) seek directly to a
     # region within a time range, instead of scanning the whole time window and
     # filtering in memory. (timestamp is already indexed on its own.)
     col.create_index([("feeder_id", 1), ("timestamp", 1)])
     col.create_index([("state", 1), ("timestamp", 1)])
-    logger.info("  %-20s <- %-26s (%d docs, time-series, meta=dataid)", READINGS_COLLECTION, READINGS_FILE.name, len(docs))
+    logger.info("  %-20s <- %-26s (%d docs, time-series, meta=dataid)", READINGS_COLLECTION, READINGS_FILE.name, total)
 
 
 def main():

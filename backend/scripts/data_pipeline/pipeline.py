@@ -54,7 +54,7 @@ OUTAGE_FULL_FRAC = 0.5          # of outages, fraction that are full dropouts (r
 OUTAGE_MIN_LEN   = 1            # min consecutive intervals an outage lasts
 OUTAGE_MAX_LEN   = 5            # max consecutive intervals (e.g. 4 = up to 1h at 15-min data)
 SEED             = 42           # reproducible RNG
-OUT_JSON         = _os.path.join(_OUTPUTS, "readings_final.json")
+OUT_JSON         = _os.path.join(_OUTPUTS, "readings_final.jsonl")  # JSON Lines: one reading per line (streamed, low memory)
 OUT_CUSTOMERS    = _os.path.join(_OUTPUTS, "customers_expanded.csv")
 OUT_CUSTOMERS_JSON = _os.path.join(_OUTPUTS, "customers_expanded.json")  # collection, for Atlas import
 NETWORK_OUT_JSON  = _os.path.join(_OUTPUTS, "network_map.json")  # meter -> grid topology, its own collection
@@ -717,15 +717,26 @@ def _count_bad(o, n=0):
         return sum(_count_bad(v) for v in o)
     return n
 
-docs_out      = _sanitize(docs)
-customers_out = _sanitize(customers.to_dict("records"))
-network_out   = _sanitize(network_df.to_dict("records"))
+# Readings are the big collection: stream them to JSON Lines (one sanitized doc
+# per line) so we never build a second full copy in memory (`_sanitize(docs)` used
+# to double the peak). The loader reads this file line-by-line too, so neither side
+# holds all ~145k readings at once — this is what keeps the pipeline under a small
+# (512Mi) pod. See ENHANCEMENTS.md #6.
+n_bad = 0
+with open(OUT_JSON, "w") as f:
+    for d in docs:
+        n_bad += _count_bad(d)
+        f.write(json.dumps(_sanitize(d)) + "\n")
 
-n_bad = sum(_count_bad(x) for x in (docs, customers.to_dict("records"), network_df.to_dict("records")))
+# Customers and network are small (hundreds of docs) — a plain JSON array is fine.
+customers_records = customers.to_dict("records")
+network_records   = network_df.to_dict("records")
+n_bad += sum(_count_bad(x) for x in customers_records) + sum(_count_bad(x) for x in network_records)
+customers_out = _sanitize(customers_records)
+network_out   = _sanitize(network_records)
 if n_bad:
     print(f"[sanitize] found {n_bad} NaN/Inf value(s); wrote them as JSON null so the export stays valid\n")
 
-json.dump(docs_out, open(OUT_JSON,"w"), indent=2)
 customers.to_csv(OUT_CUSTOMERS, index=False)
 json.dump(customers_out, open(OUT_CUSTOMERS_JSON,"w"), indent=2)
 json.dump(network_out, open(NETWORK_OUT_JSON,"w"), indent=2)
