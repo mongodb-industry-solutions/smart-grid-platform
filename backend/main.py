@@ -51,6 +51,9 @@ async def _stream_cmd(args):
     proc = await asyncio.create_subprocess_exec(
         *args,
         cwd=BACKEND_DIR,
+        # PYTHONUNBUFFERED so the child's prints/logs stream live over the pipe
+        # instead of being block-buffered until it exits (progress wouldn't show).
+        env={**os.environ, "PYTHONUNBUFFERED": "1"},
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.STDOUT,
     )
