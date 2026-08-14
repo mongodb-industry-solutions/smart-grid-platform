@@ -181,7 +181,7 @@ node --env-file=.env.local scripts/seedKnowledgeBase.mjs
 | `DEMO_REGEN_COOLDOWN_MINUTES` | `frontend/.env.local` | No | Minimum minutes between Start Demo regenerations (default `60`; `0` disables the cooldown). |
 | `DEMO_STEP_TIMEOUT_MS` | `frontend/.env.local` | No | Max ms a Start Demo setup step may run before it's killed (default `600000` = 10 min). |
 | `MONGODB_TIMEOUT_MS` | `frontend/.env.local` | No | Per-operation MongoDB timeout - any query/aggregation exceeding it is aborted so it can't hang a request (default `20000` = 20 s). |
-| `BACKEND_URL` | `frontend/.env.local` | No | URL of the backend service the Start Demo pipeline runs in (default `http://localhost:8000`; in Kanopy the internal service URL). |
+| `BACKEND_URL` | `frontend/.env.local` | No | URL of the backend that runs the Start Demo pipeline (default `http://localhost:8000`; in Kanopy the backend is a sidecar in the same pod, also reached over `localhost:8000`). |
 
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
 

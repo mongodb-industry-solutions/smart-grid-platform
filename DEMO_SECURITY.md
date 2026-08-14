@@ -3,14 +3,15 @@
 Technical reference for the `/api/demo/*` routes that power the **Start Demo**
 modal. These endpoints are more sensitive than a typical web route: they trigger OS processes (in the backend) and drop/reload MongoDB collections. This document is the threat model and the safeguards in place, for reviewers and for the next team.
 
-**Architecture.** The Python data pipeline (generate / load / feeder) runs in the
-**backend** service (which has Python + `uv`); the frontend `/api/demo/*` routes
-**orchestrate** it - forwarding the pipeline steps to the backend over the internal
-cluster URL (`BACKEND_URL`) and streaming progress back to the browser. The only
-step the frontend still spawns locally is the Node knowledge-base seed. The backend
-demo endpoints (`/demo/generate`, `/demo/load`, `/demo/feeder/*`) are **not exposed
-to the public internet** (the backend runs with `ingress.enabled=false`) - only the
-frontend, inside the cluster, can reach them.
+**Architecture.** The Python data pipeline (generate / load / feeder) runs in a
+**backend sidecar** (which has Python + `uv`) deployed in the **same pod** as the
+frontend; the frontend `/api/demo/*` routes **orchestrate** it - forwarding the
+pipeline steps to the backend over **`localhost`** (`BACKEND_URL`, shared network
+namespace) and streaming progress back to the browser. The only step the frontend
+still spawns locally is the Node knowledge-base seed. The backend demo endpoints
+(`/demo/generate`, `/demo/load`, `/demo/feeder/*`) have **no Service or ingress of
+their own** - they listen only on the pod's loopback, so nothing outside the pod
+(let alone the public internet) can reach them.
 
 ## What the endpoints do
 
@@ -114,10 +115,11 @@ is the shared helper `frontend/lib/http/sameOrigin.js`.
    the setup endpoint - it protects **every** request (including this endpoint's
    cooldown check) from a slow or runaway query hanging the app.
 
-8. **Backend isolation.** The pipeline processes actually run in the backend
-   service, whose demo endpoints are **not publicly ingressed**
-   (`ingress.enabled=false`) - only the frontend, inside the cluster, can reach
-   them. Nothing outside the cluster can call the process-running routes.
+8. **Backend isolation.** The pipeline processes run in a **backend sidecar** in
+   the same pod as the frontend, listening only on the pod's **loopback** - it has
+   **no Service or ingress**. So the process-running endpoints are unreachable from
+   anywhere outside the pod; only the frontend (same network namespace) can call
+   them over `localhost`.
 
 ## Configuration
 
@@ -153,8 +155,8 @@ exposed publicly without an auth proxy should consider adding:
 
 - **Auth / SSO integration** - gate `/api/demo/*` behind the deployment's identity
   provider.
-- **Keep the backend internal** - don't expose the backend service publicly
-  (`ingress.enabled=false`), so the process-running endpoints stay cluster-only
+- **Keep the backend a loopback-only sidecar** - don't give it a Service or
+  ingress, so the process-running endpoints stay reachable only from the frontend
   (safeguard #8).
 - **Output sanitization** - strip absolute filesystem paths from the streamed logs
   (minor information-disclosure hardening).

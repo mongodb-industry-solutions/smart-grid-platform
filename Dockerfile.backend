@@ -2,6 +2,14 @@ FROM python:3.13-slim
 
 WORKDIR /
 
+# CA certificates: python:*-slim ships without them, but the data pipeline
+# (load_to_mongo.py / feeder.py) connects to Atlas over TLS, which fails cert
+# verification without a system CA store. (The Node frontend bundles its own CAs,
+# which is why only the backend hit this.)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
 # uv installation
 RUN pip install uv
 
@@ -14,7 +22,9 @@ RUN uv sync --no-dev
 # Copy the rest of the backend code
 COPY ./backend/ .
 
-# if using multi-container setup expose 8000 instead
-EXPOSE 8080
+# Runs as a sidecar in the same pod as the frontend (shared network namespace),
+# so it must listen on a different port than the frontend (8080). The frontend
+# reaches it at http://localhost:8000 (BACKEND_URL).
+EXPOSE 8000
 
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
