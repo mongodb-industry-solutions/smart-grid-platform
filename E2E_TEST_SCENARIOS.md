@@ -17,9 +17,11 @@ demo path plus the behaviors that are easy to break silently.
 - The database is **seeded** (a full dataset generated + loaded). The live
   **feeder** does NOT need to be running - only scenarios that explicitly test
   live polling require it.
-- For Start Demo scenarios, the **backend service** is running (it hosts the data
-  pipeline) and `sessionStorage` is cleared so the modal re-triggers; for all other
-  scenarios the Start Demo modal is dismissed first.
+- For Start Demo scenarios, the **backend** is running (it hosts the data pipeline):
+  in the deployed app it's a sidecar in the same pod, reached over `localhost:8000`;
+  locally, run it with `uv run uvicorn main:app --port 8000`. Also clear
+  `sessionStorage` so the modal re-triggers. For all other scenarios the Start Demo
+  modal is dismissed first.
 - The app has **no auth/SSO**, so no login step is required.
 - Root `/` always redirects to `/monitoring`.
 - Add Outage scenarios **mutate the database** (insert a `manual_outage` reading);
@@ -85,6 +87,7 @@ demo path plus the behaviors that are easy to break silently.
 
 - **FOR-01** (P0): Given a seeded database, When the user opens `/forecasting`, Then Demand Forecast, Peak Timing, Weather-Adjusted Forecast, and the Region Summary cards render with data.
 - **FOR-02** (P1): Given the user is on `/forecasting`, When they pick Region then Feeder then Meter, Then selecting an upper level resets the lower ones and the charts refetch at each change.
+- **FOR-03** (P1): Given a seeded database with the live feeder running (so the readings' simulated clock has advanced ahead of wall-clock time), When the user opens the Weather-Adjusted Forecast, Then the temperature line is present across both history and the forecast horizon (not blank) - real weather is shifted onto the simulated hours.
 
 ---
 
@@ -108,7 +111,7 @@ demo path plus the behaviors that are easy to break silently.
 Run without a browser; complements the UI scenarios.
 
 - **API-01** (P0): Given a valid meter `dataid`, When `POST /api/monitoring-panel/outages` is called with it, Then it returns `200` with `{ok:true, dataid, city, state, feeder_id, substation_id, transformer_id}` and a `manual_outage` reading exists at the meter's latest timestamp.
-- **API-02** (P0): Given a POST to `/api/monitoring-panel/outages` or `/api/demo/start`, When the `Origin` header is present but mismatched, Then it is rejected with `403`; and when there is no `Origin` header, the request is allowed.
+- **API-02** (P0): Given a POST to a guarded endpoint (`/api/monitoring-panel/outages`, `/api/demo/start`, or the agent routes `/api/ai-chatbot` and `/api/ai-chatbot/vector-map`), When the `Origin` header is present but mismatched, Then it is rejected with `403`; and when there is no `Origin` header, the request is allowed. (The guard compares hosts, honoring `x-forwarded-host`, so it holds behind the ingress.)
 - **API-03** (P1): Given a POST to `/api/monitoring-panel/outages`, When the `dataid` is non-numeric or missing, Then it returns `400` ("A numeric dataid is required."); and when the `dataid` is an unknown meter, Then it returns `404` ("No readings found…") and no document is inserted.
 - **API-04** (P1): Given a POST to `/api/demo/start`, When it is sent within the cooldown window, Then it returns `429` ("~N min"); and when two are sent concurrently, Then the second returns `409` (in-progress lock).
 
