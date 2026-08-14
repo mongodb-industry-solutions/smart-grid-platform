@@ -12,12 +12,12 @@ the right next steps as the dataset grows or the demo is pushed harder.
 
 The network **demand** and **forecast** cards, and some monitoring panels, compute
 their numbers by scanning and `$group`-ing the `readings` time-series **on every
-request**. With 30 days of 15-minute data that's ~720k documents; with a live
-feeder or a longer window it grows into the millions. After the optimizations
-below these endpoints run in roughly **0.6–1.2 s** at 720k - fine for the demo -
-but the cost still scales with history, so a much larger window or higher load
-will degrade it. Pre-aggregated rollups turn these into near-constant-time reads
-(**<100 ms**) regardless of how much history accumulates.
+request**. With the default 6 days of 15-minute data that's ~145k documents; with
+a live feeder or a longer window it grows into the millions. After the
+optimizations below these endpoints run comfortably under ~1 s at that size - fine
+for the demo - but the cost still scales with history, so a much larger window or
+higher load will degrade it. Pre-aggregated rollups turn these into
+near-constant-time reads (**<100 ms**) regardless of how much history accumulates.
 
 ### What's already been done (so you don't redo it)
 
@@ -142,18 +142,24 @@ want to *keep* long history queryable without bloating the hot path.
 
 ---
 
-## 4. Weather temperature for the forecast horizon
+## 4. Weather temperature source (archive + sim-clock shift)
 
 The weather-adjusted forecast pulls temperatures from Open-Meteo's **archive** API
-(`lib/weather/openMeteo.js`), which only covers dates up to *today*. Because the
-dataset is anchored to "now", the forecast **horizon** (dates past now) has no
-archive temperature, so the temp line stops at the present. The history window is
-covered, which is what the degree-day sensitivity fit needs - but if you want the
-projected part of the chart to also show temperature, fetch the horizon from
-Open-Meteo's **forecast** endpoint (`api.open-meteo.com/v1/forecast`, with
-`past_days` for the recent overlap) and merge it with the archive series. Keep the
-"never request future dates from the archive" guard in `lib/db/weatherForecast.js`
-either way - a future `end_date` errors the whole archive request.
+(`lib/weather/openMeteo.js`), which only covers dates up to *today*. Two things
+push the readings' timestamps past that: the dataset is anchored to "now", and the
+live feeder advances a **simulated clock** ahead of wall-clock time, so `to` and
+the forecast horizon can sit days/weeks in the future - where the archive has no
+data, which would blank the temperature line.
+
+`lib/db/weatherForecast.js` handles this by **shifting** the requested window back
+onto real dates the archive covers, fetching there, then re-keying the temps
+forward onto the sim hours (`shiftHourKey`). This keeps the line populated across
+both history and the horizon regardless of how far the feeder has drifted. It
+trades exact calendar temperature for continuity - fine here, since the demo
+readings aren't weather-driven. If you ever want *true* calendar temperatures for
+the near-future horizon instead, fetch it from Open-Meteo's **forecast** endpoint
+(`api.open-meteo.com/v1/forecast`, up to ~16 days ahead) and merge - but that
+still can't cover a sim clock that has run far past +16 days.
 
 ---
 
@@ -161,18 +167,20 @@ either way - a future `end_date` errors the whole archive request.
 
 ### The problem
 
-Today the feeder is a Python script (`feeder.py`) that the Next.js app **spawns
-as a detached OS process** from `/api/demo/start` and tracks in memory
-(`globalThis` in `lib/demo/feeder.js`). It's also **coupled to this repo**, so any
-other Energy demo that wants a live smart-meter stream would have to copy the code.
-That's convenient for a single local dev box but limiting:
+The feeder (`feeder.py`) now runs in the **backend** service: `backend/main.py`
+spawns and tracks it, and the frontend drives it through the backend's
+`/demo/feeder/*` endpoints (`lib/demo/feeder.js` is a thin HTTP client). That
+already fixed the worst of the original design (the Next.js app no longer shells
+out to a local process). What's left is that it's still **coupled to this repo**
+and its lifecycle is still **in-process in the backend**, so any other Energy demo
+that wants a live smart-meter stream would have to copy the code. Remaining limits:
 
-- **State doesn't survive an app restart.** The in-memory handle is lost, so a
-  restart orphans the running feeder (it keeps writing, but the app can no longer
-  see or stop it - only its `--max-hours` guard eventually ends it).
-- **It doesn't work across instances or serverless.** Each app instance has its
-  own `globalThis`, and managed/serverless hosting can't reliably spawn and track
-  local processes.
+- **State doesn't survive a backend restart.** The process handle lives in a module
+  global in `backend/main.py`, so a restart orphans the running feeder (it keeps
+  writing, but the backend can no longer see or stop it - only its `--max-hours`
+  guard eventually ends it).
+- **It doesn't work across instances.** Each backend replica has its own in-memory
+  handle, so `feeder/status` and `feeder/stop` only know about the local one.
 - **It isn't reusable.** The streaming logic lives inside smart-grid-platform; other demos
   can't consume it without duplicating it.
 
@@ -192,10 +200,11 @@ of it.
   child process), and persist its state (running flag, sim clock) in its own store
   or the target DB, so status is authoritative and survives restarts / instances.
 
-In this repo, `/api/demo/*` become **thin HTTP clients** of that service -
-`lib/demo/feeder.js` (spawn + `globalThis` tracking) goes away. `demo/start` still
-orchestrates generate → load → seed KB, then calls the feeder service to start
-streaming.
+In this repo the plumbing is already close: `lib/demo/feeder.js` is an HTTP client
+and `demo/start` orchestrates generate → load → seed KB → start feeder. The step
+is to point that client at the **standalone** service instead of this demo's own
+backend, and move the backend's in-process feeder subprocess (and its `demo/feeder/*`
+endpoints) into that service, persisting state so status survives restarts/instances.
 
 ### Why it's worth it
 
@@ -217,3 +226,42 @@ assumptions in the payloads), then swap this demo's subprocess handling for HTTP
 calls. Trade-off: it adds a service to run and an API contract to keep stable
 across consumers - worth it once more than one demo needs the stream, or the demo
 is deployed and must survive restarts.
+
+---
+
+## 6. Scale the dataset back up (streamed loading + memory)
+
+### Background
+
+The generator (`pipeline.py`) builds every reading as a dict in a Python list in
+RAM (`docs`), because the post-processing steps (grid topology assignment, grid
+stress, outage summary) operate on the whole set. That list is the peak-memory
+driver. The window is trimmed to **6 days** × 15-min × 250 meters (~145k readings)
+so the backend pod (512Mi) doesn't get **OOMKilled** during Start Demo.
+
+### What's already been done (streamed I/O)
+
+Readings are exported and loaded as a stream, so neither side holds the full set
+beyond the generator's working list:
+
+- `pipeline.py` writes readings to **JSON Lines** (`readings_final.jsonl`), one
+  sanitized doc per line, streamed.
+- `load_to_mongo.py` **streams** that file line-by-line and `insert_many`s in
+  batches (`BATCH`), so it never holds all readings at once (and emits steady
+  progress, which also keeps the streaming HTTP response alive).
+
+This keeps the load step flat in memory and the export peak low.
+
+### If you need a bigger window (more history)
+
+`pipeline.py` still holds the single `docs` list during generation (the
+post-processing needs it), so memory still scales with `DURATION`. To go well
+beyond 6 days you have two levers:
+
+- **Stream generation too (durable fix).** Make `synthesize` (and the grid
+  topology / stress / summary passes) operate per-meter and append each meter's
+  readings to the JSONL file as they're produced, so `docs` never holds the whole
+  set. More involved because a few passes currently scan all readings at once.
+- **Raise the pod memory (stopgap).** Bump the backend's `resources.limits.memory`
+  in `.drone.yml` (`deploy-backend-*`) - roughly `1Gi` for ~14 days, `2Gi` for ~30
+  days - and raise `DURATION` accordingly. Simplest, but it just moves the ceiling.

@@ -70,7 +70,7 @@ TTL) for long-running demos.
 
 | Output (`outputs/`)        | Collection          | Notes                                  |
 | -------------------------- | ------------------- | -------------------------------------- |
-| `readings_final.json`      | `readings`          | time-series; carries `grid_event_id`   |
+| `readings_final.jsonl`     | `readings`          | time-series (JSON Lines, streamed); carries `grid_event_id` |
 | `network_map.json`         | `meter_network_map` | meter → transformer/feeder/substation  |
 | `customers_expanded.json`  | `customer_db`       | seed 25 expanded to `TOTAL_CUSTOMERS`  |
 | `inputs/network.json`      | `network`           | canonical topology (input, seeded as-is) |
@@ -79,4 +79,5 @@ TTL) for long-running demos.
 This pipeline is the **single source of truth** for the operational data — there
 is no prebuilt dump. `load_to_mongo.py` seeds Atlas directly (`readings` as a
 time-series collection with `metaField=dataid` + indexes), and the app's **Start
-Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you.
+Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you (via the
+backend service, which hosts these scripts — the frontend just orchestrates it).

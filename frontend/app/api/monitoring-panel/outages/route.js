@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { getOutagesSummary } from "@/lib/db/outages";
+import { sameOriginOk } from "@/lib/http/sameOrigin";
 
 const dbName = process.env.DATABASE_NAME;
 const READINGS = process.env.READINGS_COLLECTION_NAME || "readings";
@@ -19,18 +20,6 @@ export async function GET() {
       { summary: null, error: "Failed to fetch outages data" },
       { status: 500 }
     );
-  }
-}
-
-// Reject cross-site browser POSTs (a present-but-mismatched Origin); same-origin
-// requests and non-browser tooling (no Origin) are allowed.
-function sameOriginOk(request) {
-  const origin = request.headers.get("origin");
-  if (!origin) return true;
-  try {
-    return new URL(origin).origin === request.nextUrl.origin;
-  } catch {
-    return false;
   }
 }
 

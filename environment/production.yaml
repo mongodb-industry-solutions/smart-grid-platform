@@ -6,14 +6,15 @@ security:
 ownership:
   driEmail: javier.guajardo@mongodb.com
 
+# --- Main container: the frontend (Next.js) ---
 env:
   NODE_ENV: prod
   # AWS region for IRSA (no credentials needed)
   AWS_REGION: us-east-1
-  # Backend API URL for frontend to connect to backend health check
-  BACKEND_URL: http://smart-meter-backend-web-app:80
+  # The backend runs as a sidecar in this same pod (shared network namespace), so
+  # it's reachable over localhost — no Service/ingress of its own.
+  BACKEND_URL: http://localhost:8000
 
-## Single Pod Containers
 envSecrets:
   # MongoDB Configuration
   MONGODB_URI: smart-meter
@@ -25,30 +26,40 @@ envSecrets:
   CHATCOMPLETIONS_MODEL_ID: smart-meter
   EMBEDDINGS_MODEL_ID: smart-meter
 
-## should be used in case of multi-pod container i.e: both frontend and backend in one pod
-# sidecarContainers:
-#   - name: backend
-#     image: 275662791714.dkr.ecr.us-east-1.amazonaws.com/kanopy-session-backend:latest
-#     env:
-#       # MongoDB connection (from Kubernetes secret)
-#       - name: MONGODB_URI
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: MONGODB_URI
+# Main container (frontend) resources.
+resources:
+  limits:
+    cpu: 500m
+    memory: 512Mi
+  requests:
+    cpu: 150m
+    memory: 256Mi
 
-#       - name: DATABASE_NAME
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: DATABASE_NAME
-
-#       # Voyage AI API Key (embeddings)
-#       - name: VOYAGE_API_KEY
-#         valueFrom:
-#           secretKeyRef:
-#             name: session-temp-kanopy
-#             key: VOYAGE_API_KEY
+# --- Sidecar: the Python backend that runs the Start Demo pipeline (generate /
+# load / feeder). Internal only — the frontend calls it at http://localhost:8000.
+# The image tag is overridden per-build in .drone.yml. ---
+sidecarContainers:
+  - name: backend
+    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend-prod:prod-latest
+    env:
+      - name: MONGODB_URI
+        valueFrom:
+          secretKeyRef:
+            name: smart-meter
+            key: MONGODB_URI
+      - name: DATABASE_NAME
+        valueFrom:
+          secretKeyRef:
+            name: smart-meter
+            key: DATABASE_NAME
+    resources:
+      limits:
+        cpu: 500m
+        # 1Gi: the pipeline builds the dataset in memory during generate.
+        memory: 1024Mi
+      requests:
+        cpu: 150m
+        memory: 256Mi
 
 ## ----------------------------- Cloud Specific Configurations (For AWS only line 42 to 46 needed)-----------------------------
 

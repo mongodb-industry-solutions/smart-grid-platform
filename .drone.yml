@@ -35,8 +35,6 @@ steps:
       tags:
         - git-${DRONE_COMMIT_SHA:0:7}
         - latest
-      # build_args:
-      #   - NEXT_BACKEND_URL: http://kanopy-session-backend-web-app:80
       dockerfile: Dockerfile.frontend
       access_key:
         from_secret: ecr_access_key ## set in drone web ui
@@ -46,34 +44,10 @@ steps:
       event:
         - push
 
-  - name: deploy-backend-staging
-    image: public.ecr.aws/kanopy/drone-helm:v3
-    settings:
-      chart: mongodb/web-app
-      chart_version: 4.30.0
-      add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: industrysolutions
-      release: smart-meter-backend
-      values:
-        - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-backend.industrysolutions.staging.corp.mongodb.com"
-        - "mesh.enabled=true"
-        # Backend resources (reduced defaults for demos - increase if OOMKilled)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=100m"
-        - "resources.requests.memory=256Mi"
-      api_server: https://api.staging.corp.mongodb.com
-      kubernetes_token:
-        from_secret: staging_kubernetes_token ## set in drone web ui
-      values_files: ["environment/staging.yaml"]
-    when:
-      event:
-        - push
-
-  - name: deploy-frontend-staging
+  # Single pod: frontend (main container) + backend (sidecar). They share one
+  # network namespace, so the frontend reaches the backend at http://localhost:8000
+  # (BACKEND_URL) and the backend needs no Service/ingress of its own.
+  - name: deploy-staging
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/web-app
@@ -84,14 +58,11 @@ steps:
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-frontend"
+        - "sidecarContainers[0].name=backend"
+        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend:git-${DRONE_COMMIT_SHA:0:7}"
         - "ingress.enabled=true"
         - "ingress.hosts[0]=smart-meter-frontend.industrysolutions.staging.corp.mongodb.com"
         - "mesh.enabled=true"
-        # Frontend resources (reduced defaults for demos - increase if OOMKilled)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=100m"
-        - "resources.requests.memory=256Mi"
       api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
         from_secret: staging_kubernetes_token ## set in drone web ui
@@ -146,34 +117,9 @@ steps:
       event:
         - push
 
-  - name: deploy-backend-production
-    image: public.ecr.aws/kanopy/drone-helm:v3
-    settings:
-      chart: mongodb/web-app
-      chart_version: 4.30.0
-      add_repos: [mongodb=https://10gen.github.io/helm-charts]
-      namespace: industrysolutions
-      release: smart-meter-backend-prod
-      values:
-        - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend-prod"
-        - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-backend.industrysolutions.prod.corp.mongodb.com"
-        - "mesh.enabled=true"
-        # Backend resources (production - slightly higher for reliability)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=150m"
-        - "resources.requests.memory=256Mi"
-      api_server: https://api.prod.corp.mongodb.com
-      kubernetes_token:
-        from_secret: prod_kubernetes_token
-      values_files: ["environment/production.yaml"]
-    when:
-      event:
-        - push
-
-  - name: deploy-frontend-production
+  # Single pod: frontend (main container) + backend (sidecar) — see the staging
+  # deploy note above.
+  - name: deploy-production
     image: public.ecr.aws/kanopy/drone-helm:v3
     settings:
       chart: mongodb/web-app
@@ -184,14 +130,11 @@ steps:
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
         - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-frontend-prod"
+        - "sidecarContainers[0].name=backend"
+        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend-prod:git-${DRONE_COMMIT_SHA:0:7}-prod"
         - "ingress.enabled=true"
         - "ingress.hosts[0]=smart-meter-frontend.industrysolutions.prod.corp.mongodb.com"
         - "mesh.enabled=true"
-        # Frontend resources (production - slightly higher for reliability)
-        - "resources.limits.cpu=500m"
-        - "resources.limits.memory=512Mi"
-        - "resources.requests.cpu=150m"
-        - "resources.requests.memory=256Mi"
       api_server: https://api.prod.corp.mongodb.com
       kubernetes_token:
         from_secret: prod_kubernetes_token
