@@ -142,7 +142,7 @@ browser session.)
 
 > **Security note:** Start Demo provisions the data through a privileged setup
 > routine, protected by same-origin, cooldown, and timeout safeguards. If you want
-> to understand the security measures behind it, see [DEMO_SECURITY.md](DEMO_SECURITY.md).
+> to understand the security measures behind it, see [DEMO_SECURITY.md](Documentation/DEMO_SECURITY.md).
 
 ### Alternative: load the data from the CLI
 
@@ -186,7 +186,7 @@ node --env-file=.env.local scripts/seedKnowledgeBase.mjs
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
 
 The `DEMO_*` variables tune the Start Demo safeguards - see
-[DEMO_SECURITY.md](DEMO_SECURITY.md) for the full threat model and the safeguards
+[DEMO_SECURITY.md](Documentation/DEMO_SECURITY.md) for the full threat model and the safeguards
 in place.
 
 There is a **single config file** - `frontend/.env.local`. The data pipeline

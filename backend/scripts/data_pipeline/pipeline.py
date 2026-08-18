@@ -721,7 +721,7 @@ def _count_bad(o, n=0):
 # per line) so we never build a second full copy in memory (`_sanitize(docs)` used
 # to double the peak). The loader reads this file line-by-line too, so neither side
 # holds all ~145k readings at once — this is what keeps the pipeline under a small
-# (512Mi) pod. See ENHANCEMENTS.md #6.
+# (512Mi) pod. See Documentation/ENHANCEMENTS.md #6.
 n_bad = 0
 with open(OUT_JSON, "w") as f:
     for d in docs:

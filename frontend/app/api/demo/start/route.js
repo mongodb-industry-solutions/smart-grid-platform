@@ -153,12 +153,7 @@ export async function POST(request) {
         // agent / vector map need the knowledge base.
         send("step", { step: "kb", message: "Seeding the AI knowledge base…" });
         try {
-          await runStep(
-            "node",
-            ["--env-file=.env.local", "scripts/seedKnowledgeBase.mjs"],
-            FRONTEND_DIR,
-            log
-          );
+          await runStep("node", ["scripts/seedKnowledgeBase.mjs"], FRONTEND_DIR, log);
         } catch (e) {
           log(`(knowledge base skipped: ${e.message})\n`);
         }
