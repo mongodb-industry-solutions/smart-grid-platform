@@ -1,50 +1,40 @@
-import { spawn } from "node:child_process";
-import path from "node:path";
+// Client for the backend's demo endpoints. The Python data pipeline (generate /
+// load / feeder) runs in the backend container — which has Python + uv — so the
+// frontend (Node only) forwards to it over the internal service URL instead of
+// spawning `uv` locally.
 
-// The data pipeline lives in the sibling backend/ folder; the Next server runs
-// from frontend/, so resolve backend relative to the process cwd.
-export const BACKEND_DIR = path.resolve(process.cwd(), "..", "backend");
+// The Next server runs from frontend/; the KB seed step still spawns a local
+// Node script, so keep this for that step's cwd.
 export const FRONTEND_DIR = process.cwd();
 
-// Track the feeder across route-module reloads (dev hot-reload) via globalThis.
-function slot() {
-  if (!globalThis.__demoFeeder) globalThis.__demoFeeder = { proc: null };
-  return globalThis.__demoFeeder;
+const BACKEND_URL = (process.env.BACKEND_URL || "http://localhost:8000").replace(/\/$/, "");
+
+export function backendUrl(path) {
+  return `${BACKEND_URL}${path}`;
 }
 
-export function isFeederRunning() {
-  const p = slot().proc;
-  return !!(p && p.exitCode === null && !p.killed);
+export async function startFeeder() {
+  const r = await fetch(backendUrl("/demo/feeder/start"), { method: "POST" });
+  if (!r.ok) throw new Error(`feeder start failed: ${r.status}`);
+  return r.json();
 }
 
-// Start the live feeder detached so it keeps streaming after the request ends.
-// No-op if one is already running.
-export function startFeeder(args = []) {
-  if (isFeederRunning()) return { started: false, alreadyRunning: true };
-  const proc = spawn("uv", ["run", "scripts/data_pipeline/feeder.py", ...args], {
-    cwd: BACKEND_DIR,
-    env: process.env,
-    detached: true,
-    stdio: "ignore",
-  });
-  proc.unref();
-  slot().proc = proc;
-  return { started: true, pid: proc.pid };
-}
-
-export function stopFeeder() {
-  const p = slot().proc;
-  if (!isFeederRunning()) return { stopped: false };
+export async function stopFeeder() {
   try {
-    // Negative pid kills the detached process group.
-    process.kill(-p.pid, "SIGINT");
+    const r = await fetch(backendUrl("/demo/feeder/stop"), { method: "POST" });
+    return r.json();
   } catch {
-    try {
-      p.kill("SIGINT");
-    } catch {
-      /* already gone */
-    }
+    return { stopped: false };
   }
-  slot().proc = null;
-  return { stopped: true };
+}
+
+export async function isFeederRunning() {
+  try {
+    const r = await fetch(backendUrl("/demo/feeder/status"));
+    if (!r.ok) return false;
+    const d = await r.json();
+    return !!d.feederRunning;
+  } catch {
+    return false;
+  }
 }

@@ -33,13 +33,19 @@ INPUT_CSV        = _os.path.join(_INPUTS, "readings_base.csv.gz")  # base readin
 LOCATIONS_FILE   = _os.path.join(_INPUTS, "customer_seed.json")  # city/state pairs to reuse
 TOTAL_CUSTOMERS  = 250          # grow customer set to this many (keeps existing 25)
 START            = None         # None = earliest available slice; ANCHOR_NOW re-pins it to today
-DURATION         = "30d"       # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
+DURATION         = "6d"        # 24h, 1w, 3d, 30m, 2mo, 1y ... or None for no end
+                               # 6d keeps enough history for forecasting / consumption
+                               # trend while keeping the generator's peak memory small —
+                               # it builds all readings in RAM before loading, so a
+                               # demo-sized pod (512Mi) won't OOM.
 SHIFT_YEAR       = _NOW.year    # rebase timestamps to the CURRENT year (dynamic, not static)
 ANCHOR_NOW       = True          # shift the whole window onto the current clock so the
                                  # data looks like it's being read in real time
 ANCHOR_MODE      = "end"         # "end" -> last reading = now (recent history, best for
                                  # dashboards); "start" -> first reading = now (future window)
-OUTAGE_MODE      = "both"       # "none" | "full" | "partial" | "both"
+OUTAGE_MODE      = "none"       # "none" | "full" | "partial" | "both"  (no scattered
+                                # random outages — keep the baseline sparse so a
+                                # manually-added outage stands out on the map)
 OUTAGE_TARGET_PCT = 0.10        # target fraction of customers that see >=1 outage
                                 # (auto-computes OUTAGE_RATE from the window size).
                                 # Set to None to use OUTAGE_RATE directly instead.
@@ -48,7 +54,7 @@ OUTAGE_FULL_FRAC = 0.5          # of outages, fraction that are full dropouts (r
 OUTAGE_MIN_LEN   = 1            # min consecutive intervals an outage lasts
 OUTAGE_MAX_LEN   = 5            # max consecutive intervals (e.g. 4 = up to 1h at 15-min data)
 SEED             = 42           # reproducible RNG
-OUT_JSON         = _os.path.join(_OUTPUTS, "readings_final.json")
+OUT_JSON         = _os.path.join(_OUTPUTS, "readings_final.jsonl")  # JSON Lines: one reading per line (streamed, low memory)
 OUT_CUSTOMERS    = _os.path.join(_OUTPUTS, "customers_expanded.csv")
 OUT_CUSTOMERS_JSON = _os.path.join(_OUTPUTS, "customers_expanded.json")  # collection, for Atlas import
 NETWORK_OUT_JSON  = _os.path.join(_OUTPUTS, "network_map.json")  # meter -> grid topology, its own collection
@@ -60,13 +66,15 @@ NETWORK_ASSETS_JSON = _os.path.join(_INPUTS, "network.json")
 
 # --- Grid stress simulation ("recreate stressful behaviour" for a utility) ---
 STRESS_ENABLED       = True     # inject correlated cascading outages, not just independent ones
-STRESS_COVER_ALL_UTILITIES = True  # one event per utility, spread across time, instead of
-                                    # clustering every event onto one random substation/area
-STRESS_EVENTS_PER_UTILITY  = 1  # only used when STRESS_COVER_ALL_UTILITIES is False
+STRESS_COVER_ALL_UTILITIES = False  # False = only a few total events (sparse baseline);
+                                    # True = one event per utility (every city affected)
+STRESS_EVENTS_PER_UTILITY  = 2  # when COVER_ALL is False: how many DISTINCT utilities
+                                # (= cities / clusters) get a stress event
 STRESS_SCOPE     = "feeder" # "feeder" (localized, realistic) or "substation" (bigger blast radius)
 STRESS_START     = None     # ISO ts to force every event there, or None to spread them out
 STRESS_DURATION  = "3h"     # how long each event lasts
-STRESS_SEVERITY  = 0.5      # fraction of METERS in scope that go down for the whole event
+STRESS_SEVERITY  = 0.25     # fraction of METERS in scope that go down for the whole event
+                            # (kept low so each cluster shows only ~1-2 outages)
 STRESS_FULL_FRAC = 0.4      # of those affected meters, fraction that trip fully (rest brownout)
 STRESS_LABEL     = "peak_demand_overload"  # e.g. heatwave/cold-snap driven transformer overload
 
@@ -255,10 +263,15 @@ def outage_length(rng):
     """How many consecutive intervals the outage lasts."""
     return int(rng.integers(OUTAGE_MIN_LEN, OUTAGE_MAX_LEN+1))
 
-def make_doc(ts, did, prof, channels, amps, pf, freq, v1, v2, cumulative):
+def make_doc(ts, did, prof, channels, amps, pf, freq, v1, v2, cumulative, interval_kwh):
     avg = round((v1+v2)/2,3)
     return {"avg_reading":float(avg),"current":float(amps),"dataid":int(did),
-            "energy":float(cumulative),"env_power":float(channels["env_power"]),
+            "energy":float(cumulative),
+            # Precomputed consumption for THIS interval (energy − previous energy),
+            # so consumption/tariff/weather queries sum a field instead of diffing
+            # consecutive cumulative readings at query time.
+            "interval_kwh":float(interval_kwh),
+            "env_power":float(channels["env_power"]),
             "ev_power":float(channels["ev_power"]),"frequency":float(freq),
             "has_ev":bool(prof["has_ev"]),"heating_power":float(channels["heating_power"]),
             "hvac_power":float(channels["hvac_power"]),"kitchen_power":float(channels["kitchen_power"]),
@@ -300,6 +313,7 @@ def synthesize(df, customers, rng):
     for _, c in customers.iterrows():
         did = int(c["dataid"]); prof = customer_profile(rng)
         cumulative = prof["energy0"]; src = real.get(did)
+        prev_cum = cumulative  # energy at the previous interval, for interval_kwh
         outage_remaining = 0   # intervals left in the current sustained outage
         outage_active = None   # "full" or "partial" while an outage persists
 
@@ -362,7 +376,12 @@ def synthesize(df, customers, rng):
             if not is_real or not have["energy"]:
                 cumulative = round(cumulative + (channels["power"]/1000)*0.25, 5)
 
-            docs.append(make_doc(ts,did,prof,channels,amps,pf,freq,v1,v2,cumulative))
+            # Consumption this interval = rise in the cumulative register (clamped
+            # so source gaps/resets never yield a negative).
+            interval_kwh = round(max(0.0, cumulative - prev_cum), 5)
+            prev_cum = cumulative
+
+            docs.append(make_doc(ts,did,prof,channels,amps,pf,freq,v1,v2,cumulative,interval_kwh))
     return docs
 
 docs = synthesize(df, customers, rng)
@@ -496,10 +515,20 @@ def simulate_grid_stress(docs, network_df, rng):
             units = grp[scope_col].unique().tolist()
             targets.append(units[int(rng.integers(0, len(units)))])
     else:
-        units = network_df[scope_col].unique().tolist()
-        if not units:
+        # Pick STRESS_EVENTS_PER_UTILITY DISTINCT utilities (→ distinct cities /
+        # clusters) and one scope-unit (feeder) in each, so the sparse baseline
+        # spreads across separate clusters instead of piling onto one city.
+        utils = network_df["utility_id"].dropna().unique().tolist()
+        if not utils:
             return []
-        targets = [units[int(rng.integers(0, len(units)))] for _ in range(STRESS_EVENTS_PER_UTILITY)]
+        k = min(STRESS_EVENTS_PER_UTILITY, len(utils))
+        chosen = rng.choice(utils, size=k, replace=False)
+        targets = []
+        for uid in chosen:
+            grp = network_df[network_df["utility_id"] == uid]
+            units = grp[scope_col].unique().tolist()
+            if units:
+                targets.append(units[int(rng.integers(0, len(units)))])
 
     dur = parse_duration(STRESS_DURATION)
     span_start, span_end = all_ts[0], all_ts[-1]
@@ -688,15 +717,26 @@ def _count_bad(o, n=0):
         return sum(_count_bad(v) for v in o)
     return n
 
-docs_out      = _sanitize(docs)
-customers_out = _sanitize(customers.to_dict("records"))
-network_out   = _sanitize(network_df.to_dict("records"))
+# Readings are the big collection: stream them to JSON Lines (one sanitized doc
+# per line) so we never build a second full copy in memory (`_sanitize(docs)` used
+# to double the peak). The loader reads this file line-by-line too, so neither side
+# holds all ~145k readings at once — this is what keeps the pipeline under a small
+# (512Mi) pod. See ENHANCEMENTS.md #6.
+n_bad = 0
+with open(OUT_JSON, "w") as f:
+    for d in docs:
+        n_bad += _count_bad(d)
+        f.write(json.dumps(_sanitize(d)) + "\n")
 
-n_bad = sum(_count_bad(x) for x in (docs, customers.to_dict("records"), network_df.to_dict("records")))
+# Customers and network are small (hundreds of docs) — a plain JSON array is fine.
+customers_records = customers.to_dict("records")
+network_records   = network_df.to_dict("records")
+n_bad += sum(_count_bad(x) for x in customers_records) + sum(_count_bad(x) for x in network_records)
+customers_out = _sanitize(customers_records)
+network_out   = _sanitize(network_records)
 if n_bad:
     print(f"[sanitize] found {n_bad} NaN/Inf value(s); wrote them as JSON null so the export stays valid\n")
 
-json.dump(docs_out, open(OUT_JSON,"w"), indent=2)
 customers.to_csv(OUT_CUSTOMERS, index=False)
 json.dump(customers_out, open(OUT_CUSTOMERS_JSON,"w"), indent=2)
 json.dump(network_out, open(NETWORK_OUT_JSON,"w"), indent=2)

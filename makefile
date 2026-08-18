@@ -22,7 +22,7 @@ uv_sync:
 uv_update:
 	cd backend && uv lock --upgrade
 
-# Generate the operational dataset and load it into Atlas (reads SEED_* from backend/.env).
+# Generate the operational dataset and load it into Atlas (reads MONGODB_URI/DATABASE_NAME from frontend/.env.local).
 seed_data:
 	cd backend && uv run scripts/data_pipeline/pipeline.py && uv run scripts/data_pipeline/load_to_mongo.py
 

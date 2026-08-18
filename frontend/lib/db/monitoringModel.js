@@ -1,6 +1,5 @@
 const READINGS = process.env.READINGS_COLLECTION_NAME || "readings";
 const CUSTOMERS = process.env.CUSTOMERS_COLLECTION_NAME || "customer_db";
-const NETWORK_MAP = process.env.NETWORK_MAP_COLLECTION_NAME || "meter_network_map";
 const NETWORK = process.env.NETWORK_COLLECTION_NAME || "network";
 
 function strId(doc) {
@@ -108,17 +107,15 @@ export async function getMonitoringComponentModel(db, component) {
       break;
     }
     case "grid-stability": {
-      collections = [await sample(READINGS, { timestamp: -1 }), await sample(NETWORK_MAP), await sample(NETWORK)];
+      collections = [await sample(READINGS, { timestamp: -1 }), await sample(NETWORK)];
       operations = [
         {
           title: "Feeder load vs capacity",
           collection: READINGS,
           type: "aggregate",
           pipeline: [
-            { $match: { timestamp: latestTs } },
-            { $lookup: { from: NETWORK_MAP, localField: "dataid", foreignField: "dataid", as: "map" } },
-            { $unwind: "$map" },
-            { $group: { _id: "$map.feeder_id", total_load: { $sum: "$avg_reading" }, meter_count: { $sum: 1 } } },
+            { $match: { timestamp: latestTs, feeder_id: { $ne: null } } },
+            { $group: { _id: "$feeder_id", total_load: { $sum: "$avg_reading" }, meter_count: { $sum: 1 } } },
             { $lookup: { from: NETWORK, localField: "_id", foreignField: "asset_id", as: "network" } },
             { $unwind: "$network" },
             {
@@ -223,11 +220,29 @@ export async function getMonitoringComponentModel(db, component) {
           collection: READINGS,
           type: "aggregate",
           pipeline: [
+            { $match: { voltage: { $ne: null } } },
             { $sort: { dataid: 1, timestamp: 1 } },
-            { $group: { _id: "$dataid", readings: { $push: "$$ROOT" } } },
-            { $set: { latest: { $last: "$readings" }, baseline: { $slice: ["$readings", 0, { $subtract: [{ $size: "$readings" }, 1] }] } } },
-            { $set: { mean: { $avg: "$baseline.power" }, std: { $stdDevSamp: "$baseline.power" } } },
-            { $set: { sigma: { $divide: [{ $abs: { $subtract: ["$latest.power", "$mean"] } }, "$std"] } } },
+            // Per-meter baseline mean/std + the latest value, via $group
+            // accumulators — no $push of whole documents into per-meter arrays.
+            {
+              $group: {
+                _id: "$dataid",
+                mean: { $avg: "$power" },
+                std: { $stdDevSamp: "$power" },
+                latest: { $last: "$power" },
+              },
+            },
+            {
+              $set: {
+                sigma: {
+                  $cond: [
+                    { $gt: ["$std", 0] },
+                    { $divide: [{ $abs: { $subtract: ["$latest", "$mean"] } }, "$std"] },
+                    null, // std == 0 → no meaningful deviation (avoids Infinity)
+                  ],
+                },
+              },
+            },
             { $match: { sigma: { $ne: null } } },
             { $sort: { sigma: -1 } },
           ],

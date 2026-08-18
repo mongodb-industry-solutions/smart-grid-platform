@@ -207,16 +207,18 @@ function periodRate(period) {
   return tier.rate + (tier.adj ?? 0);
 }
 
-// Estimates monthly kWh from a meter's cumulative `energy` readings. Uses the
-// observed energy-per-hour rate (total consumed / elapsed hours) extrapolated to
-// a month, so it's correct at ANY cadence — 15-min history and 1-second live
-// readings alike (averaging per-interval would collapse when cadences mix).
+// Estimates monthly kWh from a meter's precomputed per-interval consumption
+// (`interval_kwh`). Uses the observed energy-per-hour rate (total consumed /
+// elapsed hours) extrapolated to a month, so it's correct at ANY cadence — 15-min
+// history and 1-second live readings alike.
 function estimateMonthlyKwh(rows) {
   if (rows.length < 2) return null;
+  // Sum the intervals strictly inside [first, last] — skip rows[0], whose
+  // interval_kwh belongs to the interval before the window start, so the
+  // numerator lines up with the elapsed-hours denominator below.
   let total = 0;
   for (let i = 1; i < rows.length; i += 1) {
-    const delta = rows[i].energy - rows[i - 1].energy;
-    if (delta > 0) total += delta;
+    if (rows[i].interval_kwh > 0) total += rows[i].interval_kwh;
   }
   const hours =
     (new Date(rows[rows.length - 1].timestamp) - new Date(rows[0].timestamp)) /
@@ -356,7 +358,7 @@ export async function getTariffRecommendation(db, dataid) {
         projection: {
           _id: 0,
           timestamp: 1,
-          energy: 1,
+          interval_kwh: 1,
           power: 1,
           power_factor: 1,
         },
@@ -371,12 +373,13 @@ export async function getTariffRecommendation(db, dataid) {
   const tariff = await tariffs.findOne({ location_label: locationLabel });
   if (!tariff) return null;
 
-  // Per-interval consumption tagged with hour/month, for the TOU split.
+  // Per-interval consumption tagged with hour/month, for the TOU split. Uses the
+  // precomputed interval_kwh on each reading.
   const intervals = [];
-  for (let i = 1; i < rows.length; i += 1) {
-    const consumption = rows[i].energy - rows[i - 1].energy;
-    if (consumption <= 0) continue;
-    const ts = new Date(rows[i].timestamp);
+  for (const r of rows) {
+    const consumption = r.interval_kwh;
+    if (!(consumption > 0)) continue;
+    const ts = new Date(r.timestamp);
     intervals.push({
       month: ts.getUTCMonth(),
       hour: ts.getUTCHours(),
@@ -502,7 +505,7 @@ export async function getCustomerInsights(db, dataid) {
   const readings = db.collection(READINGS_COLLECTION_NAME);
 
   const rows = await readings
-    .find({ dataid }, { projection: { _id: 0, timestamp: 1, energy: 1 } })
+    .find({ dataid }, { projection: { _id: 0, timestamp: 1, interval_kwh: 1 } })
     .sort({ timestamp: 1 })
     .toArray();
   if (!rows.length) return null;
@@ -682,12 +685,12 @@ export async function getConsumptionTrend(db, dataid, regionFilter = null) {
         dataid: { $in: ids },
         ...(windowStart ? { timestamp: { $gte: windowStart } } : {}),
       },
-      { projection: { _id: 0, dataid: 1, timestamp: 1, energy: 1 } }
+      { projection: { _id: 0, dataid: 1, timestamp: 1, interval_kwh: 1 } }
     )
     .sort({ dataid: 1, timestamp: 1 })
     .toArray();
 
-  // Group readings by meter so we can diff consecutive cumulative readings.
+  // Group readings by meter, then bucket their precomputed interval_kwh.
   const byMeter = new Map();
   for (const row of rows) {
     if (!byMeter.has(row.dataid)) byMeter.set(row.dataid, []);
@@ -708,10 +711,10 @@ export async function getConsumptionTrend(db, dataid, regionFilter = null) {
   const allTimestamps = new Set();
   for (const [id, list] of byMeter) {
     const map = new Map();
-    for (let i = 1; i < list.length; i += 1) {
-      const consumption = list[i].energy - list[i - 1].energy;
+    for (const row of list) {
+      const consumption = row.interval_kwh;
       if (!(consumption > 0)) continue;
-      const bucket = bucketOf(list[i].timestamp);
+      const bucket = bucketOf(row.timestamp);
       map.set(bucket, (map.get(bucket) ?? 0) + consumption);
       allTimestamps.add(bucket);
     }

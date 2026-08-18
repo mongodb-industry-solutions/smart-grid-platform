@@ -15,6 +15,27 @@ const STEPS = [
 // Order used to mark earlier steps done when a later one starts.
 const ORDER = STEPS.map((s) => s.key);
 
+// Step status icon: green check when done, otherwise a spinning loader (brighter
+// for the in-progress step, faint for steps still queued) so progress reads at a
+// glance without a log line.
+function StepIcon({ isDone, isCurrent }) {
+  if (isDone) return <span style={{ fontSize: 16, lineHeight: 1 }}>✅</span>;
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        width: 14,
+        height: 14,
+        borderRadius: "50%",
+        border: "2px solid #e8edeb",
+        borderTopColor: isCurrent ? "#00684a" : "#c1c7c6",
+        opacity: isCurrent ? 1 : 0.55,
+        animation: "demoSpin 0.7s linear infinite",
+      }}
+    />
+  );
+}
+
 // "today", "yesterday", or an absolute date, for the last-generated context line.
 function formatGeneratedAt(iso) {
   const d = new Date(iso);
@@ -35,7 +56,6 @@ export default function DemoStartModal() {
   const [phase, setPhase] = useState("intro"); // intro | running | done | error
   const [currentStep, setCurrentStep] = useState(null);
   const [doneSteps, setDoneSteps] = useState(() => new Set());
-  const [lastLog, setLastLog] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const startedRef = useRef(false);
 
@@ -118,7 +138,6 @@ export default function DemoStartModal() {
             continue;
           }
           if (evt.event === "step") markStep(evt.step);
-          else if (evt.event === "log") setLastLog(evt.line.trim().split("\n").pop() || "");
           else if (evt.event === "done") {
             setDoneSteps(new Set(ORDER));
             setCurrentStep(null);
@@ -158,6 +177,7 @@ export default function DemoStartModal() {
         padding: 24,
       }}
     >
+      <style>{"@keyframes demoSpin{to{transform:rotate(360deg)}}"}</style>
       <div
         style={{
           background: "#fff",
@@ -217,8 +237,15 @@ export default function DemoStartModal() {
                   key={s.key}
                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0" }}
                 >
-                  <span style={{ width: 20 }}>
-                    {isDone ? "✅" : isCurrent ? "⏳" : "⬜"}
+                  <span
+                    style={{
+                      width: 20,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <StepIcon isDone={isDone} isCurrent={isCurrent} />
                   </span>
                   <Body
                     style={{
@@ -231,21 +258,6 @@ export default function DemoStartModal() {
                 </div>
               );
             })}
-            {phase === "running" && lastLog && (
-              <Body
-                style={{
-                  marginTop: 12,
-                  fontFamily: "monospace",
-                  fontSize: 12,
-                  color: "#89979b",
-                  whiteSpace: "nowrap",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                }}
-              >
-                {lastLog}
-              </Body>
-            )}
             {phase === "done" && (
               <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
                 <Button variant="primary" onClick={enter}>
@@ -260,10 +272,6 @@ export default function DemoStartModal() {
           <>
             <Body style={{ marginTop: 16, color: "#970606" }}>
               {errorMsg}
-            </Body>
-            <Body style={{ marginTop: 8, color: "#5c6c75", fontSize: 13 }}>
-              Check that <code>uv</code> is installed and <code>MONGODB_URI</code> /
-              <code> DATABASE_NAME</code> are set in <code>frontend/.env.local</code>, then try again.
             </Body>
             <div style={{ display: "flex", gap: 12, marginTop: 24, justifyContent: "flex-end" }}>
               <Button variant="default" onClick={dismiss}>

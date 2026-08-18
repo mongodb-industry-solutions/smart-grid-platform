@@ -56,21 +56,21 @@ derived from consecutive-reading differences stays correct at any cadence.
 
 **Built-in overflow guards** (so it can never grow unbounded or run forever):
 `--retain-days` (default 35) prunes readings older than a rolling window each
-tick, and `--max-hours` (default 12) auto-stops the process. Set either to `0`
+tick, and `--max-hours` (default 2) auto-stops the process. Set either to `0`
 to disable.
 
 **Frontend note:** the analytics were made cadence-agnostic so 1-second live
 readings coexist with 15-min history — kW is derived from the real `dt` (not a
 fixed ×4), monthly kWh from an energy-per-hour rate, and the consumption chart
 buckets to 15 min so live data rolls up instead of flooding the axis. At ~1s the
-collection grows by (250 × 3600) ≈ 900k docs/hour — use `--retain-hours` or a
-TTL for long-running demos.
+collection grows by (250 × 3600) ≈ 900k docs/hour — use `--retain-days` (or a
+TTL) for long-running demos.
 
 ## Data lineage → MongoDB collections
 
 | Output (`outputs/`)        | Collection          | Notes                                  |
 | -------------------------- | ------------------- | -------------------------------------- |
-| `readings_final.json`      | `readings`          | time-series; carries `grid_event_id`   |
+| `readings_final.jsonl`     | `readings`          | time-series (JSON Lines, streamed); carries `grid_event_id` |
 | `network_map.json`         | `meter_network_map` | meter → transformer/feeder/substation  |
 | `customers_expanded.json`  | `customer_db`       | seed 25 expanded to `TOTAL_CUSTOMERS`  |
 | `inputs/network.json`      | `network`           | canonical topology (input, seeded as-is) |
@@ -79,4 +79,5 @@ TTL for long-running demos.
 This pipeline is the **single source of truth** for the operational data — there
 is no prebuilt dump. `load_to_mongo.py` seeds Atlas directly (`readings` as a
 time-series collection with `metaField=dataid` + indexes), and the app's **Start
-Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you.
+Demo** modal runs `pipeline.py` + `load_to_mongo.py` + `feeder.py` for you (via the
+backend service, which hosts these scripts — the frontend just orchestrates it).

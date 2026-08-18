@@ -196,18 +196,11 @@ export function buildWeatherForecastPipeline(sel = {}) {
 
   return [
     { $match: match },
-    // 1) Per-meter interval consumption from the cumulative energy register.
-    {
-      $setWindowFields: {
-        partitionBy: "$dataid",
-        sortBy: { timestamp: 1 },
-        output: { prev_energy: { $shift: { output: "$energy", by: -1 } } },
-      },
-    },
-    { $match: { prev_energy: { $ne: null } } },
+    // 1) Per-meter interval consumption is precomputed on each reading
+    //    (`interval_kwh`), so no per-meter $setWindowFields/$shift is needed.
     {
       $set: {
-        interval_kwh: { $max: [{ $subtract: ["$energy", "$prev_energy"] }, 0] },
+        interval_kwh: { $max: [{ $ifNull: ["$interval_kwh", 0] }, 0] },
         hour: { $dateTrunc: { date: "$timestamp", unit: "hour" } },
       },
     },
@@ -224,10 +217,11 @@ export function buildWeatherForecastPipeline(sel = {}) {
         raw: { $push: { hour: "$_id", v: "$energy_kwh", n: "$n" } },
       },
     },
-    // The only under-counted hours are the first (loses one interval to $shift)
-    // and the last (truncated / still in progress). Drop exactly those two, which
-    // is cadence-agnostic — comparing interval counts would wrongly nuke every
-    // 15-min history hour once high-frequency live readings inflate the max.
+    // The only under-counted hours are the window's first and last (partial:
+    // the window rarely starts/ends exactly on an hour boundary). Drop exactly
+    // those two — cadence-agnostic, unlike comparing interval counts, which would
+    // wrongly nuke every 15-min history hour once high-frequency live readings
+    // inflate the max.
     {
       $set: {
         series: {

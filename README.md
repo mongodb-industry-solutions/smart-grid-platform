@@ -67,8 +67,9 @@ cd smart-meter
 
 ### 2. Install dependencies
 
-The app (frontend) and the data pipeline (backend). The pipeline runs via `uv`,
-which the **Start Demo** button also uses, so install both up front:
+The app (frontend) and the data pipeline (backend). The pipeline runs via `uv`
+in the **backend** service, and the **Start Demo** button calls that service to
+generate/load the data, so install both up front:
 
 ```bash
 cd frontend && npm install
@@ -109,12 +110,24 @@ npm run dev
 
 The app is now available at **http://localhost:3000**.
 
-### 5. Generate the data - **Start Demo**
+### 5. Start the backend (needed for Start Demo)
+
+The **Start Demo** button runs the Python data pipeline in the backend service,
+so start it too. From the `backend` folder:
+
+```bash
+uv run uvicorn main:app --port 8000
+```
+
+The frontend reaches it at `BACKEND_URL` (defaults to `http://localhost:8000`).
+If you only want to seed from the CLI (see below), you can skip this.
+
+### 6. Generate the data - **Start Demo**
 
 On first load, a **Start Demo** modal appears. Click **Start Demo** and it does
 the whole setup for you, no terminal needed:
 
-- generates the dataset in code - 30 days of 15-minute readings for 250 meters,
+- generates the dataset in code - 6 days of 15-minute readings for 250 meters,
   **dated to today** - and loads it into Atlas as a time-series collection with indexes,
 - seeds the AI knowledge base (with the Atlas Vector + full-text search indexes),
 - starts the **live feeder** so the dashboards stream in real time.
@@ -127,6 +140,10 @@ browser session.)
 > Atlas builds search indexes asynchronously, so the AI assistant's sources may
 > take an extra minute to appear.
 
+> **Security note:** Start Demo provisions the data through a privileged setup
+> routine, protected by same-origin, cooldown, and timeout safeguards. If you want
+> to understand the security measures behind it, see [DEMO_SECURITY.md](DEMO_SECURITY.md).
+
 ### Alternative: load the data from the CLI
 
 Prefer the terminal, or automating a headless setup? Do exactly what the modal
@@ -135,7 +152,7 @@ does, by hand (full details in the
 `backend` folder:
 
 ```bash
-uv run scripts/data_pipeline/pipeline.py         # generate 30 days of history (dated to today)
+uv run scripts/data_pipeline/pipeline.py         # generate 6 days of history (dated to today)
 uv run scripts/data_pipeline/load_to_mongo.py    # load it into Atlas
 uv run scripts/data_pipeline/feeder.py           # stream live readings on top (leave running)
 # or, generate + load in one step from the repo root: make seed_data
@@ -143,28 +160,13 @@ uv run scripts/data_pipeline/feeder.py           # stream live readings on top (
 
 The feeder keeps streaming (that's what makes the dashboards move) until you stop
 it with `Ctrl+C`; it has built-in guards so it can't overflow the collection or
-run forever (`--retain-days`, default 35; `--max-hours`, default 12). Tune the
+run forever (`--retain-days`, default 35; `--max-hours`, default 2). Tune the
 window and meter count in the `Config` block of `pipeline.py` (`DURATION`,
 `TOTAL_CUSTOMERS`). Then seed the knowledge base, from the `frontend` folder:
 
 ```bash
 node --env-file=.env.local scripts/seedKnowledgeBase.mjs
 ```
-
-<!-- ### (Optional) Run the backend
-
-The FastAPI scaffold is not required for the demo. If you want to run it:
-
-```bash
-# from the repo root
-make uv_init
-make uv_sync
-cd backend
-uv run uvicorn main:app --host 0.0.0.0 --port 8000
-```
-
-The backend API will be accessible at http://localhost:8000. Create a `.env` file
-in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it. -->
 
 ## Environment variables
 
@@ -176,8 +178,16 @@ in `backend/` with `MONGODB_URI`, `DATABASE_NAME`, and `APP_NAME` if you use it.
 | `VOYAGE_API_KEY` | `frontend/.env.local` | Yes | Voyage AI key for the Vector Map. |
 | `ANTHROPIC_MODEL` | `frontend/.env.local` | No | Override the default model (`claude-haiku-4-5`). |
 | `GROVE_API_KEY` / `GROVE_ANTHROPIC_URL` | `frontend/.env.local` | No | MongoDB-internal Grove gateway (used instead of `ANTHROPIC_API_KEY` when set). |
+| `DEMO_REGEN_COOLDOWN_MINUTES` | `frontend/.env.local` | No | Minimum minutes between Start Demo regenerations (default `60`; `0` disables the cooldown). |
+| `DEMO_STEP_TIMEOUT_MS` | `frontend/.env.local` | No | Max ms a Start Demo setup step may run before it's killed (default `600000` = 10 min). |
+| `MONGODB_TIMEOUT_MS` | `frontend/.env.local` | No | Per-operation MongoDB timeout - any query/aggregation exceeding it is aborted so it can't hang a request (default `20000` = 20 s). |
+| `BACKEND_URL` | `frontend/.env.local` | No | URL of the backend that runs the Start Demo pipeline (default `http://localhost:8000`; in Kanopy the backend is a sidecar in the same pod, also reached over `localhost:8000`). |
 
 \* Either `ANTHROPIC_API_KEY` or `GROVE_API_KEY` must be set.
+
+The `DEMO_*` variables tune the Start Demo safeguards - see
+[DEMO_SECURITY.md](DEMO_SECURITY.md) for the full threat model and the safeguards
+in place.
 
 There is a **single config file** - `frontend/.env.local`. The data pipeline
 (backend) reads the same `MONGODB_URI` / `DATABASE_NAME` from it, so there's

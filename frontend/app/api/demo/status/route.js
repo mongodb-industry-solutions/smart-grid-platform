@@ -16,7 +16,7 @@ export async function GET() {
       seeded: count > 0,
       readingsCount: count,
       generatedAt: meta?.generatedAt ?? null,
-      feederRunning: isFeederRunning(),
+      feederRunning: await isFeederRunning(),
     });
   } catch (error) {
     return Response.json(

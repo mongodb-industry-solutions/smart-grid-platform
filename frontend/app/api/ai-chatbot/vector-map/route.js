@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { embedTexts, embedQuery } from "@/lib/ai/voyage";
 import { hybridSearch } from "@/lib/ai/knowledgeBase";
+import { sameOriginOk } from "@/lib/http/sameOrigin";
 
 const dbName = process.env.DATABASE_NAME;
 const KB = process.env.KB_COLLECTION_NAME || "kb_articles";
@@ -47,6 +48,9 @@ function cosine(a, b) {
  * Voyage key (search itself uses Atlas auto-embedding).
  */
 export async function POST(request) {
+  if (!sameOriginOk(request)) {
+    return NextResponse.json({ error: "Cross-origin request rejected." }, { status: 403 });
+  }
   try {
     const { query, category } = await request.json();
     if (!query) return NextResponse.json({ articles: [] });
