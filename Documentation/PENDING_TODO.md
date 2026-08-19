@@ -7,6 +7,7 @@
 - [ ] **Implement the E2E test scenarios.** The scenarios are already written in
   [`E2E_TEST_SCENARIOS.md`](E2E_TEST_SCENARIOS.md) (Given/When/Then) — they still
   need to be built out as actual automated tests.
+- [ ] **Demo portal publication.** Create the Demo Card and make it public.
 
 ---
 
