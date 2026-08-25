@@ -65,6 +65,12 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
             )
             logger.info(
                 f"Time series collection '{collection_name}' and index created successfully.")
+        except CollectionInvalid:
+            logger.error(
+                f"Time series collection '{collection_name}' already exists.")
+        except Exception as e:
+            logger.error(
+                f"An error occurred while creating the time series collection: {e}")
 
     def ensure_secondary_indexes(self, collection_name: str):
         """Create secondary compound indexes for common query patterns.
@@ -86,12 +92,6 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
             col.create_index(spec, name=name)
             logger.info(f"Index '{name}' ensured on '{collection_name}'.")
         logger.info(f"All secondary indexes ensured on '{collection_name}'.")
-        except CollectionInvalid:
-            logger.error(
-                f"Time series collection '{collection_name}' already exists.")
-        except Exception as e:
-            logger.error(
-                f"An error occurred while creating the time series collection: {e}")
 
 
 if __name__ == "__main__":
@@ -101,5 +101,14 @@ if __name__ == "__main__":
         collection_name="telemetry_data",
         time_field="timestamp",
         granularity="minutes",
+    )
+    # For the readings collection, set a 90-day TTL so MongoDB automatically
+    # prunes old documents without relying on the feeder's manual delete_many.
+    creator.create_timeseries_collection(
+        collection_name="readings",
+        time_field="timestamp",
+        meta_field="dataid",
+        granularity="minutes",
+        expire_after_seconds=90 * 86400,  # 90 days
     )
     creator.ensure_secondary_indexes("readings")
