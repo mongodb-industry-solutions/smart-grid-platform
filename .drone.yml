@@ -13,7 +13,7 @@ steps:
     settings:
       create_repository: true
       registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com ## keep same for all demos < - aws ecr registry used to store docker image
-      repo: industrysolutions/smart-meter-backend
+      repo: industrysolutions/smart-grid-backend
       tags:
         - git-${DRONE_COMMIT_SHA:0:7}
         - latest
@@ -31,7 +31,7 @@ steps:
     settings:
       create_repository: true
       registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
-      repo: industrysolutions/smart-meter-frontend
+      repo: industrysolutions/smart-grid-frontend
       tags:
         - git-${DRONE_COMMIT_SHA:0:7}
         - latest
@@ -54,14 +54,14 @@ steps:
       chart_version: 4.30.0
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: industrysolutions
-      release: smart-meter-frontend
+      release: smart-grid-frontend
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-frontend"
+        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-grid-frontend"
         - "sidecarContainers[0].name=backend"
-        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend:git-${DRONE_COMMIT_SHA:0:7}"
+        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-grid-backend:git-${DRONE_COMMIT_SHA:0:7}"
         - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-frontend.industrysolutions.staging.corp.mongodb.com"
+        - "ingress.hosts[0]=smart-grid-frontend.industrysolutions.staging.corp.mongodb.com"
         - "mesh.enabled=true"
       api_server: https://api.staging.corp.mongodb.com
       kubernetes_token:
@@ -86,7 +86,7 @@ steps:
     settings:
       create_repository: true
       registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com # keep same for all demos < - aws ecr registry used to store docker image
-      repo: industrysolutions/smart-meter-backend-prod
+      repo: industrysolutions/smart-grid-backend-prod
       tags:
         - git-${DRONE_COMMIT_SHA:0:7}-prod
         - prod-latest
@@ -104,7 +104,7 @@ steps:
     settings:
       create_repository: true
       registry: 795250896452.dkr.ecr.us-east-1.amazonaws.com
-      repo: industrysolutions/smart-meter-frontend-prod
+      repo: industrysolutions/smart-grid-frontend-prod
       tags:
         - git-${DRONE_COMMIT_SHA:0:7}-prod
         - prod-latest
@@ -126,14 +126,14 @@ steps:
       chart_version: 4.30.0
       add_repos: [mongodb=https://10gen.github.io/helm-charts]
       namespace: industrysolutions
-      release: smart-meter-frontend-prod
+      release: smart-grid-frontend-prod
       values:
         - "image.tag=git-${DRONE_COMMIT_SHA:0:7}-prod"
-        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-frontend-prod"
+        - "image.repository=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-grid-frontend-prod"
         - "sidecarContainers[0].name=backend"
-        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend-prod:git-${DRONE_COMMIT_SHA:0:7}-prod"
+        - "sidecarContainers[0].image=795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-grid-backend-prod:git-${DRONE_COMMIT_SHA:0:7}-prod"
         - "ingress.enabled=true"
-        - "ingress.hosts[0]=smart-meter-frontend.industrysolutions.prod.corp.mongodb.com"
+        - "ingress.hosts[0]=smart-grid-frontend.industrysolutions.prod.corp.mongodb.com"
         - "mesh.enabled=true"
       api_server: https://api.prod.corp.mongodb.com
       kubernetes_token:
