@@ -111,10 +111,11 @@ def main():
                     help="simulated minutes each tick advances (default 15 = native cadence). "
                          "Accelerated replay: tick 3 + interval 15. True real-time: tick 900 + interval 15.")
     # Safety limits so the feeder can never overflow the collection or run forever:
-    ap.add_argument("--retain-days", type=float, default=7.0,
+    ap.add_argument("--retain-days", type=float, default=0,
                     help="prune readings older than this many simulated days each tick "
-                         "(default 7 — keeps the collection bounded near the seed window; "
-                         "keep in sync with pipeline.py DURATION, currently 6d; 0 disables)")
+                         "(default 0 — disabled; MongoDB TTL handles pruning via "
+                         "expireAfterSeconds on the collection; set non-zero only as "
+                         "a local dev override)")
     ap.add_argument("--max-hours", type=float, default=2.0,
                     help="auto-stop after this many real hours so an orphaned feeder can't "
                          "run indefinitely (default 2; 0 disables)")
