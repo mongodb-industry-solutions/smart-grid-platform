@@ -351,9 +351,10 @@ export async function getTariffRecommendation(db, dataid) {
   if (!customer) return null;
   const locationLabel = toLocationLabel(customer.city, customer.state);
 
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
   const rows = await readings
     .find(
-      { dataid },
+      { dataid, timestamp: { $gte: thirtyDaysAgo } },
       {
         projection: {
           _id: 0,
@@ -468,24 +469,27 @@ export async function getUsageSegment(db, dataid) {
     .filter((c) => segmentLabels.has(toLocationLabel(c.city, c.state)))
     .map((c) => c.dataid);
 
-  // Average power per customer across all their readings.
+  // Average power per customer over the last 7 days, with DB-side percentile rank.
+  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
   const usageRows = await readings
     .aggregate([
-      { $match: { dataid: { $in: segmentDataids } } },
+      { $match: { dataid: { $in: segmentDataids }, timestamp: { $gte: sevenDaysAgo } } },
       { $group: { _id: "$dataid", avgPower: { $avg: "$avg_reading" } } },
+      { $setWindowFields: {
+        sortBy: { avgPower: 1 },
+        output: { percentile: { $percentRank: {} } },
+      }},
     ])
     .toArray();
 
   const thisCustomer = usageRows.find((u) => u._id === dataid);
   if (!thisCustomer) return null;
 
-  const below = usageRows.filter((u) => u.avgPower < thisCustomer.avgPower).length;
-  const percentile = Math.round((below / usageRows.length) * 100);
   const segmentAvg = usageRows.reduce((s, u) => s + u.avgPower, 0) / usageRows.length;
 
   return {
     dataid,
-    percentile,
+    percentile: Math.round(thisCustomer.percentile * 100),
     segmentName: tariff.rateName ?? (tariff.rate_type === "tou" ? "Time-of-Use" : "Tiered Rate"),
     segmentSize: usageRows.length,
     customerAvgW: Math.round(thisCustomer.avgPower),
