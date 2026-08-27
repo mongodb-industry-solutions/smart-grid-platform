@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 """
-Live feeder: appends one fresh reading per customer every tick, at the real wall
-clock, so the demo streams "real-time" data on top of the seeded history.
+Live feeder: appends one fresh reading per customer every tick using real
+wall-clock timestamps, so the demo streams genuinely real-time data.
 
     cd backend
-    uv run scripts/data_pipeline/feeder.py             # accelerated replay: +15 sim-min every ~3s
-    uv run scripts/data_pipeline/feeder.py --tick 900  # true real-time (a new interval every 15 min)
+    uv run scripts/data_pipeline/feeder.py                  # real-time: wall-clock ts every 3s
+    uv run scripts/data_pipeline/feeder.py --accelerated    # legacy: +15 sim-min every 3s
 
 Reads the app's config (MONGODB_URI / DATABASE_NAME from frontend/.env.local) and
 appends to the same collections the pipeline seeds. Each tick advances every
@@ -106,13 +106,15 @@ def make_reading(did, st, ts, dt_hours, rng):
 def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--tick", type=float, default=3.0,
-                    help="real seconds between inserts (default 3 — visible movement)")
+                    help="real seconds between inserts (default 3)")
+    ap.add_argument("--accelerated", action="store_true",
+                    help="legacy mode: advance a simulated clock by --interval-minutes "
+                         "per tick instead of using wall-clock timestamps")
     ap.add_argument("--interval-minutes", type=float, default=15.0,
-                    help="simulated minutes each tick advances (default 15 = native cadence). "
-                         "Accelerated replay: tick 3 + interval 15. True real-time: tick 900 + interval 15.")
+                    help="simulated minutes per tick in --accelerated mode (default 15)")
     # Safety limits so the feeder can never overflow the collection or run forever:
     ap.add_argument("--retain-days", type=float, default=0,
-                    help="prune readings older than this many simulated days each tick "
+                    help="prune readings older than this many days each tick "
                          "(default 0 — disabled; MongoDB TTL handles pruning via "
                          "expireAfterSeconds on the collection; set non-zero only as "
                          "a local dev override)")
@@ -129,38 +131,52 @@ def main():
     if not state:
         sys.exit("No seeded readings found — run pipeline.py + load_to_mongo.py first.")
 
-    # Continue the simulation clock from the newest existing reading, keeping the
-    # native cadence so every stored reading stays evenly spaced (nothing in the
-    # 15-min-oriented frontend breaks). The wall clock only paces the inserts.
-    last = col.find_one(sort=[("timestamp", -1)], projection={"timestamp": 1})
-    sim_ts = last["timestamp"]
-    if sim_ts.tzinfo is None:
-        sim_ts = sim_ts.replace(tzinfo=timezone.utc)
-    step = timedelta(minutes=args.interval_minutes)
-    dt_hours = args.interval_minutes / 60.0
     rng = np.random.default_rng()
+
+    if args.accelerated:
+        # Legacy mode: advance a simulated clock from the last reading.
+        last = col.find_one(sort=[("timestamp", -1)], projection={"timestamp": 1})
+        sim_ts = last["timestamp"]
+        if sim_ts.tzinfo is None:
+            sim_ts = sim_ts.replace(tzinfo=timezone.utc)
+        step = timedelta(minutes=args.interval_minutes)
+        dt_hours = args.interval_minutes / 60.0
+        mode_label = "accelerated (+%.0f sim-min/tick)" % args.interval_minutes
+    else:
+        # Real-time mode: each reading gets the current wall-clock timestamp.
+        # dt_hours is the actual tick interval for energy calculation.
+        sim_ts = None  # not used
+        step = None    # not used
+        dt_hours = args.tick / 3600.0
+        mode_label = "real-time (wall-clock, every %.1fs)" % args.tick
 
     running = {"go": True}
     signal.signal(signal.SIGINT, lambda *_: running.update(go=False))
     deadline = time.monotonic() + args.max_hours * 3600 if args.max_hours else None
-    logger.info("Replaying %d customers: +%.0f sim-min every %.3gs "
-                "(retain %.0f sim-days, max %.0fh; Ctrl+C to stop) ...",
-                len(state), args.interval_minutes, args.tick,
+    logger.info("Feeding %d customers in %s mode "
+                "(retain %.0fd, max %.0fh; Ctrl+C to stop) ...",
+                len(state), mode_label,
                 args.retain_days or 0, args.max_hours or 0)
 
     ticks = 0
     while running["go"]:
         t0 = time.monotonic()
-        sim_ts = sim_ts + step
-        docs = [make_reading(did, st, sim_ts, dt_hours, rng) for did, st in state.items()]
+
+        if args.accelerated:
+            sim_ts = sim_ts + step
+            ts = sim_ts
+        else:
+            ts = datetime.now(timezone.utc)
+
+        docs = [make_reading(did, st, ts, dt_hours, rng) for did, st in state.items()]
         col.insert_many(docs, ordered=False)
         # Internal overflow guard: keep only a rolling window of readings.
         if args.retain_days:
-            cutoff = sim_ts - timedelta(days=args.retain_days)
+            cutoff = ts - timedelta(days=args.retain_days)
             col.delete_many({"timestamp": {"$lt": cutoff}})
         ticks += 1
         if ticks % 5 == 0:
-            logger.info("tick %d — sim %s — inserted %d readings", ticks, sim_ts.isoformat(), len(docs))
+            logger.info("tick %d — %s — inserted %d readings", ticks, ts.isoformat(), len(docs))
         # Internal auto-stop so a forgotten feeder can't run forever.
         if deadline and time.monotonic() >= deadline:
             logger.info("Reached --max-hours limit; stopping.")
