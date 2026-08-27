@@ -174,9 +174,11 @@ def main():
         # Upsert each reading into latest_readings (one doc per meter, keyed by
         # dataid). This small collection supports Change Streams for real-time
         # push to dashboards — time-series collections cannot be watched.
+        # Strip _id (assigned by insert_many) so it doesn't conflict with the
+        # dataid-based _id used in latest_readings.
         latest_col = db[LATEST_READINGS]
         latest_col.bulk_write(
-            [ReplaceOne({"_id": doc["dataid"]}, doc, upsert=True) for doc in docs],
+            [ReplaceOne({"_id": doc["dataid"]}, {k: v for k, v in doc.items() if k != "_id"}, upsert=True) for doc in docs],
             ordered=False,
         )
         # Internal overflow guard: keep only a rolling window of readings.
