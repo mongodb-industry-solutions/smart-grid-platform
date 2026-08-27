@@ -1,4 +1,4 @@
-import getMongoClientPromise from "@/lib/mongodb";
+import { MongoClient, ServerApiVersion } from "mongodb";
 
 export const dynamic = "force-dynamic";
 
@@ -6,6 +6,24 @@ const dbName = process.env.DATABASE_NAME;
 const readingsCollection = process.env.READINGS_COLLECTION_NAME || "readings";
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
+
+// Change Streams are long-lived cursors that wait indefinitely for new events.
+// The shared MongoClient has a 20s CSOT that kills idle cursors. Use a dedicated
+// client without timeoutMS for the stream endpoint.
+let _streamClient;
+function getStreamClient() {
+  if (!_streamClient) {
+    _streamClient = new MongoClient(process.env.MONGODB_URI, {
+      appName: "smartgrid-stream",
+      serverApi: {
+        version: ServerApiVersion.v1,
+        strict: false,
+        deprecationErrors: true,
+      },
+    });
+  }
+  return _streamClient;
+}
 
 /**
  * SSE endpoint backed by a MongoDB Change Stream on the readings collection.
@@ -32,7 +50,7 @@ export async function GET(request) {
       request.signal.addEventListener("abort", cleanup);
 
       try {
-        const client = await getMongoClientPromise();
+        const client = getStreamClient();
         const db = client.db(dbName);
 
         // Time-series collections are internally views — Change Streams can't
