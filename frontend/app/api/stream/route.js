@@ -34,10 +34,15 @@ export async function GET(request) {
       try {
         const client = await getMongoClientPromise();
         const db = client.db(dbName);
-        const col = db.collection(readingsCollection);
 
-        changeStream = col.watch(
-          [{ $match: { operationType: "insert" } }],
+        // Time-series collections are internally views — Change Streams can't
+        // be opened on views directly. Watch the database instead and filter
+        // for inserts into the readings namespace.
+        changeStream = db.watch(
+          [{ $match: {
+            operationType: "insert",
+            "ns.coll": readingsCollection,
+          } }],
           { fullDocument: "updateLookup", batchSize: 500 }
         );
 
