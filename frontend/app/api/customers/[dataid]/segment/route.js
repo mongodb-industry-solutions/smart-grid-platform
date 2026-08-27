@@ -17,7 +17,7 @@ export async function GET(_, { params }) {
   } catch (error) {
     console.error("Error fetching usage segment:", error);
     return NextResponse.json(
-      { error: "Failed to fetch usage segment" },
+      { error: error.message || "Failed to fetch usage segment" },
       { status: 500 }
     );
   }
