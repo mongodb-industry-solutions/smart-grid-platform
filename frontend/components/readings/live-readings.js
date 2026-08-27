@@ -1,14 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/live-readings.module.css";
 import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGreenTable, flexRender,} from "@leafygreen-ui/table";
 import TablePagination from "@/components/general/TablePagination";
 import { useAutoPageSize } from "@/components/general/useAutoPageSize";
-
-const TICK_MS = 2_000;
-const MAX_ROWS = 250;
+import { useStream } from "@/lib/streaming/useStream";
 
 const fmt = (val, decimals) => (val != null ? val.toFixed(decimals) : "N/A");
 
@@ -65,33 +63,11 @@ const columns = [
 ];
 
 export default function RecentReadings() {
-  const [readings, setReadings] = useState([]);
-  const [error, setError]       = useState("");
+  const { readings: streamReadings, status } = useStream();
+  const [error] = useState("");
 
-  useEffect(() => {
-    let periodIndex = 0;
-
-    const fetchReadings = async () => {
-      try {
-        const res = await fetch(
-          `/api/monitoring-panel/reading-logs?periodIndex=${periodIndex}&limit=${MAX_ROWS}`
-        );
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (data.length) setReadings(data);
-        periodIndex += 1;
-      } catch (err) {
-        setError(err.message);
-      }
-    };
-
-    fetchReadings();
-    const intervalId = setInterval(fetchReadings, TICK_MS);
-    return () => clearInterval(intervalId);
-  }, []);
+  // useStream returns the latest batch of readings from the Change Stream.
+  const readings = streamReadings;
 
   const table = useLeafyGreenTable({
     data: readings,

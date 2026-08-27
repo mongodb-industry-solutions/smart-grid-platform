@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { H1, Body } from "@leafygreen-ui/typography";
+import { useStream } from "@/lib/streaming/useStream";
 import {
   Table,
   TableHead,
@@ -72,23 +73,25 @@ const columns = [
 ];
 
 export default function LiveMeterReading({ meterId }) {
+  const { readings: streamReadings, status } = useStream();
   const [reading, setReading] = useState(null);
   const [error, setError] = useState("");
 
+  // Filter the SSE stream for this specific meter.
   useEffect(() => {
-    const fetchReading = () => {
-      fetch(`/api/meters/${meterId}/live`)
-        .then((res) => {
-          if (!res.ok) throw new Error(`Meter "${meterId}" not found`);
-          return res.json();
-        })
-        .then((data) => setReading(data))
-        .catch((err) => setError(err.message));
-    };
+    const match = streamReadings.find((r) => r.dataid === meterId);
+    if (match) setReading(match);
+  }, [streamReadings, meterId]);
 
-    fetchReading();
-    const intervalId = setInterval(fetchReading, 5000);
-    return () => clearInterval(intervalId);
+  // Initial fetch for the first render (before the stream delivers data).
+  useEffect(() => {
+    fetch(`/api/meters/${meterId}/live`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`Meter "${meterId}" not found`);
+        return res.json();
+      })
+      .then((data) => setReading(data))
+      .catch((err) => setError(err.message));
   }, [meterId]);
 
   const table = useLeafyGreenTable({
