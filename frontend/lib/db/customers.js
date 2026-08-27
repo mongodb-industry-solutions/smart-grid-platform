@@ -1,3 +1,5 @@
+import { readRollupAll } from "./rollups.js";
+
 const CUSTOMERS_COLLECTION_NAME =
   process.env.CUSTOMERS_COLLECTION_NAME || "customer_db";
 const READINGS_COLLECTION_NAME =
@@ -62,6 +64,12 @@ export async function getCustomers(db) {
   const tariffs = db.collection(TARIFFS_COLLECTION_NAME);
   const readings = db.collection(READINGS_COLLECTION_NAME);
 
+  // Try pre-computed latest readings first.
+  const rollup = await readRollupAll(db, "rollup_latest_readings");
+  const readingsPromise = rollup && !rollup.isStale
+    ? Promise.resolve(new Map(rollup.data.map((r) => [r._id, r])))
+    : getLatestReadingsByMeter(readings);
+
   const [customerDocs, tariffDocs, readingsByMeter] = await Promise.all([
     customers
       .find({}, { projection: { _id: 0, dataid: 1, city: 1, state: 1 } })
@@ -81,7 +89,7 @@ export async function getCustomers(db) {
         }
       )
       .toArray(),
-    getLatestReadingsByMeter(readings),
+    readingsPromise,
   ]);
 
   const tariffByLocation = new Map(
