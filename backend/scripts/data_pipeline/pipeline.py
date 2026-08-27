@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # SmartMeters Pipeline — Filter, Expand & Synthesize
+# # SmartGrid Pipeline — Filter, Expand & Synthesize
 # Continues the logic of `smip_schema.ipynb` and `readings_generator__1_.ipynb`.
 # 
 # This single notebook takes a post-generation CSV (`readings_enriched.csv`) and:

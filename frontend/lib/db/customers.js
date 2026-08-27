@@ -1,3 +1,5 @@
+import { readRollupAll } from "./rollups.js";
+
 const CUSTOMERS_COLLECTION_NAME =
   process.env.CUSTOMERS_COLLECTION_NAME || "customer_db";
 const READINGS_COLLECTION_NAME =
@@ -62,6 +64,12 @@ export async function getCustomers(db) {
   const tariffs = db.collection(TARIFFS_COLLECTION_NAME);
   const readings = db.collection(READINGS_COLLECTION_NAME);
 
+  // Try pre-computed latest readings first.
+  const rollup = await readRollupAll(db, "rollup_latest_readings");
+  const readingsPromise = rollup && !rollup.isStale
+    ? Promise.resolve(new Map(rollup.data.map((r) => [r._id, r])))
+    : getLatestReadingsByMeter(readings);
+
   const [customerDocs, tariffDocs, readingsByMeter] = await Promise.all([
     customers
       .find({}, { projection: { _id: 0, dataid: 1, city: 1, state: 1 } })
@@ -81,7 +89,7 @@ export async function getCustomers(db) {
         }
       )
       .toArray(),
-    getLatestReadingsByMeter(readings),
+    readingsPromise,
   ]);
 
   const tariffByLocation = new Map(
@@ -351,9 +359,20 @@ export async function getTariffRecommendation(db, dataid) {
   if (!customer) return null;
   const locationLabel = toLocationLabel(customer.city, customer.state);
 
+  // Bound to last 30 days anchored to the latest reading (not wall-clock)
+  // so the window works with both real-time and accelerated feeder modes.
+  const newestReading = await readings.findOne(
+    { dataid },
+    { projection: { timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  const tariffAnchor = newestReading?.timestamp
+    ? new Date(newestReading.timestamp).getTime()
+    : Date.now();
+  const thirtyDaysAgo = new Date(tariffAnchor - 30 * 86_400_000);
+
   const rows = await readings
     .find(
-      { dataid },
+      { dataid, timestamp: { $gte: thirtyDaysAgo } },
       {
         projection: {
           _id: 0,
@@ -468,24 +487,37 @@ export async function getUsageSegment(db, dataid) {
     .filter((c) => segmentLabels.has(toLocationLabel(c.city, c.state)))
     .map((c) => c.dataid);
 
-  // Average power per customer across all their readings.
+  // Average power per customer over a recent window, with DB-side percentile rank.
+  // Anchor to the latest reading timestamp (not Date.now()) so the window works
+  // regardless of whether the feeder uses real-time or accelerated timestamps.
+  const latestReading = await readings.findOne(
+    { dataid },
+    { projection: { timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  const anchor = latestReading?.timestamp
+    ? new Date(latestReading.timestamp).getTime()
+    : Date.now();
+  const windowStart = new Date(anchor - 7 * 86_400_000);
+
   const usageRows = await readings
     .aggregate([
-      { $match: { dataid: { $in: segmentDataids } } },
+      { $match: { dataid: { $in: segmentDataids }, timestamp: { $gte: windowStart } } },
       { $group: { _id: "$dataid", avgPower: { $avg: "$avg_reading" } } },
+      { $setWindowFields: {
+        sortBy: { avgPower: 1 },
+        output: { percentile: { $percentRank: {} } },
+      }},
     ])
     .toArray();
 
   const thisCustomer = usageRows.find((u) => u._id === dataid);
   if (!thisCustomer) return null;
 
-  const below = usageRows.filter((u) => u.avgPower < thisCustomer.avgPower).length;
-  const percentile = Math.round((below / usageRows.length) * 100);
   const segmentAvg = usageRows.reduce((s, u) => s + u.avgPower, 0) / usageRows.length;
 
   return {
     dataid,
-    percentile,
+    percentile: Math.round(thisCustomer.percentile * 100),
     segmentName: tariff.rateName ?? (tariff.rate_type === "tou" ? "Time-of-Use" : "Tiered Rate"),
     segmentSize: usageRows.length,
     customerAvgW: Math.round(thisCustomer.avgPower),

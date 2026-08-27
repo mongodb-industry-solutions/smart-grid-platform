@@ -1,4 +1,4 @@
-from pymongo import ASCENDING
+from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import CollectionInvalid
 from bson.codec_options import CodecOptions
 from bson.datetime_ms import DatetimeConversion
@@ -72,12 +72,43 @@ class TimeSeriesCollectionCreator(MongoDBConnector):
             logger.error(
                 f"An error occurred while creating the time series collection: {e}")
 
+    def ensure_secondary_indexes(self, collection_name: str):
+        """Create secondary compound indexes for common query patterns.
+
+        Idempotent — MongoDB's create_index is a no-op when the index already
+        exists with the same spec."""
+        col = self.db[collection_name]
+        indexes = [
+            # Per-customer lookups: getCustomerDetail, getConsumptionTrend, etc.
+            ([("dataid", ASCENDING), ("timestamp", DESCENDING)], "dataid_ts_desc"),
+            # Outage detection: $match on power <= 0
+            ([("power", ASCENDING)], "power_asc"),
+            # Anomaly / grid-stability: latest docs with voltage filter
+            ([("timestamp", DESCENDING), ("voltage", ASCENDING)], "ts_desc_voltage"),
+            # Demand forecast: per-substation time-range queries
+            ([("substation_id", ASCENDING), ("timestamp", DESCENDING)], "substation_ts_desc"),
+        ]
+        for spec, name in indexes:
+            col.create_index(spec, name=name)
+            logger.info(f"Index '{name}' ensured on '{collection_name}'.")
+        logger.info(f"All secondary indexes ensured on '{collection_name}'.")
+
 
 if __name__ == "__main__":
     # Example usage
-    response = TimeSeriesCollectionCreator().create_timeseries_collection(
+    creator = TimeSeriesCollectionCreator()
+    creator.create_timeseries_collection(
         collection_name="telemetry_data",
         time_field="timestamp",
-        granularity="minutes"
+        granularity="minutes",
     )
-    print(response)
+    # For the readings collection, set a 90-day TTL so MongoDB automatically
+    # prunes old documents without relying on the feeder's manual delete_many.
+    creator.create_timeseries_collection(
+        collection_name="readings",
+        time_field="timestamp",
+        meta_field="dataid",
+        granularity="minutes",
+        expire_after_seconds=90 * 86400,  # 90 days
+    )
+    creator.ensure_secondary_indexes("readings")

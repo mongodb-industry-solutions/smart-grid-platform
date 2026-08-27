@@ -1,3 +1,5 @@
+import { readRollup } from "./rollups.js";
+
 // Readings are sampled every 15 minutes, so two outage readings belong to the
 // same continuous outage when they are no more than one interval apart.
 const OUTAGE_INTERVAL_MS = 15 * 60 * 1000;
@@ -26,6 +28,19 @@ const CUSTOMERS_COLLECTION_NAME =
 export async function getOutagesSummary(db) {
   const readings = db.collection(READINGS_COLLECTION_NAME);
   const customers = db.collection(CUSTOMERS_COLLECTION_NAME);
+
+  // Fast path: use pre-computed rollup if available and fresh.
+  const rollup = await readRollup(db, "rollup_outage_summary", { _id: "summary" });
+  if (rollup && !rollup.isStale) {
+    const d = rollup.data;
+    return {
+      totalOutages: d.totalOutages,
+      customersWithOutage: d.customersWithOutage,
+      totalCustomers: d.totalCustomers,
+      pctCustomersWithOutage: d.pctCustomersWithOutage,
+      longestOutage: d.longestOutage,
+    };
+  }
 
   const [result] = await readings
     .aggregate([

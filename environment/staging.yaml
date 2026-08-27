@@ -18,14 +18,14 @@ env:
 
 envSecrets:
   # MongoDB Configuration
-  MONGODB_URI: smart-meter
-  DATABASE_NAME: smart-meter
-  VOYAGE_API_KEY: smart-meter
+  MONGODB_URI: smart-grid
+  DATABASE_NAME: smart-grid
+  VOYAGE_API_KEY: smart-grid
   # AI assistant LLM — Claude via the Grove gateway (MongoDB-internal)
-  GROVE_API_KEY: smart-meter
+  GROVE_API_KEY: smart-grid
   # Bedrock Inference Profiles (see cloud-cost-tracking.md)
-  CHATCOMPLETIONS_MODEL_ID: smart-meter
-  EMBEDDINGS_MODEL_ID: smart-meter
+  CHATCOMPLETIONS_MODEL_ID: smart-grid
+  EMBEDDINGS_MODEL_ID: smart-grid
 
 # Main container (frontend) resources.
 resources:
@@ -41,17 +41,17 @@ resources:
 # The image tag is overridden per-build in .drone.yml. ---
 sidecarContainers:
   - name: backend
-    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-meter-backend:latest
+    image: 795250896452.dkr.ecr.us-east-1.amazonaws.com/industrysolutions/smart-grid-backend:latest
     env:
       - name: MONGODB_URI
         valueFrom:
           secretKeyRef:
-            name: smart-meter
+            name: smart-grid
             key: MONGODB_URI
       - name: DATABASE_NAME
         valueFrom:
           secretKeyRef:
-            name: smart-meter
+            name: smart-grid
             key: DATABASE_NAME
     resources:
       limits:

@@ -7,7 +7,7 @@ separate backend config to keep in sync.
 In the container there is no repo checkout: Dockerfile.backend copies only
 backend/ to WORKDIR /, so this file lands at /scripts/data_pipeline/_config.py
 and frontend/.env.local does not exist. There MONGODB_URI/DATABASE_NAME come
-from the environment (injected from the smart-meter secret, see
+from the environment (injected from the smart-grid secret, see
 environment/staging.yaml), so the env file is optional.
 """
 import os
