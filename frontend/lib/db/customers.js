@@ -505,7 +505,7 @@ export async function getUsageSegment(db, dataid) {
       { $group: { _id: "$dataid", avgPower: { $avg: "$avg_reading" } } },
       { $setWindowFields: {
         sortBy: { avgPower: 1 },
-        output: { percentile: { $percentRank: {} } },
+        output: { rank: { $rank: {} } },
       }},
     ])
     .toArray();
@@ -517,7 +517,7 @@ export async function getUsageSegment(db, dataid) {
 
   return {
     dataid,
-    percentile: Math.round(thisCustomer.percentile * 100),
+    percentile: Math.round(((thisCustomer.rank - 1) / usageRows.length) * 100),
     segmentName: tariff.rateName ?? (tariff.rate_type === "tou" ? "Time-of-Use" : "Tiered Rate"),
     segmentSize: usageRows.length,
     customerAvgW: Math.round(thisCustomer.avgPower),
