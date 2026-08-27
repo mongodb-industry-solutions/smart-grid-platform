@@ -48,7 +48,7 @@ export default function LiveReadingsChart() {
         maxDeviation: 0.5,
         groupData: false,
         extraMax: 0.05,
-        baseInterval: { timeUnit: "second", count: TICK_MS / 1000 },
+        baseInterval: { timeUnit: "second", count: 3 },
         renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 70 }),
         tooltip: am5.Tooltip.new(root, {}),
       })
