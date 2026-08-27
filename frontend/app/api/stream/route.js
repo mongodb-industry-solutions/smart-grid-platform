@@ -3,7 +3,7 @@ import { MongoClient, ServerApiVersion } from "mongodb";
 export const dynamic = "force-dynamic";
 
 const dbName = process.env.DATABASE_NAME;
-const readingsCollection = process.env.READINGS_COLLECTION_NAME || "readings";
+const latestReadingsCollection = "latest_readings";
 
 const HEARTBEAT_INTERVAL_MS = 15_000;
 
@@ -53,14 +53,13 @@ export async function GET(request) {
         const client = getStreamClient();
         const db = client.db(dbName);
 
-        // Time-series collections are internally views — Change Streams can't
-        // be opened on views directly. Watch the database instead and filter
-        // for inserts into the readings namespace.
-        changeStream = db.watch(
-          [{ $match: {
-            operationType: "insert",
-            "ns.coll": readingsCollection,
-          } }],
+        // Watch the latest_readings collection — a regular collection with one
+        // doc per meter, upserted by the feeder each tick. Time-series
+        // collections don't support Change Streams, so this derived collection
+        // acts as the real-time push source (Computed Pattern).
+        const col = db.collection(latestReadingsCollection);
+        changeStream = col.watch(
+          [{ $match: { operationType: { $in: ["insert", "replace", "update"] } } }],
           { fullDocument: "updateLookup", batchSize: 500 }
         );
 
