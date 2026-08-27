@@ -359,7 +359,17 @@ export async function getTariffRecommendation(db, dataid) {
   if (!customer) return null;
   const locationLabel = toLocationLabel(customer.city, customer.state);
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+  // Bound to last 30 days anchored to the latest reading (not wall-clock)
+  // so the window works with both real-time and accelerated feeder modes.
+  const newestReading = await readings.findOne(
+    { dataid },
+    { projection: { timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  const tariffAnchor = newestReading?.timestamp
+    ? new Date(newestReading.timestamp).getTime()
+    : Date.now();
+  const thirtyDaysAgo = new Date(tariffAnchor - 30 * 86_400_000);
+
   const rows = await readings
     .find(
       { dataid, timestamp: { $gte: thirtyDaysAgo } },
@@ -477,11 +487,21 @@ export async function getUsageSegment(db, dataid) {
     .filter((c) => segmentLabels.has(toLocationLabel(c.city, c.state)))
     .map((c) => c.dataid);
 
-  // Average power per customer over the last 7 days, with DB-side percentile rank.
-  const sevenDaysAgo = new Date(Date.now() - 7 * 86_400_000);
+  // Average power per customer over a recent window, with DB-side percentile rank.
+  // Anchor to the latest reading timestamp (not Date.now()) so the window works
+  // regardless of whether the feeder uses real-time or accelerated timestamps.
+  const latestReading = await readings.findOne(
+    { dataid },
+    { projection: { timestamp: 1 }, sort: { timestamp: -1 } }
+  );
+  const anchor = latestReading?.timestamp
+    ? new Date(latestReading.timestamp).getTime()
+    : Date.now();
+  const windowStart = new Date(anchor - 7 * 86_400_000);
+
   const usageRows = await readings
     .aggregate([
-      { $match: { dataid: { $in: segmentDataids }, timestamp: { $gte: sevenDaysAgo } } },
+      { $match: { dataid: { $in: segmentDataids }, timestamp: { $gte: windowStart } } },
       { $group: { _id: "$dataid", avgPower: { $avg: "$avg_reading" } } },
       { $setWindowFields: {
         sortBy: { avgPower: 1 },
