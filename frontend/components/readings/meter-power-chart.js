@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
+import { useStream } from "@/lib/streaming/useStream";
 import { Select, Option } from "@leafygreen-ui/select";
 import {
   ResponsiveContainer,
@@ -24,7 +25,6 @@ import {
   LEGEND_WRAPPER,
 } from "@/lib/const/chartConfig";
 
-const TICK_MS = 5_000;
 const MAX_ROWS = 250;
 const MAX_HISTORY = 20;
 
@@ -50,59 +50,49 @@ export default function MeterPowerChart() {
   const [selectValue, setSelectValue]   = useState("10");
   const [customInput, setCustomInput]   = useState("");
   const [error, setError]               = useState("");
+  const { readings: streamReadings } = useStream();
 
+  // Reset chart when limit changes.
+  const prevLimitRef = useRef(limit);
   useEffect(() => {
-    let periodIndex = 0;
-    setHistory([]);
-    setMeterIds([]);
+    if (prevLimitRef.current !== limit) {
+      setHistory([]);
+      setMeterIds([]);
+      prevLimitRef.current = limit;
+    }
+  }, [limit]);
 
-    const fetchReadings = async () => {
-      try {
-        const res = await fetch(
-          `/api/monitoring-panel/reading-logs?periodIndex=${periodIndex}&limit=${limit}`
-        );
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
+  // Push SSE stream data into the chart.
+  useEffect(() => {
+    if (!streamReadings.length) return;
 
-        if (data.length) {
-          const point = {
-            time: new Date(data[0].timestamp).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-            }),
-          };
+    // Respect the meter limit.
+    const data = streamReadings.slice(0, limit);
 
-          const seenIds = [];
-          for (const r of data) {
-            point[r.dataid] = r.energy ?? 0;
-            seenIds.push(r.dataid);
-          }
-
-          setMeterIds((prev) => {
-            const merged = [...new Set([...prev, ...seenIds])];
-            return merged;
-          });
-
-          setHistory((prev) => {
-            const next = [...prev, point];
-            return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
-          });
-
-          periodIndex += 1;
-        }
-      } catch (err) {
-        setError(err.message);
-      }
+    const point = {
+      time: new Date(data[0].timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }),
     };
 
-    fetchReadings();
-    const intervalId = setInterval(fetchReadings, TICK_MS);
-    return () => clearInterval(intervalId);
-  }, [limit]);
+    const seenIds = [];
+    for (const r of data) {
+      point[r.dataid] = r.energy ?? 0;
+      seenIds.push(r.dataid);
+    }
+
+    setMeterIds((prev) => {
+      const merged = [...new Set([...prev, ...seenIds])];
+      return merged;
+    });
+
+    setHistory((prev) => {
+      const next = [...prev, point];
+      return next.length > MAX_HISTORY ? next.slice(-MAX_HISTORY) : next;
+    });
+  }, [streamReadings, limit]);
 
   function handleSelectChange(val) {
     setSelectValue(val);

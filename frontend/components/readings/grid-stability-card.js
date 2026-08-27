@@ -7,7 +7,9 @@ import { PieChart, Pie } from "recharts";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/grid-stability-card.module.css";
 
-const TICK_MS = 2_000;
+// Relaxed interval: grid stability reads from a server-side aggregation that
+// joins readings with network capacity. Raw SSE readings can't replace this.
+const TICK_MS = 10_000;
 
 // Industry-standard feeder utilization thresholds
 const THRESHOLD_ELEVATED = 70;   // %

@@ -6,8 +6,8 @@ import * as am5 from "@amcharts/amcharts5";
 import * as am5xy from "@amcharts/amcharts5/xy";
 import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import styles from "../../style/readings/live-readings-chart.module.css";
+import { useStream } from "@/lib/streaming/useStream";
 
-const TICK_MS = 2_000;
 const MAX_HISTORY = 48;
 const LIMIT = 250; // meters averaged per reading (the whole fleet)
 const LINE_COLOR = 0x00684a;
@@ -16,6 +16,7 @@ const GRID_COLOR = 0xe8edeb;
 
 export default function LiveReadingsChart() {
   const [error, setError] = useState("");
+  const { readings: streamReadings, status } = useStream();
 
   const chartDivRef = useRef(null);
   const rootRef = useRef(null);
@@ -120,90 +121,52 @@ export default function LiveReadingsChart() {
     };
   }, []);
 
-  // Live data feed.
+  // Push SSE stream data into the chart.
+  const lastPushedDateRef = useRef(null);
+  const prevDateRef = useRef(null);
+  const baseIntervalSetRef = useRef(false);
+
   useEffect(() => {
     const series = seriesRef.current;
-    if (!series) return;
+    if (!series || !streamReadings.length) return;
 
-    let periodIndex = 0;
-    let active = true;
-    let prevDate = null;
-    let lastPushedDate = null;
-    let baseIntervalSet = false;
-    let id;
-    series.data.setAll([]);
+    const data = streamReadings;
+    const avg =
+      data.reduce((sum, r) => sum + (r.power ?? 0), 0) / data.length / 1000;
+    const value = parseFloat(avg.toFixed(2));
+    const date = new Date(data[0].timestamp).getTime();
 
-    const fetchTick = async () => {
-      try {
-        const res = await fetch(
-          `/api/monitoring-panel/reading-logs?periodIndex=${periodIndex}&limit=${LIMIT}`
-        );
-        if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.error || `HTTP ${res.status}`);
-        }
-        const data = await res.json();
-        if (!active) return;
+    // Skip duplicate timestamps.
+    if (date === lastPushedDateRef.current) return;
+    lastPushedDateRef.current = date;
 
-        // No more periods in the dataset — stop; don't invent readings.
-        if (!data.length) {
-          clearInterval(id);
-          return;
-        }
+    // Match the axis grid to the real cadence between readings.
+    if (!baseIntervalSetRef.current && prevDateRef.current != null && date > prevDateRef.current) {
+      xAxisRef.current?.set("baseInterval", {
+        timeUnit: "millisecond",
+        count: date - prevDateRef.current,
+      });
+      baseIntervalSetRef.current = true;
+    }
+    prevDateRef.current = date;
 
-        const avg =
-          data.reduce((sum, r) => sum + (r.power ?? 0), 0) / data.length / 1000;
-        const value = parseFloat(avg.toFixed(2));
-        const date = new Date(data[0].timestamp).getTime();
+    const prev =
+      series.dataItems[series.dataItems.length - 1]?.get("valueY") ?? value;
+    series.data.push({ date, value });
+    if (series.dataItems.length > MAX_HISTORY) series.data.removeIndex(0);
 
-        // Caught up to the live feed: the same period repeats until the feeder
-        // appends a newer one. Skip duplicates so points don't stack.
-        if (date === lastPushedDate) {
-          periodIndex += 1;
-          setError("");
-          return;
-        }
-        lastPushedDate = date;
+    // Animate the new point sliding in from the previous value.
+    const di = series.dataItems[series.dataItems.length - 1];
+    di.animate({
+      key: "valueYWorking",
+      to: value,
+      from: prev,
+      duration: 2400,
+      easing: am5.ease.linear,
+    });
 
-        // Match the axis grid to the real cadence between readings.
-        if (!baseIntervalSet && prevDate != null && date > prevDate) {
-          xAxisRef.current?.set("baseInterval", {
-            timeUnit: "millisecond",
-            count: date - prevDate,
-          });
-          baseIntervalSet = true;
-        }
-        prevDate = date;
-
-        const prev =
-          series.dataItems[series.dataItems.length - 1]?.get("valueY") ?? value;
-        series.data.push({ date, value });
-        if (series.dataItems.length > MAX_HISTORY) series.data.removeIndex(0);
-
-        // Animate the new point sliding in from the previous value.
-        const di = series.dataItems[series.dataItems.length - 1];
-        di.animate({
-          key: "valueYWorking",
-          to: value,
-          from: prev,
-          duration: TICK_MS * 0.8,
-          easing: am5.ease.linear,
-        });
-
-        periodIndex += 1;
-        setError("");
-      } catch (err) {
-        if (active) setError(err.message);
-      }
-    };
-
-    fetchTick();
-    id = setInterval(fetchTick, TICK_MS);
-    return () => {
-      active = false;
-      clearInterval(id);
-    };
-  }, []);
+    setError("");
+  }, [streamReadings]);
 
   return (
     <div className={styles.widget}>
@@ -218,7 +181,7 @@ export default function LiveReadingsChart() {
           </div>
           <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
             Average power per meter (kW), across all {LIMIT} live meters - one
-            point per reading interval, updated every {TICK_MS / 1000}s.
+            point per reading interval, updated via live stream.
           </Body>
         </div>
       </div>
