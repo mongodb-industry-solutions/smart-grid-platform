@@ -11,17 +11,10 @@ export async function GET(request) {
     const parsed = parseFloat(searchParams.get("threshold"));
     const threshold = Number.isFinite(parsed) && parsed >= 0 ? parsed : 3;
 
-    // Optional periodIndex advances the "reading under test" through time.
-    const rawPeriod = searchParams.get("periodIndex");
-    const periodIndex =
-      rawPeriod != null && Number.isFinite(parseInt(rawPeriod))
-        ? parseInt(rawPeriod)
-        : null;
-
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const anomalies = await getAnomalies(db, { threshold, periodIndex });
+    const anomalies = await getAnomalies(db, { threshold });
 
     return NextResponse.json({ anomalies, threshold });
   } catch (error) {
