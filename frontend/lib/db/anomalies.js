@@ -1,5 +1,6 @@
 const READINGS_COLLECTION_NAME =
   process.env.READINGS_COLLECTION_NAME || "readings";
+const LATEST_READINGS_COLLECTION = "latest_readings";
 
 // Metrics evaluated for anomalies. avg_reading is omitted (duplicate of
 // voltage); volt_leg_1/2 are omitted as they overlap with voltage.
@@ -15,163 +16,93 @@ const DEFAULT_METRICS = [
 // mean/std are trustworthy enough to flag anomalies.
 const MIN_BASELINE = 3;
 
-// Native reading cadence (ms) and how many periods before the latest the walk
-// starts, so periodIndex 0 lands on RECENT data (which has baseline history)
-// rather than the oldest period (no prior baseline → nothing to flag).
-const CADENCE_MS = 15 * 60 * 1000;
-const START_BACK = 48;
-
 // Default sigma multiple above which a metric is flagged as anomalous.
 const DEFAULT_THRESHOLD = 3;
 
+// Baseline window: recent history for computing mean/std per meter.
+const BASELINE_LOOKBACK_MS = 2 * 86_400_000;
+
 /**
- * Detects per-meter reading anomalies entirely in the database.
+ * Detects per-meter reading anomalies by comparing the latest reading (from
+ * latest_readings) against a baseline mean/std computed from the time-series
+ * readings collection.
  *
- * For each meter (dataid) the latest reading is compared, metric by metric,
- * against the mean and sample standard deviation of that meter's prior readings
- * (its last-24h baseline — which, for this dataset, is its whole history
- * excluding the latest reading). A metric is flagged when its current value
- * deviates from the baseline mean by more than `threshold` standard deviations
- * (|value - mean| / std > threshold). One row is emitted per flagged
- * (meter, metric) pair, most extreme first.
- *
- * Metrics with a zero/undefined std, or meters with fewer than MIN_BASELINE
- * baseline readings, are skipped.
+ * This approach works with any feeder cadence — it doesn't depend on readings
+ * landing on a fixed 15-minute grid.
  *
  * @param {import("mongodb").Db} db connected MongoDB database handle
  * @param {object} [options]
  * @param {number} [options.threshold=3] sigma multiple above which a metric is flagged
- * @param {string[]} [options.metrics] metric field names to evaluate; defaults to DEFAULT_METRICS
+ * @param {string[]} [options.metrics] metric field names to evaluate
  * @returns {Promise<Array<{
- *   meterId: number,
- *   metric: string,
- *   value: number,
- *   mean: number,
- *   std: number,
- *   sigma: number,
- *   timestamp: Date
+ *   meterId: number, metric: string, value: number,
+ *   mean: number, std: number, sigma: number, timestamp: Date
  * }>>} flagged anomalies, highest sigma first
  */
 export async function getAnomalies(
   db,
-  { threshold = DEFAULT_THRESHOLD, metrics = DEFAULT_METRICS, periodIndex = null } = {}
+  { threshold = DEFAULT_THRESHOLD, metrics = DEFAULT_METRICS } = {}
 ) {
   const readings = db.collection(READINGS_COLLECTION_NAME);
+  const latestCol = db.collection(LATEST_READINGS_COLLECTION);
 
-  // Only allow known metric fields (avoids injecting arbitrary field names).
   const monitored = metrics.filter((m) => DEFAULT_METRICS.includes(m));
 
-  // Resolve which reading is "under test". Anchor to the latest period (indexed,
-  // fast) and, when a periodIndex is given, walk forward from START_BACK periods
-  // ago on the uniform cadence grid — clamped to the latest — so the view advances
-  // over recent data like the live chart instead of starting 30 days back.
-  const latestDoc = await readings.findOne(
-    { voltage: { $ne: null } },
-    { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
-  );
-  if (!latestDoc) return [];
-  const latest = new Date(latestDoc.timestamp).getTime();
-  let targetTs;
-  if (periodIndex == null) {
-    targetTs = new Date(latest);
-  } else {
-    const t = Math.min(latest, latest - (START_BACK - periodIndex) * CADENCE_MS);
-    targetTs = new Date(t);
-  }
+  // Get the latest readings (one per meter) from the derived collection.
+  const latestDocs = await latestCol.find({}).toArray();
+  if (!latestDocs.length) return [];
 
-  // One descriptor per metric, reading the per-meter stats computed in $group.
-  const metricDescriptors = monitored.map((metric) => ({
-    metric,
-    value: `$test_${metric}`,
-    mean: `$mean_${metric}`,
-    std: `$std_${metric}`,
-    timestamp: targetTs,
-  }));
+  // Build a map of meterId -> latest reading for quick lookup.
+  const latestByMeter = new Map(latestDocs.map((d) => [d._id, d]));
+  const newestTs = latestDocs.reduce((max, d) => {
+    const t = new Date(d.timestamp).getTime();
+    return t > max ? t : max;
+  }, 0);
+  const windowStart = new Date(newestTs - BASELINE_LOOKBACK_MS);
 
-  // Per-meter accumulators: mean/std of each metric over the baseline window plus
-  // the value of the reading under test (the row at targetTs). Using $group
-  // accumulators — instead of $push-ing whole docs and re-scanning arrays — keeps
-  // this fast on large collections. (The test row is included in the mean/std; at
-  // ~1 of hundreds of points its effect is negligible.)
-  const isTest = { $eq: ["$timestamp", targetTs] };
-  const groupStage = {
-    _id: "$dataid",
-    n: { $sum: 1 },
-    hasTest: { $max: { $cond: [isTest, 1, 0] } },
-  };
+  // Compute baseline mean/std per meter from the time-series collection.
+  const groupStage = { _id: "$dataid", n: { $sum: 1 } };
   for (const m of monitored) {
     groupStage[`mean_${m}`] = { $avg: `$${m}` };
     groupStage[`std_${m}`] = { $stdDevSamp: `$${m}` };
-    groupStage[`test_${m}`] = { $max: { $cond: [isTest, `$${m}`, null] } };
   }
 
-  // Baseline window: only the recent history up to the reading under test — a few
-  // days is plenty for a mean/std baseline, and it bounds the scan.
-  const BASELINE_LOOKBACK_MS = 2 * 86_400_000;
-  const windowStart = new Date(new Date(targetTs).getTime() - BASELINE_LOOKBACK_MS);
+  const baselines = await readings
+    .aggregate([
+      { $match: { voltage: { $ne: null }, timestamp: { $gte: windowStart } } },
+      { $group: groupStage },
+      { $match: { n: { $gte: MIN_BASELINE + 1 } } },
+    ])
+    .toArray();
 
-  const pipeline = [
-    // Real readings within the baseline window, up to (and including) the test row.
-    // voltage != null excludes partial "heartbeat" docs.
-    { $match: { voltage: { $ne: null }, timestamp: { $gte: windowStart, $lte: targetTs } } },
+  // Compare each meter's latest reading against its baseline.
+  const anomalies = [];
+  for (const b of baselines) {
+    const latest = latestByMeter.get(b._id);
+    if (!latest) continue;
 
-    // Per-meter mean/std + the test row's values, without materializing arrays.
-    { $group: groupStage },
+    for (const metric of monitored) {
+      const value = latest[metric];
+      const mean = b[`mean_${metric}`];
+      const std = b[`std_${metric}`];
 
-    // Only meters with a reading at the target timestamp and enough baseline points.
-    { $match: { hasTest: 1, n: { $gte: MIN_BASELINE + 1 } } },
+      if (value == null || mean == null || !std || std === 0) continue;
 
-    // Fan out into one row per monitored metric.
-    { $set: { metrics: metricDescriptors } },
-    { $unwind: "$metrics" },
+      const sigma = Math.abs(value - mean) / std;
+      if (threshold > 0 && sigma <= threshold) continue;
 
-    // Deviation in sigma units. Null when std is 0/missing or value is missing,
-    // so those rows are dropped by the threshold match below.
-    {
-      $set: {
-        "metrics.sigma": {
-          $cond: [
-            {
-              $and: [
-                { $gt: ["$metrics.std", 0] },
-                { $ne: ["$metrics.value", null] },
-                { $ne: ["$metrics.mean", null] },
-              ],
-            },
-            {
-              $divide: [
-                { $abs: { $subtract: ["$metrics.value", "$metrics.mean"] } },
-                "$metrics.std",
-              ],
-            },
-            null,
-          ],
-        },
-      },
-    },
+      anomalies.push({
+        meterId: b._id,
+        metric,
+        value: Math.round(value * 100) / 100,
+        mean: Math.round(mean * 100) / 100,
+        std: Math.round(std * 100) / 100,
+        sigma: Math.round(sigma * 100) / 100,
+        timestamp: latest.timestamp,
+      });
+    }
+  }
 
-    // Keep metrics above the threshold; threshold <= 0 shows all valid rows.
-    {
-      $match: {
-        "metrics.sigma": threshold > 0 ? { $gt: threshold } : { $ne: null },
-      },
-    },
-
-    {
-      $project: {
-        _id: 0,
-        meterId: "$_id",
-        metric: "$metrics.metric",
-        value: "$metrics.value",
-        mean: "$metrics.mean",
-        std: "$metrics.std",
-        sigma: "$metrics.sigma",
-        timestamp: "$metrics.timestamp",
-      },
-    },
-
-    { $sort: { sigma: -1 } },
-  ];
-
-  return readings.aggregate(pipeline).toArray();
+  anomalies.sort((a, b) => b.sigma - a.sigma);
+  return anomalies;
 }

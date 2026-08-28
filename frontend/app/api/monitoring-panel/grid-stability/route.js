@@ -4,14 +4,11 @@ import { getGridStability } from "@/lib/db/gridStability";
 
 const dbName = process.env.DATABASE_NAME;
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const periodIndex = parseInt(searchParams.get("periodIndex") ?? "0");
-
+export async function GET() {
   try {
     const client = await getMongoClientPromise();
     const db     = client.db(dbName);
-    const data   = await getGridStability(db, periodIndex);
+    const data   = await getGridStability(db);
     return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching grid stability:", error);

@@ -94,18 +94,15 @@ export default function GridStabilityCard() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    let periodIndex = 0;
-
     const fetchData = async () => {
       try {
-        const res = await fetch(`/api/monitoring-panel/grid-stability?periodIndex=${periodIndex}`);
+        const res = await fetch("/api/monitoring-panel/grid-stability");
         if (!res.ok) {
           const body = await res.json().catch(() => ({}));
           throw new Error(body.error || `HTTP ${res.status}`);
         }
         const json = await res.json();
         if (json.summary) setData(json);
-        periodIndex += 1;
         setError("");
       } catch (err) {
         setError(err.message);
