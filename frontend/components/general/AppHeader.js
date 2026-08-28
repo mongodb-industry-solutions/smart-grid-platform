@@ -3,6 +3,7 @@
 import Link from "next/link";
 import InfoWizard from "@/components/infoWizard/InfoWizard";
 import NotificationBell from "@/components/notifications/NotificationBell";
+import FeederToggle from "@/components/demo/FeederToggle";
 
 export default function AppHeader() {
   return (
@@ -32,7 +33,8 @@ export default function AppHeader() {
             </div>
           </div>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <FeederToggle />
           <NotificationBell />
           <InfoWizard />
         </div>
