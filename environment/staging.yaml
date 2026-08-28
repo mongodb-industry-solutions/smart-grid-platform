@@ -30,11 +30,11 @@ envSecrets:
 # Main container (frontend) resources.
 resources:
   limits:
-    cpu: 500m
-    memory: 512Mi
+    cpu: 1000m
+    memory: 1Gi
   requests:
-    cpu: 100m
-    memory: 256Mi
+    cpu: 250m
+    memory: 512Mi
 
 # --- Sidecar: the Python backend that runs the Start Demo pipeline (generate /
 # load / feeder). Internal only — the frontend calls it at http://localhost:8000.
