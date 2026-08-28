@@ -23,7 +23,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 import numpy as np
-from pymongo import MongoClient
+from pymongo import MongoClient, ReplaceOne
 
 from _config import resolve_target
 
@@ -31,6 +31,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("feeder")
 
 READINGS = "readings"
+LATEST_READINGS = "latest_readings"
 MAP = "meter_network_map"
 # Grid hierarchy + region denormalized onto each live reading (matches the
 # pipeline), so demand/forecast run without a $lookup back into meter_network_map.
@@ -170,6 +171,16 @@ def main():
 
         docs = [make_reading(did, st, ts, dt_hours, rng) for did, st in state.items()]
         col.insert_many(docs, ordered=False)
+        # Upsert each reading into latest_readings (one doc per meter, keyed by
+        # dataid). This small collection supports Change Streams for real-time
+        # push to dashboards — time-series collections cannot be watched.
+        # Strip _id (assigned by insert_many) so it doesn't conflict with the
+        # dataid-based _id used in latest_readings.
+        latest_col = db[LATEST_READINGS]
+        latest_col.bulk_write(
+            [ReplaceOne({"_id": doc["dataid"]}, {k: v for k, v in doc.items() if k != "_id"}, upsert=True) for doc in docs],
+            ordered=False,
+        )
         # Internal overflow guard: keep only a rolling window of readings.
         if args.retain_days:
             cutoff = ts - timedelta(days=args.retain_days)
