@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 
 const ANOMALIES_ENDPOINT = "/api/monitoring-panel/anomalies";
-const TICK_MS = 2_000;
+const TICK_MS = 10_000;
 
 /**
  * Fetches detected anomalies from the monitoring API, refetching whenever the
- * sigma threshold changes.
+ * sigma threshold changes. Anomalies are computed by comparing the latest
+ * reading (from latest_readings) against a baseline from the time-series.
  *
  * @param {number} threshold sigma multiple above which a metric is flagged
  * @returns {{ anomalies: Array, isLoading: boolean, error: string|null }}
@@ -18,13 +19,12 @@ export function useAnomalies(threshold) {
   useEffect(() => {
     let isActive = true;
     let isFirst = true;
-    let periodIndex = 0;
 
     const fetchAnomalies = async () => {
-      if (isFirst) setIsLoading(true); // only the first load shows the spinner
+      if (isFirst) setIsLoading(true);
       try {
         const res = await fetch(
-          `${ANOMALIES_ENDPOINT}?threshold=${threshold}&periodIndex=${periodIndex}`
+          `${ANOMALIES_ENDPOINT}?threshold=${threshold}`
         );
         const data = await res.json();
         if (!res.ok) {
@@ -32,15 +32,8 @@ export function useAnomalies(threshold) {
         }
         if (!isActive) return;
 
-        const list = data.anomalies ?? [];
-        // Empty means we ran past the last period — loop back to the start.
-        if (list.length === 0 && periodIndex > 0) {
-          periodIndex = 0;
-        } else {
-          setAnomalies(list);
-          setError(null);
-          periodIndex += 1;
-        }
+        setAnomalies(data.anomalies ?? []);
+        setError(null);
       } catch (err) {
         if (isActive) setError(err.message);
       } finally {
