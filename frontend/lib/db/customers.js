@@ -370,54 +370,61 @@ export async function getTariffRecommendation(db, dataid) {
     : Date.now();
   const thirtyDaysAgo = new Date(tariffAnchor - 30 * 86_400_000);
 
-  const rows = await readings
-    .find(
-      { dataid, timestamp: { $gte: thirtyDaysAgo } },
+  // Compute all stats in MongoDB instead of loading raw readings into Node.
+  // Two aggregations: (1) overall stats, (2) per-hour/month consumption buckets.
+  const [stats] = await readings
+    .aggregate([
+      { $match: { dataid, timestamp: { $gte: thirtyDaysAgo } } },
+      { $sort: { timestamp: 1 } },
       {
-        projection: {
-          _id: 0,
-          timestamp: 1,
-          interval_kwh: 1,
-          power: 1,
-          power_factor: 1,
+        $group: {
+          _id: null,
+          count: { $sum: 1 },
+          totalKwh: { $sum: { $cond: [{ $gt: ["$interval_kwh", 0] }, "$interval_kwh", 0] } },
+          firstTs: { $first: "$timestamp" },
+          lastTs: { $last: "$timestamp" },
+          peakPower: { $max: "$power" },
+          avgPower: { $avg: "$power" },
+          avgPowerFactor: { $avg: "$power_factor" },
         },
-      }
-    )
-    .sort({ timestamp: 1 })
+      },
+    ])
     .toArray();
 
-  const monthlyKwh = estimateMonthlyKwh(rows);
+  if (!stats || stats.count < 2) return null;
+
+  // Estimate monthly kWh from observed rate.
+  const hours = (new Date(stats.lastTs) - new Date(stats.firstTs)) / 3_600_000;
+  const monthlyKwh = hours > 0 ? (stats.totalKwh / hours) * HOURS_PER_MONTH : 0;
   if (monthlyKwh == null) return null;
 
   const tariff = await tariffs.findOne({ location_label: locationLabel });
   if (!tariff) return null;
 
-  // Per-interval consumption tagged with hour/month, for the TOU split. Uses the
-  // precomputed interval_kwh on each reading.
-  const intervals = [];
-  for (const r of rows) {
-    const consumption = r.interval_kwh;
-    if (!(consumption > 0)) continue;
-    const ts = new Date(r.timestamp);
-    intervals.push({
-      month: ts.getUTCMonth(),
-      hour: ts.getUTCHours(),
-      consumption,
-    });
-  }
+  // Per-hour/month consumption buckets for TOU split — computed in MongoDB.
+  const intervals = await readings
+    .aggregate([
+      { $match: { dataid, timestamp: { $gte: thirtyDaysAgo }, interval_kwh: { $gt: 0 } } },
+      {
+        $group: {
+          _id: { month: { $month: "$timestamp" }, hour: { $hour: "$timestamp" } },
+          consumption: { $sum: "$interval_kwh" },
+        },
+      },
+    ])
+    .toArray()
+    .then((rows) =>
+      rows.map((r) => ({
+        month: r._id.month - 1, // MongoDB $month is 1-based, JS is 0-based
+        hour: r._id.hour,
+        consumption: r.consumption,
+      }))
+    );
 
-  // Usage characteristics from the power readings. reduce() (not Math.max(...))
-  // so a customer with many readings can't overflow the call stack.
-  const powers = rows.map((r) => r.power).filter((p) => p != null);
-  const peakKw = powers.reduce((max, p) => (p > max ? p : max), 0) / 1000;
-  const avgKw = powers.length
-    ? powers.reduce((a, b) => a + b, 0) / powers.length / 1000
-    : 0;
+  const peakKw = (stats.peakPower ?? 0) / 1000;
+  const avgKw = (stats.avgPower ?? 0) / 1000;
   const loadFactor = peakKw > 0 ? avgKw / peakKw : null;
-  const pfs = rows.map((r) => r.power_factor).filter((p) => p != null);
-  const avgPowerFactor = pfs.length
-    ? pfs.reduce((a, b) => a + b, 0) / pfs.length
-    : null;
+  const avgPowerFactor = stats.avgPowerFactor ?? null;
 
   // Breakdown: fixed + energy + demand + pattern adjustment.
   const fixed = tariff.fixedChargeFirstMeter ?? 0;
@@ -702,55 +709,56 @@ export async function getConsumptionTrend(db, dataid, regionFilter = null) {
 
   // Only the recent window — the dataset spans weeks, but the trend chart should
   // show a readable slice (a saturated axis of thousands of points is unusable).
+  // Anchor to the latest reading (not wall-clock) for feeder mode compatibility.
   const TREND_LOOKBACK_MS = 2 * 86_400_000;
+  const DISPLAY_BUCKET_MIN = 15;
   const latest = await readings.findOne(
     { dataid },
     { projection: { _id: 0, timestamp: 1 }, sort: { timestamp: -1 } }
   );
-  const windowStart = latest?.timestamp
-    ? new Date(new Date(latest.timestamp).getTime() - TREND_LOOKBACK_MS)
-    : null;
+  if (!latest) return { dataid, regionLabel, availableRegions, points: [] };
+  const windowStart = new Date(new Date(latest.timestamp).getTime() - TREND_LOOKBACK_MS);
 
-  const rows = await readings
-    .find(
+  // Bucket and sum consumption entirely in MongoDB — no .toArray() of raw
+  // readings into Node memory. Each doc in the result is one (meter, bucket)
+  // pair with summed interval_kwh, which is a small result set.
+  const bucketed = await readings
+    .aggregate([
       {
-        dataid: { $in: ids },
-        ...(windowStart ? { timestamp: { $gte: windowStart } } : {}),
+        $match: {
+          dataid: { $in: ids },
+          timestamp: { $gte: windowStart },
+          interval_kwh: { $gt: 0 },
+        },
       },
-      { projection: { _id: 0, dataid: 1, timestamp: 1, interval_kwh: 1 } }
-    )
-    .sort({ dataid: 1, timestamp: 1 })
+      {
+        $group: {
+          _id: {
+            dataid: "$dataid",
+            bucket: {
+              $dateTrunc: {
+                date: "$timestamp",
+                unit: "minute",
+                binSize: DISPLAY_BUCKET_MIN,
+              },
+            },
+          },
+          consumption: { $sum: "$interval_kwh" },
+        },
+      },
+      { $sort: { "_id.bucket": 1 } },
+    ])
     .toArray();
 
-  // Group readings by meter, then bucket their precomputed interval_kwh.
-  const byMeter = new Map();
-  for (const row of rows) {
-    if (!byMeter.has(row.dataid)) byMeter.set(row.dataid, []);
-    byMeter.get(row.dataid).push(row);
-  }
-
-  // Per meter: map of 15-min bucket -> summed consumption. Bucketing to a fixed
-  // display cadence keeps the chart stable no matter the raw reading cadence:
-  // 1-second live readings roll up into the current 15-min bucket instead of
-  // flooding the axis with thousands of near-zero points.
-  const DISPLAY_BUCKET_MS = 15 * 60 * 1000;
-  const bucketOf = (ts) =>
-    new Date(
-      Math.floor(new Date(ts).getTime() / DISPLAY_BUCKET_MS) * DISPLAY_BUCKET_MS
-    ).toISOString();
-
+  // Build per-meter consumption maps from the aggregated (small) result set.
   const consumptionByMeter = new Map();
   const allTimestamps = new Set();
-  for (const [id, list] of byMeter) {
-    const map = new Map();
-    for (const row of list) {
-      const consumption = row.interval_kwh;
-      if (!(consumption > 0)) continue;
-      const bucket = bucketOf(row.timestamp);
-      map.set(bucket, (map.get(bucket) ?? 0) + consumption);
-      allTimestamps.add(bucket);
-    }
-    consumptionByMeter.set(id, map);
+  for (const row of bucketed) {
+    const id = row._id.dataid;
+    const bucket = new Date(row._id.bucket).toISOString();
+    if (!consumptionByMeter.has(id)) consumptionByMeter.set(id, new Map());
+    consumptionByMeter.get(id).set(bucket, row.consumption);
+    allTimestamps.add(bucket);
   }
 
   const customerMap = consumptionByMeter.get(dataid) ?? new Map();
