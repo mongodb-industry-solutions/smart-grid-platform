@@ -56,6 +56,15 @@ export default function NavBar({ collapsed, setCollapsed }) {
 
       <SideNavItem
         as={Link}
+        href="/time-series-explorer"
+        active={pathname === "/time-series-explorer"}
+        glyph={<Icon glyph="CurlyBraces" />}
+      >
+        Time-Series Explorer
+      </SideNavItem>
+
+      <SideNavItem
+        as={Link}
         href="/ai-chatbot"
         active={pathname === "/ai-chatbot"}
         glyph={<Icon glyph="Sparkle" />}
