@@ -31,15 +31,8 @@ export default function FeederToggle() {
   const toggle = async () => {
     setLoading(true);
     try {
-      if (running) {
-        await fetch("/api/demo/stop", { method: "POST" });
-      } else {
-        await fetch("/api/demo/start", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ feeder: true }),
-        });
-      }
+      const endpoint = running ? "/api/demo/feeder/stop" : "/api/demo/feeder/start";
+      await fetch(endpoint, { method: "POST" });
       // Give the backend a moment to start/stop, then refresh status.
       setTimeout(checkStatus, 1000);
     } catch {
