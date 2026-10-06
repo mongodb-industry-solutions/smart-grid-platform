@@ -159,6 +159,24 @@ def load_readings(uri: str, db: str):
     col.create_index([("state", 1), ("timestamp", 1)])
     logger.info("  %-20s <- %-26s (%d docs, time-series, meta=dataid)", READINGS_COLLECTION, READINGS_FILE.name, total)
 
+    # Seed latest_readings with the most recent reading per meter. This small
+    # collection backs Change Streams for real-time push to dashboards — without
+    # it the "Recent Readings" table and "Average Power" chart stay empty until
+    # the feeder runs its first tick.
+    latest_col = ts.db["latest_readings"]
+    latest_col.drop()
+    latest_docs = list(col.aggregate([
+        {"$sort": {"timestamp": -1}},
+        {"$group": {"_id": "$dataid", "doc": {"$first": "$$ROOT"}}},
+        {"$replaceRoot": {"newRoot": "$doc"}},
+    ]))
+    if latest_docs:
+        # Re-key by dataid (matching the feeder's upsert pattern)
+        for d in latest_docs:
+            d["_id"] = d["dataid"]
+        latest_col.insert_many(latest_docs, ordered=False)
+    logger.info("  %-20s <- aggregation         (%d docs)", "latest_readings", len(latest_docs))
+
 
 def main():
     _require_outputs()
