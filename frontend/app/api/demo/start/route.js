@@ -143,10 +143,10 @@ export async function POST(request) {
         // drop+create of the readings time-series collection and can re-create it
         // as a plain collection (losing metaField/bucketing → slow queries).
         await stopFeeder();
-        send("step", { step: "generate", message: "Generating the dataset (current dates)…" });
-        await runBackendStep("/demo/generate", log);
 
-        send("step", { step: "load", message: "Loading collections into Atlas…" });
+        // Load pre-generated data with timestamps auto-shifted to "now" by the
+        // loader — no regeneration step needed, which cuts setup from ~2 min to ~30s.
+        send("step", { step: "load", message: "Loading collections (timestamps shifted to now)…" });
         await runBackendStep("/demo/load", log);
 
         // Best-effort: the operational demo still works without it, but the AI

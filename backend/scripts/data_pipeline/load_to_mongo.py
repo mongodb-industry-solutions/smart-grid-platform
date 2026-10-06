@@ -16,6 +16,7 @@ Each collection is dropped and reloaded, so the seed is idempotent.
 """
 import sys
 import logging
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from bson import json_util
@@ -64,6 +65,37 @@ def _iter_jsonl(path: Path):
                 yield json_util.loads(line)
 
 
+def _compute_time_shift(path: Path) -> timedelta:
+    """Scan the readings JSONL to find the latest timestamp, then return the
+    delta that shifts it to 'now minus 5 minutes'. This way data generated
+    days ago loads with fresh timestamps — no regeneration needed."""
+    max_ts = None
+    for doc in _iter_jsonl(path):
+        ts = doc.get("timestamp")
+        if ts is None:
+            continue
+        if hasattr(ts, "replace"):  # datetime
+            if ts.tzinfo is None:
+                ts = ts.replace(tzinfo=timezone.utc)
+            if max_ts is None or ts > max_ts:
+                max_ts = ts
+    if max_ts is None:
+        return timedelta(0)
+    target = datetime.now(timezone.utc) - timedelta(minutes=5)
+    delta = target - max_ts
+    logger.info("  Time-shift: latest reading at %s, shifting by %s to land at ~now",
+                max_ts.isoformat(), delta)
+    return delta
+
+
+def _shift_timestamp(doc: dict, delta: timedelta) -> dict:
+    """Shift the 'timestamp' field on a reading doc by delta."""
+    ts = doc.get("timestamp")
+    if ts is not None and hasattr(ts, "__add__"):
+        doc["timestamp"] = ts + delta
+    return doc
+
+
 def _require_outputs():
     missing = [p.name for p in [READINGS_FILE, *PLAIN_COLLECTIONS] if not p.exists()]
     if missing:
@@ -100,11 +132,17 @@ def load_readings(uri: str, db: str):
             f"(got {info.get('type')!r}). Stop the feeder before loading, then retry."
         )
     col = ts.get_collection(READINGS_COLLECTION)
+    # Compute the time shift so readings land at "now" regardless of when they
+    # were generated. This single scan finds the max timestamp; the per-doc shift
+    # is a cheap timedelta addition during the insert loop below.
+    delta = _compute_time_shift(READINGS_FILE)
+
     # Stream the JSONL file and insert in batches so the whole dataset is never in
     # memory (the readings are the big collection). Also gives steady progress
     # output, which keeps the streaming HTTP response alive during the load.
     total, batch = 0, []
     for doc in _iter_jsonl(READINGS_FILE):
+        _shift_timestamp(doc, delta)
         batch.append(doc)
         if len(batch) >= BATCH:
             col.insert_many(batch, ordered=False)
