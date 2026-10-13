@@ -177,14 +177,14 @@ export default function LiveReadingsChart() {
 
     // Two shaded operating bands behind the curve: normal below the ceiling,
     // high-load above it. The live average weaves across the boundary.
-    const addBand = (value, endValue, color, text) => {
+    const addBand = (value, endValue, color, text, opacity) => {
       const range = yAxis.createAxisRange(
         yAxis.makeDataItem({ value, endValue })
       );
       range.get("grid").setAll({ visible: false });
       range.get("axisFill").setAll({
         fill: am5.color(color),
-        fillOpacity: 0.08,
+        fillOpacity: opacity,
         visible: true,
       });
       range.get("label").setAll({
@@ -196,8 +196,19 @@ export default function LiveReadingsChart() {
         fontWeight: "600",
       });
     };
-    addBand(0, NORMAL_BAND_MAX, NORMAL_BAND_COLOR, "NORMAL");
-    addBand(NORMAL_BAND_MAX, HIGH_LOAD_BAND_MAX, HIGH_LOAD_BAND_COLOR, "HIGH-LOAD");
+    addBand(0, NORMAL_BAND_MAX, NORMAL_BAND_COLOR, "NORMAL", 0.14);
+    addBand(NORMAL_BAND_MAX, HIGH_LOAD_BAND_MAX, HIGH_LOAD_BAND_COLOR, "HIGH-LOAD", 0.22);
+
+    // Dashed threshold line marking the boundary between the two bands.
+    const threshold = yAxis.createAxisRange(
+      yAxis.makeDataItem({ value: NORMAL_BAND_MAX })
+    );
+    threshold.get("grid").setAll({
+      stroke: am5.color(AXIS_LABEL_COLOR),
+      strokeOpacity: 0.6,
+      strokeDasharray: [4, 4],
+    });
+    threshold.get("label").setAll({ visible: false });
 
     const series = chart.series.push(
       am5xy.LineSeries.new(root, {

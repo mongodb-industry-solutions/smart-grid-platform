@@ -63,8 +63,9 @@
 .bubble {
   position: absolute;
   top: calc(100% + 10px);
-  /* Anchored to the toggle so the arrow lines up with it. */
-  right: 0;
+  /* Centred on the toggle so the arrow always points at the button. */
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 60;
   width: 260px;
   padding: 10px 12px;
@@ -83,7 +84,8 @@
   content: "";
   position: absolute;
   top: -6px;
-  right: 42px;
+  left: 50%;
+  margin-left: -5px;
   width: 10px;
   height: 10px;
   background: #fffaeb;
