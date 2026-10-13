@@ -6,8 +6,8 @@ const dbName = process.env.DATABASE_NAME;
 
 // Collections allowed for the QE explorer
 const ALLOWED_COLLECTIONS = new Set([
-  "customer_db",
-  "customer_db_encrypted",
+  "metering_points",
+  "metering_points_encrypted",
 ]);
 
 // Block write/exec stages
@@ -38,7 +38,7 @@ export async function POST(request) {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    // Steps 1-2 use regular aggregation on plaintext customer_db
+    // Steps 1-2 use regular aggregation on plaintext metering_points
     if (!mode || mode !== "encrypted_find") {
       const err = validatePipeline(pipeline);
       if (err) {
