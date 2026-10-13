@@ -1,0 +1,115 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid #e8edeb;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  color: #89979b;
+  transition: all 0.15s;
+}
+
+.toggle:disabled {
+  background: #f5f6f7;
+  cursor: wait;
+}
+
+.running {
+  color: #00684a;
+}
+
+/* Feeder is off: pull the eye to the button until the user starts it. */
+.attention {
+  border-color: #ffc010;
+  animation: attention 1.8s ease-in-out infinite;
+}
+
+@keyframes attention {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 192, 16, 0.55); }
+  50%      { box-shadow: 0 0 0 6px rgba(255, 192, 16, 0); }
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #ccc;
+}
+
+.running .dot {
+  background: #00ed64;
+  box-shadow: 0 0 6px rgba(0, 237, 100, 0.5);
+}
+
+.attention .dot {
+  background: #ffc010;
+  animation: blink 1.8s ease-in-out infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%      { opacity: 0.3; transform: scale(0.75); }
+}
+
+.bubble {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 200px;
+  z-index: 50;
+  width: 240px;
+  padding: 10px 12px;
+  border: 1px solid #ffc010;
+  border-radius: 8px;
+  background: #fffaeb;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+  line-height: 1.45;
+  color: #5c4200;
+  text-align: left;
+}
+
+/* Arrow pointing up at the toggle. */
+.bubble::before {
+  content: "";
+  position: absolute;
+  top: -6px;
+  right: 24px;
+  width: 10px;
+  height: 10px;
+  background: #fffaeb;
+  border-left: 1px solid #ffc010;
+  border-top: 1px solid #ffc010;
+  transform: rotate(45deg);
+}
+
+.bubbleRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dismiss {
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: #5c4200;
+  opacity: 0.6;
+}
+
+.dismiss:hover {
+  opacity: 1;
+}
