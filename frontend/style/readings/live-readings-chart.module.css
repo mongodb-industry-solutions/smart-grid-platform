@@ -124,6 +124,16 @@
   justify-content: center;
 }
 
+/* Small annotation telling the reader which time window the x axis spans —
+   it changes between live streaming and the seeded history. */
+.windowCaption {
+  align-self: flex-end;
+  margin: 0 10px 2px 0;
+  font-size: 11px;
+  color: #89979b;
+  letter-spacing: 0.02em;
+}
+
 .loadingRow {
   display: flex;
   align-items: center;

@@ -21,7 +21,7 @@ documents and aggregation pipelines powering them.
 - **Aggregation Framework** - analytics run in the database: `$setWindowFields`/`$shift` (gaps-and-islands outage detection), `$lookup` across the grid topology for utilization, and `$group` with `$stdDevSamp` for anomalies and forecasting.
 - **Flexible document model** - meters, customers, and the grid hierarchy live as related documents joined on demand; the schema evolves without migrations.
 - **Change Streams** - a derived `latest_readings` collection (time-series collections don't support change streams) drives the live panels over SSE.
-- **Queryable Encryption** - sensitive fields (SSN, billing amount) are encrypted client-side and stored as ciphertext, while equality and range queries still run server-side.
+- **Queryable Encryption** - sensitive CIM fields (metering point id, consumption) are encrypted client-side and stored as ciphertext, while equality and range queries still run server-side.
 - **Atlas Vector Search with automated Voyage AI embeddings** - semantic search with no separate embedding service.
 - **Hybrid search** - vector + full-text results fused with Reciprocal Rank Fusion (RRF).
 - **Agentic AI on MongoDB** - a LangGraph multi-agent with conversation memory persisted in Atlas (`agent_checkpoints`).
@@ -159,9 +159,10 @@ has built-in guards so it can't overflow the collection or run forever
 ## Queryable Encryption demo
 
 The **Queryable Encryption** page walks through six steps: a plaintext record,
-the exposure, the encrypted record, an equality search, a range query, and why
-it matters. It reads a second collection (`customer_db_encrypted`) whose `ssn`
-and `billing_amount` fields are encrypted with MongoDB Queryable Encryption.
+the interoperability gap, the encrypted record, an equality search, a range
+query, and why it matters. It reads a second collection
+(`metering_points_encrypted`) whose `metering_point_id` and `consumption_kwh`
+fields are encrypted with MongoDB Queryable Encryption.
 
 Setup requires the `crypt_shared` library (automatic encryption uses it for query
 analysis) and a local KMS master key:
@@ -170,8 +171,9 @@ analysis) and a local KMS master key:
    downloads (`mongo_crypt_shared_v1-<platform>.tgz`) and place
    `lib/mongo_crypt_v1.*` in `backend/.crypt_shared/` (or point `CRYPT_SHARED_PATH`
    at it). The Docker image already bundles it at `/opt/crypt_shared`.
-2. Run the setup script against the **same cluster the app reads**. It enriches
-   `customer_db` with synthetic PII and creates the encrypted collection:
+2. Run the setup script against the **same cluster the app reads**. It builds
+   `metering_points` (one CIM-style record per customer) and creates the
+   encrypted collection from it:
 
    ```bash
    cd backend

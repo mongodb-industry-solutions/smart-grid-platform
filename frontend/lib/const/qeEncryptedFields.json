@@ -1,7 +1,7 @@
 {
   "fields": [
     {
-      "path": "ssn",
+      "path": "metering_point_id",
       "bsonType": "string",
       "keyId": {
         "$binary": {
@@ -14,7 +14,7 @@
       }
     },
     {
-      "path": "billing_amount",
+      "path": "consumption_kwh",
       "bsonType": "int",
       "keyId": {
         "$binary": {

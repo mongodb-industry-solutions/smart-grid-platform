@@ -3,14 +3,16 @@
 One-shot setup for the Queryable Encryption Explorer demo.
 
 Creates the encrypted collection used by frontend/app/queryable-encryption:
-  1. Enriches customer_db with synthetic PII (name, ssn, billing_amount,
-     payment_method, address) — the plaintext "exposure" demo needs these.
+  1. Builds metering_points from customer_db, adding the synthetic CIM fields
+     the plaintext "exposure" demo walks through (metering_point_id,
+     consumption_kwh, service_address, segment). customer_db is left untouched.
   2. Creates a local-master-key DEK in the __keyVault collection.
-  3. Creates customer_db_encrypted by copying customer_db through an
-     autoEncryption-enabled client — ssn (equality) and billing_amount
-     (range) are encrypted client-side; everything else stays plaintext.
+  3. Creates metering_points_encrypted by copying metering_points through an
+     autoEncryption-enabled client — metering_point_id (equality) and
+     consumption_kwh (range) are encrypted client-side; everything else stays
+     plaintext.
 
-Idempotent-ish: re-running refreshes PII values and re-copies the data.
+Idempotent-ish: re-running refreshes the synthetic values and re-copies the data.
 Never run against a cluster holding real customer PII.
 
 The target cluster must be named explicitly — this script writes synthetic PII,
@@ -37,21 +39,25 @@ from pymongo.encryption import AutoEncryptionOpts, ClientEncryption  # noqa: E40
 KEY_VAULT_NAMESPACE = "encryption.__keyVault"
 MASTER_KEY_PATH = Path(__file__).resolve().parent.parent / "qe_masterkey.txt"
 FIELDS_CONFIG_PATH = Path(__file__).resolve().parent.parent / "qe_encrypted_fields.json"
-ENCRYPTED_COLLECTION = "customer_db_encrypted"
+PLAINTEXT_COLLECTION = "metering_points"
+ENCRYPTED_COLLECTION = "metering_points_encrypted"
 # Automatic encryption needs the crypt_shared library (query analysis). Point at
 # a local copy via CRYPT_SHARED_PATH, or drop it in backend/.crypt_shared/.
 DEFAULT_CRYPT_SHARED = (
     Path(__file__).resolve().parent.parent / ".crypt_shared" / "mongo_crypt_v1.dylib"
 )
-SSN_ENCRYPTED_FIELDS = ["ssn"]
-RANGE_ENCRYPTED_FIELDS = ["billing_amount"]
-# Range query bounds must bracket every stored billing_amount.
-BILLING_MIN = 0
-BILLING_MAX = 400
+ID_ENCRYPTED_FIELDS = ["metering_point_id"]
+RANGE_ENCRYPTED_FIELDS = ["consumption_kwh"]
+# Range query bounds must bracket every stored consumption_kwh.
+CONSUMPTION_MIN = 0
+CONSUMPTION_MAX = 400
+# The walkthrough's equality step looks this exact metering point up, so seeding
+# must guarantee it exists (ids are assigned in sequence, MP-000001, ...).
+DEMO_METERING_POINT_ID = "MP-000001"
 
 FIRST_NAMES = ["Maria", "James", "Wei", "Aisha", "Diego", "Anna", "Omar", "Sofia", "Liam", "Priya"]
 LAST_NAMES = ["Garcia", "Chen", "Okafor", "Silva", "Kim", "Novak", "Rossi", "Haddad", "Nguyen", "Smith"]
-PAYMENT_METHODS = ["credit_card", "debit_card", "bank_transfer", "paypal", "check"]
+SEGMENTS = ["residential", "commercial", "industrial"]
 STREETS = ["Oak", "Maple", "Cedar", "Elm", "Pine", "Birch", "Willow", "Sunset"]
 
 
@@ -80,7 +86,8 @@ def get_or_create_master_key():
 
 
 def encrypted_fields_config():
-    """QE encryptedFields: ssn is equality-queryable, billing_amount range-queryable.
+    """QE encryptedFields: metering_point_id is equality-queryable,
+    consumption_kwh is range-queryable.
 
     keyId is left None so create_encrypted_collection provisions a fresh DEK per
     field and returns the filled-in config for the client's encryptedFieldsMap.
@@ -93,7 +100,7 @@ def encrypted_fields_config():
                 "keyId": None,
                 "queries": {"queryType": "equality"},
             }
-            for field in SSN_ENCRYPTED_FIELDS
+            for field in ID_ENCRYPTED_FIELDS
         ]
         + [
             {
@@ -102,8 +109,8 @@ def encrypted_fields_config():
                 "keyId": None,
                 "queries": {
                     "queryType": "range",
-                    "min": BILLING_MIN,
-                    "max": BILLING_MAX,
+                    "min": CONSUMPTION_MIN,
+                    "max": CONSUMPTION_MAX,
                 },
             }
             for field in RANGE_ENCRYPTED_FIELDS
@@ -111,27 +118,34 @@ def encrypted_fields_config():
     }
 
 
-def enrich_plaintext(db):
-    """Give customer_db docs the synthetic PII fields the demo walks through."""
+def seed_plaintext(db):
+    """Build metering_points: one CIM-style metering point per customer.
+
+    Carries the synthetic fields the walkthrough encrypts. ids are assigned in
+    sequence (MP-000001, ...) so the equality step can look up a known metering
+    point. customer_db itself is left untouched.
+    """
     rng = random.Random(42)
-    updated = 0
-    for doc in db["customer_db"].find({}):
+    db[PLAINTEXT_COLLECTION].drop()
+    docs = []
+    for i, customer in enumerate(db["customer_db"].find({}), start=1):
         first = rng.choice(FIRST_NAMES)
         last = rng.choice(LAST_NAMES)
-        db["customer_db"].update_one(
-            {"_id": doc["_id"]},
+        docs.append(
             {
-                "$set": {
-                    "name": f"{first} {last}",
-                    "ssn": f"{rng.randint(100, 999):03d}-{rng.randint(10, 99):02d}-{rng.randint(1000, 9999):04d}",
-                    "billing_amount": rng.randint(40, 350),
-                    "payment_method": rng.choice(PAYMENT_METHODS),
-                    "address": f"{rng.randint(100, 9999)} {rng.choice(STREETS)} St, {doc.get('city', 'Austin')}, {doc.get('state', 'Texas')}",
-                }
-            },
+                "metering_point_id": f"MP-{i:06d}",
+                "consumption_kwh": rng.randint(40, 350),
+                "service_address": f"{rng.randint(100, 9999)} {rng.choice(STREETS)} St",
+                "segment": rng.choice(SEGMENTS),
+                "customer_name": f"{first} {last}",
+                "dataid": customer.get("dataid"),
+                "city": customer.get("city"),
+                "state": customer.get("state"),
+            }
         )
-        updated += 1
-    print(f"Enriched {updated} customer_db docs with synthetic PII.")
+    if docs:
+        db[PLAINTEXT_COLLECTION].insert_many(docs)
+    print(f"Seeded {len(docs)} {PLAINTEXT_COLLECTION} docs (plaintext).")
 
 
 def resolve_explicit_target():
@@ -148,8 +162,8 @@ def resolve_explicit_target():
     parser.add_argument(
         "--plaintext-only",
         action="store_true",
-        help="Only enrich customer_db with synthetic PII (steps 1-2 of the "
-        "walkthrough); skip the encrypted collection, which needs crypt_shared.",
+        help="Only build metering_points (steps 1-2 of the walkthrough); skip "
+        "the encrypted collection, which needs crypt_shared.",
     )
     args = parser.parse_args()
 
@@ -171,7 +185,7 @@ def main():
 
     if plaintext_only:
         plain_client = MongoClient(uri)
-        enrich_plaintext(plain_client[dbname])
+        seed_plaintext(plain_client[dbname])
         plain_client.close()
         print("Plaintext seed complete (steps 1-2). Encrypted collection skipped.")
         return
@@ -180,7 +194,7 @@ def main():
 
     plain_client = MongoClient(uri)
     db = plain_client[dbname]
-    enrich_plaintext(db)
+    seed_plaintext(db)
 
     # Key vault: unique index on keyAltNames is required by the QE spec.
     key_vault_db = plain_client["encryption"]
@@ -227,25 +241,29 @@ def main():
         ),
     )
 
-    # Copy docs through the encrypted client — ssn / billing_amount encrypted.
+    # Copy docs through the encrypted client — metering_point_id / consumption_kwh
+    # encrypted.
     edb = encrypted_client[dbname]
-    docs = list(db["customer_db"].find({}))
+    docs = list(db[PLAINTEXT_COLLECTION].find({}))
     edb[ENCRYPTED_COLLECTION].insert_many(docs)
     print(f"Copied {len(docs)} docs into {ENCRYPTED_COLLECTION}.")
 
     # Sanity checks: equality + range queries must work through the client.
-    sample = docs[0]
-    eq = edb[ENCRYPTED_COLLECTION].find_one({"ssn": sample["ssn"]})
-    assert eq and eq["name"] == sample["name"], "equality query on ssn failed"
-    hi = list(edb[ENCRYPTED_COLLECTION].find({"billing_amount": {"$gte": 200}}))
-    print(f"Equality match on ssn: OK. Range ($gte 200) matched {len(hi)} docs.")
+    eq = edb[ENCRYPTED_COLLECTION].find_one(
+        {"metering_point_id": DEMO_METERING_POINT_ID}
+    )
+    assert eq and eq["metering_point_id"] == DEMO_METERING_POINT_ID, (
+        f"equality query on metering_point_id ({DEMO_METERING_POINT_ID}) failed"
+    )
+    hi = list(edb[ENCRYPTED_COLLECTION].find({"consumption_kwh": {"$gte": 200}}))
+    print(f"Equality match on {DEMO_METERING_POINT_ID}: OK. Range ($gte 200) matched {len(hi)} docs.")
 
     # What the server actually stores must be ciphertext:
     raw = plain_client[dbname][ENCRYPTED_COLLECTION].find_one()
-    assert isinstance(raw["ssn"], bytes) and isinstance(raw["billing_amount"], bytes), (
-        "ssn/billing_amount are not stored as ciphertext — encryption not applied"
-    )
-    print("Server-side check: ssn and billing_amount stored as Binary ciphertext. Done.")
+    assert isinstance(raw["metering_point_id"], bytes) and isinstance(
+        raw["consumption_kwh"], bytes
+    ), "metering_point_id/consumption_kwh are not stored as ciphertext — encryption not applied"
+    print("Server-side check: metering_point_id and consumption_kwh stored as Binary ciphertext. Done.")
 
     encrypted_client.close()
     plain_client.close()

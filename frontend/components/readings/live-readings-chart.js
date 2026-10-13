@@ -8,11 +8,32 @@ import am5themes_Animated from "@amcharts/amcharts5/themes/Animated";
 import styles from "../../style/readings/live-readings-chart.module.css";
 import { useStream } from "@/lib/streaming/useStream";
 
-const MAX_HISTORY = 48;
+const MAX_HISTORY = 60; // live points kept in the rolling window (~3 min at 3 s/tick)
 const LIMIT = 250; // meters averaged per reading (the whole fleet)
 const LINE_COLOR = 0x00684a;
 const AXIS_LABEL_COLOR = 0x5c6970; // matches AXIS_TICK on the other charts
 const GRID_COLOR = 0xe8edeb;
+
+// Live ticks arrive every few seconds, so the axis must use sub-minute steps.
+// If it offers an hourly step, amCharts picks it for the wider span and the
+// live curve looks frozen — the movement is squashed into the right edge.
+const LIVE_BASE_INTERVAL = { timeUnit: "second", count: 1 };
+const LIVE_GRID_INTERVALS = [
+  { timeUnit: "second", count: 5 },
+  { timeUnit: "second", count: 10 },
+  { timeUnit: "second", count: 30 },
+  { timeUnit: "minute", count: 1 },
+  { timeUnit: "minute", count: 2 },
+];
+// With the feeder off we show the seeded history, which is 15 min apart.
+const HISTORY_BASE_INTERVAL = { timeUnit: "minute", count: 15 };
+const HISTORY_GRID_INTERVALS = [
+  { timeUnit: "minute", count: 30 },
+  { timeUnit: "hour", count: 1 },
+  { timeUnit: "hour", count: 3 },
+  { timeUnit: "hour", count: 6 },
+  { timeUnit: "hour", count: 12 },
+];
 
 export default function LiveReadingsChart() {
   const [error, setError] = useState("");
@@ -23,6 +44,7 @@ export default function LiveReadingsChart() {
   const rootRef = useRef(null);
   const seriesRef = useRef(null);
   const xAxisRef = useRef(null);
+  const yAxisRef = useRef(null);
 
   // When the feeder is off the stream is silent — seed the chart with the
   // last-known fleet-average power history so the panel isn't empty.
@@ -83,18 +105,10 @@ export default function LiveReadingsChart() {
         maxDeviation: 0.5,
         groupData: false,
         extraMax: 0.05,
-        baseInterval: { timeUnit: "second", count: 1 },
-        // Candidate grid steps. Live ticks are seconds apart, so start at 10s
-        // and let amCharts pick a coarser step only if the window really is
-        // wider (e.g. while showing seeded history).
-        gridIntervals: [
-          { timeUnit: "second", count: 10 },
-          { timeUnit: "second", count: 30 },
-          { timeUnit: "minute", count: 1 },
-          { timeUnit: "minute", count: 5 },
-          { timeUnit: "minute", count: 15 },
-          { timeUnit: "hour", count: 1 },
-        ],
+        // Starts in history mode; a separate effect swaps to the live config
+        // (below) as soon as the first streamed reading arrives.
+        baseInterval: HISTORY_BASE_INTERVAL,
+        gridIntervals: HISTORY_GRID_INTERVALS,
         renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 70 }),
         tooltip: am5.Tooltip.new(root, {}),
       })
@@ -133,6 +147,7 @@ export default function LiveReadingsChart() {
         renderer: am5xy.AxisRendererY.new(root, {}),
       })
     );
+    yAxisRef.current = yAxis;
     yAxis.get("renderer").labels.template.setAll({
       fontSize: 11,
       fill: am5.color(AXIS_LABEL_COLOR),
@@ -182,8 +197,26 @@ export default function LiveReadingsChart() {
       rootRef.current = null;
       seriesRef.current = null;
       xAxisRef.current = null;
+      yAxisRef.current = null;
     };
   }, []);
+
+  // Swap the axis between the live (sub-minute) and seeded-history (hourly)
+  // configurations. Without this the single axis has to serve both cadences —
+  // 3 s live ticks and 15 min history points — and amCharts falls back to hourly
+  // labels, flattening the live curve.
+  useEffect(() => {
+    const xAxis = xAxisRef.current;
+    const yAxis = yAxisRef.current;
+    if (!xAxis || !yAxis) return;
+    const live = Boolean(lastEventAt);
+    xAxis.set("baseInterval", live ? LIVE_BASE_INTERVAL : HISTORY_BASE_INTERVAL);
+    xAxis.set("gridIntervals", live ? LIVE_GRID_INTERVALS : HISTORY_GRID_INTERVALS);
+    // maxDeviation lets amCharts even out the spacing between points; on a live
+    // feed that hides real movement, so pin it to 0 while streaming.
+    xAxis.set("maxDeviation", live ? 0 : 0.5);
+    yAxis.set("maxDeviation", live ? 0 : 1);
+  }, [lastEventAt]);
 
   // Push SSE stream data into the chart.
   const lastPushedDateRef = useRef(null);
@@ -245,7 +278,7 @@ export default function LiveReadingsChart() {
           </div>
           <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
             {lastEventAt
-              ? `Average power per meter (kW), across all ${LIMIT} live meters - one point per reading interval, updated via live stream.`
+              ? `Average power per meter (kW) across all ${LIMIT} meters, streaming live.`
               : "Showing last known values. Start the feeder simulation (toggle, top right) to stream live readings."}
           </Body>
         </div>
@@ -254,6 +287,9 @@ export default function LiveReadingsChart() {
       {error && <Body style={{ color: "#DB3030" }}>Error: {error}</Body>}
 
       <div className={styles.chartWrapper}>
+        <div className={styles.windowCaption}>
+          {lastEventAt ? "Rolling live window — last ~3 min" : "Seeded history — last 12 h"}
+        </div>
         <div ref={chartDivRef} style={{ width: "100%", height: 320 }} />
       </div>
     </div>

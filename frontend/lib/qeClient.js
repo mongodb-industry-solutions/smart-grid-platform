@@ -5,9 +5,10 @@ import { EJSON } from "bson";
 import encryptedFieldsJson from "@/lib/const/qeEncryptedFields.json";
 
 // Dedicated client for the Queryable Encryption explorer. The app's main client
-// has no autoEncryption, so queries against customer_db_encrypted through it
+// has no autoEncryption, so queries against metering_points_encrypted through it
 // return raw ciphertext. This client carries the key vault + encryptedFieldsMap,
-// so ssn / billing_amount are encrypted on query and decrypted on return.
+// so metering_point_id / consumption_kwh are encrypted on query and decrypted on
+// return.
 //
 // Requires:
 //   QE_MASTER_KEY       hex-encoded 96-byte local KMS master key (see
@@ -16,7 +17,7 @@ import encryptedFieldsJson from "@/lib/const/qeEncryptedFields.json";
 //                       needs it for query analysis)
 
 const KEY_VAULT_NAMESPACE = "encryption.__keyVault";
-const ENCRYPTED_COLLECTION = "customer_db_encrypted";
+const ENCRYPTED_COLLECTION = "metering_points_encrypted";
 
 // keyId is stored as EJSON ($binary) — deserialize so the driver gets real
 // BSON Binary values rather than plain objects.
