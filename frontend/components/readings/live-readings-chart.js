@@ -47,12 +47,15 @@ export default function LiveReadingsChart() {
   }, []);
 
   // Push seed history into the chart once both chart and seed data exist.
-  // The axis keeps its 10s grid — the seed is only a placeholder until the
-  // feeder streams live points, so it must not widen the axis cadence.
+  // Only while the stream is silent: seeded points are ~15 min apart, so
+  // keeping them alongside live points (seconds apart) would stretch the axis
+  // over hours and squash the live data into a single vertical line.
+  const seedClearedRef = useRef(false);
+
   useEffect(() => {
     const series = seriesRef.current;
-    if (!series || !seedHistory?.length) return;
-    series.data.push(...seedHistory);
+    if (!series || !seedHistory?.length || seedClearedRef.current) return;
+    series.data.setAll(seedHistory);
   }, [seedHistory]);
 
   // Build the amCharts live chart once (client-only).
@@ -81,9 +84,17 @@ export default function LiveReadingsChart() {
         groupData: false,
         extraMax: 0.05,
         baseInterval: { timeUnit: "second", count: 1 },
-        // Label every 10 seconds — the live feeder ticks at second granularity,
-        // so coarser auto-chosen intervals (minutes/hours) hid the real cadence.
-        gridIntervals: [{ timeUnit: "second", count: 10 }],
+        // Candidate grid steps. Live ticks are seconds apart, so start at 10s
+        // and let amCharts pick a coarser step only if the window really is
+        // wider (e.g. while showing seeded history).
+        gridIntervals: [
+          { timeUnit: "second", count: 10 },
+          { timeUnit: "second", count: 30 },
+          { timeUnit: "minute", count: 1 },
+          { timeUnit: "minute", count: 5 },
+          { timeUnit: "minute", count: 15 },
+          { timeUnit: "hour", count: 1 },
+        ],
         renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 70 }),
         tooltip: am5.Tooltip.new(root, {}),
       })
@@ -190,6 +201,14 @@ export default function LiveReadingsChart() {
     // Skip duplicate timestamps.
     if (date === lastPushedDateRef.current) return;
     lastPushedDateRef.current = date;
+
+    // First live point: discard the seeded history. Seed points are minutes
+    // apart, so keeping them would hold the axis at an hours-wide span and the
+    // live readings would pile up at the right edge.
+    if (!seedClearedRef.current) {
+      seedClearedRef.current = true;
+      series.data.clear();
+    }
 
     const prev =
       series.dataItems[series.dataItems.length - 1]?.get("valueY") ?? value;
