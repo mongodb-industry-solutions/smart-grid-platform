@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/live-readings.module.css";
 import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGreenTable, flexRender,} from "@leafygreen-ui/table";
@@ -63,11 +63,28 @@ const columns = [
 ];
 
 export default function RecentReadings() {
-  const { readings: streamReadings, status } = useStream();
+  const { readings: streamReadings, lastEventAt } = useStream();
   const [error] = useState("");
+  const [seedLatest, setSeedLatest] = useState(null);
 
-  // useStream returns the latest batch of readings from the Change Stream.
-  const readings = streamReadings;
+  // When the feeder is off the stream is silent — seed the table with the
+  // last-known reading per meter so it isn't stuck on "Loading...".
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/readings/live-seed")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.latest)) setSeedLatest(data.latest);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Live batch once the stream delivers; otherwise fall back to seed data.
+  const readings = streamReadings.length ? streamReadings : seedLatest ?? [];
+  const isLive = lastEventAt != null;
 
   const table = useLeafyGreenTable({
     data: readings,
@@ -80,12 +97,23 @@ export default function RecentReadings() {
   const wrapperRef = useAutoPageSize(table);
 
   if (error) return <Body>Error: {error}</Body>;
-  if (!readings.length) return <Body>Loading...</Body>;
+  if (!readings.length)
+    return (
+      <Body>
+        No readings yet. Start the feeder simulation (toggle, top right) to
+        stream meter readings.
+      </Body>
+    );
 
   return (
     <div className={styles.widget}>
       <div className={styles.header}>
         <H2>Recent Readings</H2>
+        {!isLive && (
+          <Body style={{ fontSize: 12, color: "#5C6970" }}>
+            Last known values — start the feeder (top right) for live updates.
+          </Body>
+        )}
       </div>
 
       <div className={styles.tableWrapper}>

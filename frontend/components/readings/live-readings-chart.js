@@ -16,12 +16,50 @@ const GRID_COLOR = 0xe8edeb;
 
 export default function LiveReadingsChart() {
   const [error, setError] = useState("");
-  const { readings: streamReadings, status } = useStream();
+  const { readings: streamReadings, lastEventAt } = useStream();
+  const [seedHistory, setSeedHistory] = useState(null);
 
   const chartDivRef = useRef(null);
   const rootRef = useRef(null);
   const seriesRef = useRef(null);
   const xAxisRef = useRef(null);
+
+  // When the feeder is off the stream is silent — seed the chart with the
+  // last-known fleet-average power history so the panel isn't empty.
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/readings/live-seed")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.history)) {
+          setSeedHistory(
+            data.history.map((p) => ({
+              date: new Date(p.date).getTime(),
+              value: parseFloat((p.value ?? 0).toFixed(2)),
+            }))
+          );
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Push seed history into the chart once both chart and seed data exist.
+  useEffect(() => {
+    const series = seriesRef.current;
+    const xAxis = xAxisRef.current;
+    if (!series || !seedHistory?.length) return;
+
+    series.data.push(...seedHistory);
+    if (seedHistory.length > 1) {
+      xAxis?.set("baseInterval", {
+        timeUnit: "millisecond",
+        count: seedHistory[seedHistory.length - 1].date - seedHistory[seedHistory.length - 2].date,
+      });
+    }
+  }, [seedHistory]);
 
   // Build the amCharts live chart once (client-only).
   useEffect(() => {
@@ -174,14 +212,19 @@ export default function LiveReadingsChart() {
         <div>
           <div className={styles.titleRow}>
             <H2>Average Power</H2>
-            <span className={styles.liveBadge}>
-              <span className={styles.liveDot} />
-              LIVE
-            </span>
+            {lastEventAt ? (
+              <span className={styles.liveBadge}>
+                <span className={styles.liveDot} />
+                LIVE
+              </span>
+            ) : (
+              <span className={styles.pausedBadge}>FEEDER OFF</span>
+            )}
           </div>
           <Body style={{ fontSize: 12, color: "#5C6970", marginTop: 2 }}>
-            Average power per meter (kW), across all {LIMIT} live meters - one
-            point per reading interval, updated via live stream.
+            {lastEventAt
+              ? `Average power per meter (kW), across all ${LIMIT} live meters - one point per reading interval, updated via live stream.`
+              : "Showing last known values. Start the feeder simulation (toggle, top right) to stream live readings."}
           </Body>
         </div>
       </div>

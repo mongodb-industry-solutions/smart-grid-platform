@@ -238,3 +238,7 @@ frontend/next-env.d.ts
 
 # Misc
 *.pem
+
+# QE demo local secrets / environment-specific config
+backend/qe_masterkey.txt
+backend/qe_encrypted_fields.json
