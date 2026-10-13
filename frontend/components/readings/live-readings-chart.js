@@ -47,18 +47,12 @@ export default function LiveReadingsChart() {
   }, []);
 
   // Push seed history into the chart once both chart and seed data exist.
+  // The axis keeps its 10s grid — the seed is only a placeholder until the
+  // feeder streams live points, so it must not widen the axis cadence.
   useEffect(() => {
     const series = seriesRef.current;
-    const xAxis = xAxisRef.current;
     if (!series || !seedHistory?.length) return;
-
     series.data.push(...seedHistory);
-    if (seedHistory.length > 1) {
-      xAxis?.set("baseInterval", {
-        timeUnit: "millisecond",
-        count: seedHistory[seedHistory.length - 1].date - seedHistory[seedHistory.length - 2].date,
-      });
-    }
   }, [seedHistory]);
 
   // Build the amCharts live chart once (client-only).
@@ -86,12 +80,33 @@ export default function LiveReadingsChart() {
         maxDeviation: 0.5,
         groupData: false,
         extraMax: 0.05,
-        baseInterval: { timeUnit: "second", count: 3 },
+        baseInterval: { timeUnit: "second", count: 1 },
+        // Label every 10 seconds — the live feeder ticks at second granularity,
+        // so coarser auto-chosen intervals (minutes/hours) hid the real cadence.
+        gridIntervals: [{ timeUnit: "second", count: 10 }],
         renderer: am5xy.AxisRendererX.new(root, { minGridDistance: 70 }),
         tooltip: am5.Tooltip.new(root, {}),
       })
     );
     xAxisRef.current = xAxis;
+    // Always label the axis with a time of day. The seeded history is 15-min
+    // apart while live ticks are seconds apart; without this amCharts switches
+    // to day/month labels on the wider seed span, which reads as "one point per
+    // day" even though each point is one reading interval.
+    xAxis.set("dateFormats", {
+      millisecond: "HH:mm:ss",
+      second: "HH:mm:ss",
+      minute: "HH:mm",
+      hour: "HH:mm",
+      day: "MMM d HH:mm",
+    });
+    xAxis.set("periodChangeDateFormats", {
+      millisecond: "HH:mm:ss",
+      second: "HH:mm:ss",
+      minute: "HH:mm",
+      hour: "HH:mm",
+      day: "MMM d HH:mm",
+    });
     xAxis.get("renderer").labels.template.setAll({
       fontSize: 11,
       fill: am5.color(AXIS_LABEL_COLOR),
@@ -161,8 +176,6 @@ export default function LiveReadingsChart() {
 
   // Push SSE stream data into the chart.
   const lastPushedDateRef = useRef(null);
-  const prevDateRef = useRef(null);
-  const baseIntervalSetRef = useRef(false);
 
   useEffect(() => {
     const series = seriesRef.current;
@@ -177,16 +190,6 @@ export default function LiveReadingsChart() {
     // Skip duplicate timestamps.
     if (date === lastPushedDateRef.current) return;
     lastPushedDateRef.current = date;
-
-    // Match the axis grid to the real cadence between readings.
-    if (!baseIntervalSetRef.current && prevDateRef.current != null && date > prevDateRef.current) {
-      xAxisRef.current?.set("baseInterval", {
-        timeUnit: "millisecond",
-        count: date - prevDateRef.current,
-      });
-      baseIntervalSetRef.current = true;
-    }
-    prevDateRef.current = date;
 
     const prev =
       series.dataItems[series.dataItems.length - 1]?.get("valueY") ?? value;

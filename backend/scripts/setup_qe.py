@@ -13,16 +13,21 @@ Creates the encrypted collection used by frontend/app/queryable-encryption:
 Idempotent-ish: re-running refreshes PII values and re-copies the data.
 Never run against a cluster holding real customer PII.
 
+The target cluster must be named explicitly — this script writes synthetic PII,
+so it does NOT silently inherit frontend/.env.local the way the data pipeline
+does. Pass --uri/--db, or --from-env to opt into the local env file:
+
     cd backend
-    uv run scripts/setup_qe.py
+    uv run scripts/setup_qe.py --uri "mongodb+srv://..." --db smart_grid_platform
+    uv run scripts/setup_qe.py --from-env
 """
+import argparse
 import os
 import random
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent / "data_pipeline"))
-from _config import resolve_target  # noqa: E402
 
 from bson import json_util  # noqa: E402
 from bson.codec_options import CodecOptions  # noqa: E402
@@ -33,6 +38,11 @@ KEY_VAULT_NAMESPACE = "encryption.__keyVault"
 MASTER_KEY_PATH = Path(__file__).resolve().parent.parent / "qe_masterkey.txt"
 FIELDS_CONFIG_PATH = Path(__file__).resolve().parent.parent / "qe_encrypted_fields.json"
 ENCRYPTED_COLLECTION = "customer_db_encrypted"
+# Automatic encryption needs the crypt_shared library (query analysis). Point at
+# a local copy via CRYPT_SHARED_PATH, or drop it in backend/.crypt_shared/.
+DEFAULT_CRYPT_SHARED = (
+    Path(__file__).resolve().parent.parent / ".crypt_shared" / "mongo_crypt_v1.dylib"
+)
 SSN_ENCRYPTED_FIELDS = ["ssn"]
 RANGE_ENCRYPTED_FIELDS = ["billing_amount"]
 # Range query bounds must bracket every stored billing_amount.
@@ -43,6 +53,19 @@ FIRST_NAMES = ["Maria", "James", "Wei", "Aisha", "Diego", "Anna", "Omar", "Sofia
 LAST_NAMES = ["Garcia", "Chen", "Okafor", "Silva", "Kim", "Novak", "Rossi", "Haddad", "Nguyen", "Smith"]
 PAYMENT_METHODS = ["credit_card", "debit_card", "bank_transfer", "paypal", "check"]
 STREETS = ["Oak", "Maple", "Cedar", "Elm", "Pine", "Birch", "Willow", "Sunset"]
+
+
+def crypt_shared_path():
+    """Resolve the crypt_shared library, which automatic encryption requires."""
+    path = Path(os.environ.get("CRYPT_SHARED_PATH", DEFAULT_CRYPT_SHARED))
+    if not path.is_file():
+        raise SystemExit(
+            f"crypt_shared library not found at {path}.\n"
+            "Download it for your platform from the MongoDB Enterprise downloads "
+            "(mongo_crypt_shared_v1-<platform>.tgz, lib/mongo_crypt_v1.*) and "
+            "place it there, or set CRYPT_SHARED_PATH."
+        )
+    return str(path)
 
 
 def get_or_create_master_key():
@@ -111,8 +134,48 @@ def enrich_plaintext(db):
     print(f"Enriched {updated} customer_db docs with synthetic PII.")
 
 
+def resolve_explicit_target():
+    """Require an explicit target. Writing synthetic PII to the wrong cluster is
+    not recoverable by a re-run, so there is no implicit default."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--uri", help="MongoDB connection string")
+    parser.add_argument("--db", help="Database name")
+    parser.add_argument(
+        "--from-env",
+        action="store_true",
+        help="Use MONGODB_URI/DATABASE_NAME from frontend/.env.local",
+    )
+    parser.add_argument(
+        "--plaintext-only",
+        action="store_true",
+        help="Only enrich customer_db with synthetic PII (steps 1-2 of the "
+        "walkthrough); skip the encrypted collection, which needs crypt_shared.",
+    )
+    args = parser.parse_args()
+
+    if args.from_env:
+        from _config import resolve_target
+
+        uri, dbname = resolve_target()
+        return uri, dbname, args.plaintext_only
+
+    if not args.uri or not args.db:
+        parser.error("specify both --uri and --db, or pass --from-env")
+    return args.uri, args.db, args.plaintext_only
+
+
 def main():
-    uri, dbname = resolve_target()
+    uri, dbname, plaintext_only = resolve_explicit_target()
+    host = uri.split("@")[-1].split("/")[0]
+    print(f"Target: {host} / {dbname}")
+
+    if plaintext_only:
+        plain_client = MongoClient(uri)
+        enrich_plaintext(plain_client[dbname])
+        plain_client.close()
+        print("Plaintext seed complete (steps 1-2). Encrypted collection skipped.")
+        return
+
     kms_providers = {"local": {"key": get_or_create_master_key()}}
 
     plain_client = MongoClient(uri)
@@ -159,6 +222,8 @@ def main():
             kms_providers,
             KEY_VAULT_NAMESPACE,
             encrypted_fields_map={namespace: filled_fields},
+            crypt_shared_lib_path=crypt_shared_path(),
+            crypt_shared_lib_required=True,
         ),
     )
 
