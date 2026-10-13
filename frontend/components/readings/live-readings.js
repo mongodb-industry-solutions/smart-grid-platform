@@ -10,20 +10,50 @@ import { useStream } from "@/lib/streaming/useStream";
 
 const fmt = (val, decimals) => (val != null ? val.toFixed(decimals) : "N/A");
 
+// Nominal US residential service voltage; readings far from this are worth a
+// visual flag so operators can spot brownouts/surges while scanning the table.
+const NOMINAL_VOLTAGE = 120;
+const VOLTAGE_TOLERANCE = 5;
+
+function relativeTime(value) {
+  const then = new Date(value).getTime();
+  const secondsAgo = Math.round((Date.now() - then) / 1000);
+  if (secondsAgo < 0) return "just now";
+  if (secondsAgo < 60) return `${secondsAgo}s ago`;
+  if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+  if (secondsAgo < 86_400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+  return `${Math.floor(secondsAgo / 86_400)}d ago`;
+}
+
 const columns = [
-  { accessorKey: "dataid", header: "Data ID" },
+  { accessorKey: "dataid", header: "Meter" },
   {
     accessorKey: "timestamp",
-    header: "Timestamp",
+    header: "Reading time",
     cell: ({ getValue }) => {
       const val = getValue();
-      return val ? new Date(val).toLocaleString() : "N/A";
+      if (!val) return "N/A";
+      return (
+        <span title={new Date(val).toLocaleString()}>{relativeTime(val)}</span>
+      );
     },
   },
   {
     accessorKey: "voltage",
     header: "Voltage (V)",
-    cell: ({ getValue }) => fmt(getValue(), 1),
+    cell: ({ getValue }) => {
+      const val = getValue();
+      if (val == null) return "N/A";
+      const offNominal = Math.abs(val - NOMINAL_VOLTAGE) > VOLTAGE_TOLERANCE;
+      return (
+        <span
+          style={offNominal ? { color: "#C2410C", fontWeight: 600 } : undefined}
+          title={offNominal ? `Off nominal (${NOMINAL_VOLTAGE}V)` : undefined}
+        >
+          {fmt(val, 1)}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "volt_leg_1",

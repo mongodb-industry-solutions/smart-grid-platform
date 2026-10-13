@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
+import getQeClientPromise, { qeConfigError } from "@/lib/qeClient";
 
 const dbName = process.env.DATABASE_NAME;
 
@@ -53,7 +54,6 @@ export async function POST(request) {
     }
 
     // Steps 3-6: encrypted collection operations
-    // Check if the encrypted collection exists
     const collections = await db
       .listCollections({ name: collection })
       .toArray();
@@ -63,20 +63,37 @@ export async function POST(request) {
         error:
           `Collection "${collection}" does not exist yet. ` +
           "To enable the Queryable Encryption demo, run the setup script: " +
-          "python backend/scripts/setup_qe.py — this creates the encrypted " +
-          "collection with the required encryption schema and key vault.",
+          "uv run scripts/setup_qe.py --uri <uri> --db <db> — this creates the " +
+          "encrypted collection with its encryption schema and key vault.",
       }, { status: 400 });
     }
 
-    // Run the pipeline against the encrypted collection
-    // When QE is configured on the MongoClient (via autoEncryption),
-    // queries automatically encrypt/decrypt transparently
     const err = validatePipeline(pipeline);
     if (err) {
       return NextResponse.json({ error: err }, { status: 400 });
     }
 
-    const rows = await db
+    // "The Encrypted Doc" step deliberately reads through the NON-encrypted
+    // client, so the UI can show the raw ciphertext the server actually stores.
+    if (stepId === "encrypted") {
+      const rows = await db
+        .collection(collection)
+        .aggregate(pipeline, { maxTimeMS: 20_000 })
+        .toArray();
+      return NextResponse.json({ rows: rows.slice(0, 200) });
+    }
+
+    // Remaining steps query through the autoEncryption client: the query value
+    // is encrypted client-side, matched server-side against encrypted indexes,
+    // and the result decrypted on return.
+    const configError = qeConfigError();
+    if (configError) {
+      return NextResponse.json({ error: configError }, { status: 400 });
+    }
+
+    const qeClient = await getQeClientPromise();
+    const rows = await qeClient
+      .db(dbName)
       .collection(collection)
       .aggregate(pipeline, { maxTimeMS: 20_000 })
       .toArray();

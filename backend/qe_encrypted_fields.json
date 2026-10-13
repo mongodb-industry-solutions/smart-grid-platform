@@ -1,0 +1,32 @@
+{
+  "fields": [
+    {
+      "path": "ssn",
+      "bsonType": "string",
+      "keyId": {
+        "$binary": {
+          "base64": "s8u6PqexRXuQHdNouchntg==",
+          "subType": "04"
+        }
+      },
+      "queries": {
+        "queryType": "equality"
+      }
+    },
+    {
+      "path": "billing_amount",
+      "bsonType": "int",
+      "keyId": {
+        "$binary": {
+          "base64": "z03DZi15RPeqtZlf684wLA==",
+          "subType": "04"
+        }
+      },
+      "queries": {
+        "queryType": "range",
+        "min": 0,
+        "max": 400
+      }
+    }
+  ]
+}
