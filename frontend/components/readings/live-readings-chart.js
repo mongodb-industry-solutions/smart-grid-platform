@@ -35,6 +35,14 @@ const HISTORY_GRID_INTERVALS = [
   { timeUnit: "hour", count: 12 },
 ];
 
+// Operating bands drawn behind the curve (kW per meter). The fleet average sits
+// around 2.1 kW, so the ceiling is placed mid-range and the curve weaves between
+// "normal" and "high-load".
+const NORMAL_BAND_MAX = 2.1;
+const HIGH_LOAD_BAND_MAX = 3.2;
+const NORMAL_BAND_COLOR = 0x00684a;
+const HIGH_LOAD_BAND_COLOR = 0xe5a82e;
+
 export default function LiveReadingsChart() {
   const [error, setError] = useState("");
   const { readings: streamReadings, lastEventAt } = useStream();
@@ -44,7 +52,6 @@ export default function LiveReadingsChart() {
   const rootRef = useRef(null);
   const seriesRef = useRef(null);
   const xAxisRef = useRef(null);
-  const yAxisRef = useRef(null);
 
   // When the feeder is off the stream is silent — seed the chart with the
   // last-known fleet-average power history so the panel isn't empty.
@@ -143,11 +150,12 @@ export default function LiveReadingsChart() {
 
     const yAxis = chart.yAxes.push(
       am5xy.ValueAxis.new(root, {
-        maxDeviation: 1,
+        // Pinned so both operating bands stay in view regardless of the data.
+        min: 0,
+        max: HIGH_LOAD_BAND_MAX,
         renderer: am5xy.AxisRendererY.new(root, {}),
       })
     );
-    yAxisRef.current = yAxis;
     yAxis.get("renderer").labels.template.setAll({
       fontSize: 11,
       fill: am5.color(AXIS_LABEL_COLOR),
@@ -166,6 +174,30 @@ export default function LiveReadingsChart() {
         fill: am5.color(AXIS_LABEL_COLOR),
       })
     );
+
+    // Two shaded operating bands behind the curve: normal below the ceiling,
+    // high-load above it. The live average weaves across the boundary.
+    const addBand = (value, endValue, color, text) => {
+      const range = yAxis.createAxisRange(
+        yAxis.makeDataItem({ value, endValue })
+      );
+      range.get("grid").setAll({ visible: false });
+      range.get("axisFill").setAll({
+        fill: am5.color(color),
+        fillOpacity: 0.08,
+        visible: true,
+      });
+      range.get("label").setAll({
+        text,
+        inside: true,
+        location: 0.5,
+        fill: am5.color(color),
+        fontSize: 10,
+        fontWeight: "600",
+      });
+    };
+    addBand(0, NORMAL_BAND_MAX, NORMAL_BAND_COLOR, "NORMAL");
+    addBand(NORMAL_BAND_MAX, HIGH_LOAD_BAND_MAX, HIGH_LOAD_BAND_COLOR, "HIGH-LOAD");
 
     const series = chart.series.push(
       am5xy.LineSeries.new(root, {
@@ -197,25 +229,22 @@ export default function LiveReadingsChart() {
       rootRef.current = null;
       seriesRef.current = null;
       xAxisRef.current = null;
-      yAxisRef.current = null;
     };
   }, []);
 
-  // Swap the axis between the live (sub-minute) and seeded-history (hourly)
+  // Swap the x axis between the live (sub-minute) and seeded-history (hourly)
   // configurations. Without this the single axis has to serve both cadences —
   // 3 s live ticks and 15 min history points — and amCharts falls back to hourly
   // labels, flattening the live curve.
   useEffect(() => {
     const xAxis = xAxisRef.current;
-    const yAxis = yAxisRef.current;
-    if (!xAxis || !yAxis) return;
+    if (!xAxis) return;
     const live = Boolean(lastEventAt);
     xAxis.set("baseInterval", live ? LIVE_BASE_INTERVAL : HISTORY_BASE_INTERVAL);
     xAxis.set("gridIntervals", live ? LIVE_GRID_INTERVALS : HISTORY_GRID_INTERVALS);
     // maxDeviation lets amCharts even out the spacing between points; on a live
     // feed that hides real movement, so pin it to 0 while streaming.
     xAxis.set("maxDeviation", live ? 0 : 0.5);
-    yAxis.set("maxDeviation", live ? 0 : 1);
   }, [lastEventAt]);
 
   // Push SSE stream data into the chart.
