@@ -244,3 +244,6 @@ frontend/next-env.d.ts
 # and are not secret, and the app needs them to build its encryptedFieldsMap.
 backend/qe_masterkey.txt
 backend/.crypt_shared/
+
+# graphify knowledge-graph output (regenerated locally, not source)
+graphify-out/
