@@ -26,12 +26,9 @@ envSecrets:
   # Bedrock Inference Profiles (see cloud-cost-tracking.md)
   CHATCOMPLETIONS_MODEL_ID: smart-grid
   EMBEDDINGS_MODEL_ID: smart-grid
-  # QE_MASTER_KEY is intentionally not mapped here: the staging `smart-grid`
-  # secret has no such key, and referencing a missing key makes the frontend
-  # container fail with CreateContainerConfigError, which blocks the whole
-  # rollout. Add the key via ksec (Kanopy secrets), then re-add the mapping
-  # below to enable the Queryable Encryption demo.
-  # QE_MASTER_KEY: smart-grid
+  # Local KMS master key (hex) for the Queryable Encryption demo. Provisioned in
+  # the `smart-grid` secret via ksec; must match the key that encrypted the data.
+  QE_MASTER_KEY: smart-grid
 
 # Main container (frontend) resources.
 resources:
