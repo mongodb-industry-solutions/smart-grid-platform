@@ -3,6 +3,9 @@ WORKDIR /app
 
 # crypt_shared: required for MongoDB Queryable Encryption automatic encryption
 # (query analysis). Must match the container's platform, not the dev machine's.
+# Use the ubuntu2204 build, not ubuntu2404: node:22-slim is Debian bookworm
+# (glibc 2.36), and the ubuntu2404 binary needs GLIBC_2.38 (it won't load).
+# The ubuntu2204 binary only needs GLIBC_2.35, so it runs on bookworm.
 ARG CRYPT_SHARED_VERSION=9.0.2
 RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certificates \
     && ARCH="$(dpkg --print-architecture)" \
@@ -12,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
          *) echo "unsupported arch $ARCH" && exit 1 ;; \
        esac \
     && curl -fsSL -o /tmp/crypt_shared.tgz \
-       "https://downloads.mongodb.com/linux/mongo_crypt_shared_v1-linux-${CS_ARCH}-enterprise-ubuntu2404-${CRYPT_SHARED_VERSION}.tgz" \
+       "https://downloads.mongodb.com/linux/mongo_crypt_shared_v1-linux-${CS_ARCH}-enterprise-ubuntu2204-${CRYPT_SHARED_VERSION}.tgz" \
     && mkdir -p /opt/crypt_shared /tmp/cs \
     && tar xzf /tmp/crypt_shared.tgz -C /tmp/cs \
     && cp /tmp/cs/lib/mongo_crypt_v1.so /opt/crypt_shared/ \
