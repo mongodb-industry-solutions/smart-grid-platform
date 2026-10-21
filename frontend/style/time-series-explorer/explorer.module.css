@@ -1,0 +1,76 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.header {
+  padding: 0 24px;
+  border-bottom: 1px solid #e8edeb;
+  background: #ffffff;
+}
+
+.topRow {
+  display: flex;
+  align-items: center;
+  height: 52px;
+  gap: 16px;
+}
+
+.pageTitle {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+  color: #001e2b;
+}
+
+.pageTitle span {
+  color: #5c6970;
+  font-weight: 400;
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  gap: 20px;
+  overflow: auto;
+}
+
+/* Description card between steps and pipeline */
+.description {
+  padding: 16px 20px;
+  border: 1px solid #e8edeb;
+  border-radius: 8px;
+  background: #f9fbfa;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #3d4f58;
+}
+
+/* Footer sentence */
+.footer {
+  border-top: 1px solid #e8edeb;
+  background: #ffffff;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 56px;
+}
+
+.sentence {
+  font-size: 16px;
+  line-height: 1.4;
+  color: #001e2b;
+}
+
+.keys {
+  margin-left: auto;
+  font-size: 12px;
+  color: #889397;
+  white-space: nowrap;
+}

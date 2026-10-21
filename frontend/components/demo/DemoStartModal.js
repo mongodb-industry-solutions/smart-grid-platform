@@ -6,8 +6,7 @@ import { H3, Body } from "@leafygreen-ui/typography";
 import Button from "@leafygreen-ui/button";
 
 const STEPS = [
-  { key: "generate", label: "Generate the dataset (dated to today)" },
-  { key: "load", label: "Load the collections into MongoDB Atlas" },
+  { key: "load", label: "Load collections into MongoDB Atlas (timestamps shifted to now)" },
   { key: "kb", label: "Seed the AI knowledge base" },
   { key: "feeder", label: "Start the live feeder" },
 ];
@@ -202,15 +201,14 @@ export default function DemoStartModal() {
                 <>
                   Data is already loaded ({readingsCount.toLocaleString()} readings
                   {generatedAt ? `, generated ${formatGeneratedAt(generatedAt)}` : ""}). You can
-                  enter the demo now, or regenerate a fresh dataset dated to <b>today</b> and
-                  restart the <b>live feed</b>. Regenerating takes a couple of minutes.
+                  enter the demo now, or reload the data with <b>fresh timestamps</b> (shifted to
+                  now) and restart the <b>live feed</b>. Reloading takes under a minute.
                 </>
               ) : (
                 <>
-                  Starting the demo generates a fresh dataset dated to <b>today</b> (30 days of
-                  15-minute readings for 250 meters), loads it into your Atlas cluster, and turns
-                  on a <b>live feed</b> so the dashboards update in real time. This takes a couple
-                  of minutes.
+                  Starting the demo loads pre-generated data with timestamps shifted to{" "}
+                  <b>right now</b>, so the dashboards light up immediately. It also starts a{" "}
+                  <b>live feed</b> so readings keep flowing in real time.
                 </>
               )}
             </Body>
@@ -221,7 +219,7 @@ export default function DemoStartModal() {
                 </Button>
               )}
               <Button variant="primary" onClick={startDemo}>
-                {seeded ? "Regenerate with today's data" : "Start Demo"}
+                {seeded ? "Reload with fresh timestamps" : "Start Demo"}
               </Button>
             </div>
           </>

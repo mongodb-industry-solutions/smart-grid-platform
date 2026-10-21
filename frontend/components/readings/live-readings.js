@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { H2, Body } from "@leafygreen-ui/typography";
 import styles from "../../style/readings/live-readings.module.css";
 import {Table,TableHead, TableBody, HeaderRow, HeaderCell, Row, Cell, useLeafyGreenTable, flexRender,} from "@leafygreen-ui/table";
@@ -10,20 +10,50 @@ import { useStream } from "@/lib/streaming/useStream";
 
 const fmt = (val, decimals) => (val != null ? val.toFixed(decimals) : "N/A");
 
+// Nominal US residential service voltage; readings far from this are worth a
+// visual flag so operators can spot brownouts/surges while scanning the table.
+const NOMINAL_VOLTAGE = 120;
+const VOLTAGE_TOLERANCE = 5;
+
+function relativeTime(value) {
+  const then = new Date(value).getTime();
+  const secondsAgo = Math.round((Date.now() - then) / 1000);
+  if (secondsAgo < 0) return "just now";
+  if (secondsAgo < 60) return `${secondsAgo}s ago`;
+  if (secondsAgo < 3600) return `${Math.floor(secondsAgo / 60)}m ago`;
+  if (secondsAgo < 86_400) return `${Math.floor(secondsAgo / 3600)}h ago`;
+  return `${Math.floor(secondsAgo / 86_400)}d ago`;
+}
+
 const columns = [
-  { accessorKey: "dataid", header: "Data ID" },
+  { accessorKey: "dataid", header: "Meter" },
   {
     accessorKey: "timestamp",
-    header: "Timestamp",
+    header: "Reading time",
     cell: ({ getValue }) => {
       const val = getValue();
-      return val ? new Date(val).toLocaleString() : "N/A";
+      if (!val) return "N/A";
+      return (
+        <span title={new Date(val).toLocaleString()}>{relativeTime(val)}</span>
+      );
     },
   },
   {
     accessorKey: "voltage",
     header: "Voltage (V)",
-    cell: ({ getValue }) => fmt(getValue(), 1),
+    cell: ({ getValue }) => {
+      const val = getValue();
+      if (val == null) return "N/A";
+      const offNominal = Math.abs(val - NOMINAL_VOLTAGE) > VOLTAGE_TOLERANCE;
+      return (
+        <span
+          style={offNominal ? { color: "#C2410C", fontWeight: 600 } : undefined}
+          title={offNominal ? `Off nominal (${NOMINAL_VOLTAGE}V)` : undefined}
+        >
+          {fmt(val, 1)}
+        </span>
+      );
+    },
   },
   {
     accessorKey: "volt_leg_1",
@@ -63,11 +93,28 @@ const columns = [
 ];
 
 export default function RecentReadings() {
-  const { readings: streamReadings, status } = useStream();
+  const { readings: streamReadings, lastEventAt } = useStream();
   const [error] = useState("");
+  const [seedLatest, setSeedLatest] = useState(null);
 
-  // useStream returns the latest batch of readings from the Change Stream.
-  const readings = streamReadings;
+  // When the feeder is off the stream is silent — seed the table with the
+  // last-known reading per meter so it isn't stuck on "Loading...".
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/readings/live-seed")
+      .then((r) => r.json())
+      .then((data) => {
+        if (!cancelled && Array.isArray(data.latest)) setSeedLatest(data.latest);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Live batch once the stream delivers; otherwise fall back to seed data.
+  const readings = streamReadings.length ? streamReadings : seedLatest ?? [];
+  const isLive = lastEventAt != null;
 
   const table = useLeafyGreenTable({
     data: readings,
@@ -80,12 +127,23 @@ export default function RecentReadings() {
   const wrapperRef = useAutoPageSize(table);
 
   if (error) return <Body>Error: {error}</Body>;
-  if (!readings.length) return <Body>Loading...</Body>;
+  if (!readings.length)
+    return (
+      <Body>
+        No readings yet. Start the feeder simulation (toggle, top right) to
+        stream meter readings.
+      </Body>
+    );
 
   return (
     <div className={styles.widget}>
       <div className={styles.header}>
         <H2>Recent Readings</H2>
+        {!isLive && (
+          <Body style={{ fontSize: 12, color: "#5C6970" }}>
+            Last known values — start the feeder (top right) for live updates.
+          </Body>
+        )}
       </div>
 
       <div className={styles.tableWrapper}>

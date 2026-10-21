@@ -1,0 +1,49 @@
+.steps {
+  display: flex;
+  gap: 4px;
+  padding: 0 4px;
+  overflow-x: auto;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 14px;
+  height: 44px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  color: #889397;
+  cursor: pointer;
+  font-size: 13.5px;
+  white-space: nowrap;
+  font-family: inherit;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.step:hover {
+  color: #001e2b;
+}
+
+.done {
+  color: #5c6970;
+}
+
+.on {
+  color: #001e2b;
+  border-bottom-color: #00a35c;
+  font-weight: 600;
+}
+
+.num {
+  font-family: "SF Mono", Menlo, Consolas, monospace;
+  font-size: 11px;
+  min-width: 16px;
+  text-align: right;
+  color: inherit;
+}
+
+.on .num {
+  color: #00a35c;
+}

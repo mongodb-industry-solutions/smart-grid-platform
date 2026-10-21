@@ -43,6 +43,22 @@
   animation: pulse 1.5s ease-in-out infinite;
 }
 
+/* Same shape as liveBadge, gray — shown while the feeder is off. */
+.pausedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px;
+  background: #f3f4f5;
+  border: 1px solid #89979b;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #5c6970;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1;   transform: scale(1);   }
   50%       { opacity: 0.4; transform: scale(0.75); }
@@ -106,6 +122,16 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+/* Small annotation telling the reader which time window the x axis spans —
+   it changes between live streaming and the seeded history. */
+.windowCaption {
+  align-self: flex-end;
+  margin: 0 10px 2px 0;
+  font-size: 11px;
+  color: #89979b;
+  letter-spacing: 0.02em;
 }
 
 .loadingRow {
