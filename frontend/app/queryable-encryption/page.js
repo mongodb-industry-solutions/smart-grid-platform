@@ -3,6 +3,8 @@
 import { useState, useCallback, useEffect } from "react";
 import StepIndicator from "@/components/time-series-explorer/StepIndicator";
 import PipelineViewer from "@/components/time-series-explorer/PipelineViewer";
+import QeFlowDiagram from "@/components/queryable-encryption/QeFlowDiagram";
+import QeSetupNotice from "@/components/queryable-encryption/QeSetupNotice";
 import { QE_STEPS } from "@/lib/const/queryableEncryptionSteps";
 import styles from "@/style/time-series-explorer/explorer.module.css";
 
@@ -11,6 +13,8 @@ export default function QueryableEncryptionPage() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errorCode, setErrorCode] = useState(null);
+  const [showDiagram, setShowDiagram] = useState(false);
 
   const step = QE_STEPS[currentStep];
   const prevStep = step.prevStepId
@@ -21,11 +25,13 @@ export default function QueryableEncryptionPage() {
     setCurrentStep(i);
     setResult(null);
     setError(null);
+    setErrorCode(null);
   }, []);
 
   const handleRun = useCallback(async () => {
     setIsLoading(true);
     setError(null);
+    setErrorCode(null);
     setResult(null);
     try {
       const res = await fetch("/api/queryable-encryption/run", {
@@ -43,6 +49,7 @@ export default function QueryableEncryptionPage() {
       const data = await res.json();
       if (data.error) {
         setError(data.error);
+        setErrorCode(data.code ?? null);
       } else {
         setResult(data.rows);
       }
@@ -85,7 +92,22 @@ export default function QueryableEncryptionPage() {
       </div>
 
       <div className={styles.body}>
+        <div className={styles.diagramBar}>
+          <button
+            type="button"
+            className={styles.diagramToggle}
+            onClick={() => setShowDiagram((v) => !v)}
+            aria-expanded={showDiagram}
+          >
+            <span className={styles.diagramCaret}>{showDiagram ? "▾" : "▸"}</span>
+            How Queryable Encryption works
+          </button>
+        </div>
+        {showDiagram && <QeFlowDiagram />}
+
         <div className={styles.description}>{step.description}</div>
+
+        {errorCode && <QeSetupNotice code={errorCode} message={error} />}
 
         <PipelineViewer
           pipeline={step.pipeline}
@@ -93,7 +115,7 @@ export default function QueryableEncryptionPage() {
           collection={step.collection}
           result={result}
           isLoading={isLoading}
-          error={error}
+          error={errorCode ? null : error}
           onRun={handleRun}
         />
       </div>
