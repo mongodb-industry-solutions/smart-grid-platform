@@ -1,0 +1,32 @@
+{
+  "fields": [
+    {
+      "path": "metering_point_id",
+      "bsonType": "string",
+      "keyId": {
+        "$binary": {
+          "base64": "xhrTxieVRCW3xVxadvOFrA==",
+          "subType": "04"
+        }
+      },
+      "queries": {
+        "queryType": "equality"
+      }
+    },
+    {
+      "path": "consumption_kwh",
+      "bsonType": "int",
+      "keyId": {
+        "$binary": {
+          "base64": "wt46hsH6Qje0f/kjJ+LQ0Q==",
+          "subType": "04"
+        }
+      },
+      "queries": {
+        "queryType": "range",
+        "min": 0,
+        "max": 400
+      }
+    }
+  ]
+}
