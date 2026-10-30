@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { getSegmentMix } from "@/lib/db/segmentMix";
+import { cached } from "@/lib/cache/ttlCache";
 
 const dbName = process.env.DATABASE_NAME;
+const LIVE_TTL_MS = 5_000;
 
 export async function GET(request) {
   try {
@@ -11,7 +13,9 @@ export async function GET(request) {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const mix = await getSegmentMix(db, { scope });
+    const mix = await cached(`segment-mix:${scope}`, LIVE_TTL_MS, () =>
+      getSegmentMix(db, { scope })
+    );
 
     return NextResponse.json(mix);
   } catch (error) {
