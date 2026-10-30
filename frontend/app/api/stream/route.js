@@ -43,6 +43,15 @@ export async function GET(request) {
 
       const unsubscribe = subscribeToReadings(send);
 
+      // Flush the response headers immediately. Next.js doesn't send them until
+      // the first body write, so without this the browser's EventSource would
+      // stay in "connecting" until the first event or the 15s heartbeat.
+      try {
+        controller.enqueue(encoder.encode(": connected\n\n"));
+      } catch {
+        /* controller already closed */
+      }
+
       heartbeat = setInterval(() => {
         if (closed) return;
         try {
