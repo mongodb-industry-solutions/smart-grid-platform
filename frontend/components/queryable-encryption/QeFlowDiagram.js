@@ -6,14 +6,24 @@ import styles from "@/style/queryable-encryption/qe-flow.module.css";
 // point of the diagram is the trust boundary — plaintext exists only on the
 // left, the server in the middle only ever handles ciphertext, and the keys
 // live on the right where the server cannot reach them.
+//
+// `focus` is the list of diagram targets the current step highlights; every
+// other target is dimmed so the eye lands on what this step is about.
 const CIPHER_TOKEN = "0x9f3ac1…7b2e";
 
-export default function QeFlowDiagram() {
+export default function QeFlowDiagram({
+  focus = [],
+  focusIndex = null,
+  focusNote = null,
+}) {
+  // No focus (e.g. diagram shown standalone) → nothing is dimmed.
+  const lit = (key) => (focus.length === 0 || focus.includes(key) ? "" : styles.dim);
+
   return (
     <div className={styles.wrap}>
       <div className={styles.grid}>
         {/* ── Trusted side: the application ── */}
-        <div className={`${styles.col} ${styles.colTrusted}`}>
+        <div className={`${styles.col} ${styles.colTrusted} ${lit("app")}`}>
           <div className={styles.colHead}>
             <span className={styles.colTag}>Trusted</span>
             <span className={styles.colTitle}>Your application</span>
@@ -33,7 +43,7 @@ export default function QeFlowDiagram() {
         </div>
 
         {/* ── Wire: two-way ciphertext traffic ── */}
-        <div className={styles.flow}>
+        <div className={`${styles.flow} ${lit("wire")}`}>
           <div className={styles.flowRow}>
             <span className={styles.flowArrow}>→</span>
             <span className={styles.flowCap}>encrypted query</span>
@@ -46,13 +56,13 @@ export default function QeFlowDiagram() {
         </div>
 
         {/* ── Untrusted side: the server ── */}
-        <div className={`${styles.col} ${styles.colServer}`}>
+        <div className={`${styles.col} ${styles.colServer} ${lit("server")}`}>
           <div className={styles.colHead}>
             <span className={`${styles.colTag} ${styles.tagServer}`}>Zero-knowledge</span>
             <span className={styles.colTitle}>MongoDB server</span>
           </div>
 
-          <div className={`${styles.chip} ${styles.chipStored}`}>
+          <div className={`${styles.chip} ${styles.chipStored} ${lit("stored")}`}>
             <span className={styles.chipLabel}>encrypted document</span>
             <code>
               {`{ metering_point_id: `}
@@ -63,9 +73,20 @@ export default function QeFlowDiagram() {
             </code>
           </div>
 
-          <div className={`${styles.chip} ${styles.chipStored}`}>
+          <div className={`${styles.chip} ${styles.chipStored} ${lit("indexes")}`}>
             <span className={styles.chipLabel}>encrypted indexes</span>
-            <code>equality &middot; range</code>
+            <div className={styles.idxRow}>
+              <span
+                className={`${styles.idx} ${focusIndex === "equality" ? styles.idxOn : ""}`}
+              >
+                equality
+              </span>
+              <span
+                className={`${styles.idx} ${focusIndex === "range" ? styles.idxOn : ""}`}
+              >
+                range
+              </span>
+            </div>
           </div>
 
           <div className={styles.serverNote}>
@@ -75,7 +96,7 @@ export default function QeFlowDiagram() {
       </div>
 
       {/* ── Key management strip: server has no keys ── */}
-      <div className={styles.keysRow}>
+      <div className={`${styles.keysRow} ${lit("keys")}`}>
         <span className={styles.keysLabel}>Keys never reach the server</span>
         <div className={styles.keysTrack}>
           <span className={styles.keyNode}>Master key (KMS)</span>
@@ -85,6 +106,8 @@ export default function QeFlowDiagram() {
           <span className={styles.keyNode}>used client-side only</span>
         </div>
       </div>
+
+      {focusNote && <div className={styles.focusNote}>{focusNote}</div>}
 
       <p className={styles.caption}>
         Data is encrypted in transit, at rest, in memory, in logs and in backups —

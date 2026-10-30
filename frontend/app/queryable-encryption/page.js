@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import StepIndicator from "@/components/time-series-explorer/StepIndicator";
 import PipelineViewer from "@/components/time-series-explorer/PipelineViewer";
 import QeFlowDiagram from "@/components/queryable-encryption/QeFlowDiagram";
+import QeRecordTransform from "@/components/queryable-encryption/QeRecordTransform";
 import QeSetupNotice from "@/components/queryable-encryption/QeSetupNotice";
 import { QE_STEPS } from "@/lib/const/queryableEncryptionSteps";
 import styles from "@/style/time-series-explorer/explorer.module.css";
@@ -103,7 +104,16 @@ export default function QueryableEncryptionPage() {
             How Queryable Encryption works
           </button>
         </div>
-        {showDiagram && <QeFlowDiagram />}
+        {showDiagram && (
+          <>
+            <QeFlowDiagram
+              focus={step.focus ?? []}
+              focusIndex={step.focusIndex ?? null}
+              focusNote={step.focusNote ?? null}
+            />
+            <QeRecordTransform />
+          </>
+        )}
 
         <div className={styles.description}>{step.description}</div>
 
