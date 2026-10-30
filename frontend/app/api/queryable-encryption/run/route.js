@@ -60,6 +60,7 @@ export async function POST(request) {
 
     if (collections.length === 0) {
       return NextResponse.json({
+        code: "QE_NOT_SETUP",
         error:
           `Collection "${collection}" does not exist yet. ` +
           "To enable the Queryable Encryption demo, run the setup script: " +
@@ -88,7 +89,10 @@ export async function POST(request) {
     // and the result decrypted on return.
     const configError = qeConfigError();
     if (configError) {
-      return NextResponse.json({ error: configError }, { status: 400 });
+      return NextResponse.json(
+        { code: "QE_CONFIG", error: configError },
+        { status: 400 }
+      );
     }
 
     const qeClient = await getQeClientPromise();

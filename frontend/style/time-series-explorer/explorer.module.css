@@ -40,6 +40,35 @@
   overflow: auto;
 }
 
+/* Collapsible explainer toggle (Queryable Encryption page) */
+.diagramBar {
+  display: flex;
+}
+
+.diagramToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #016bf8;
+  background: #f0f6ff;
+  border: 1px solid #c3d7fb;
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.diagramToggle:hover {
+  background: #e3eefd;
+}
+
+.diagramCaret {
+  font-size: 10px;
+  line-height: 1;
+}
+
 /* Description card between steps and pipeline */
 .description {
   padding: 16px 20px;
