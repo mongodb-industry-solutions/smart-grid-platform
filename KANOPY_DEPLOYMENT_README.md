@@ -202,6 +202,48 @@ sidecarContainers:
             key: VOYAGE_API_KEY
 ```
 
+#### 4. Queryable Encryption (optional demo)
+
+The Queryable Encryption Explorer (`/queryable-encryption`, steps 3–6) needs two
+things beyond the base config:
+
+1. **`QE_MASTER_KEY` in the `smart-grid` secret.** A hex-encoded 96-byte local KMS
+   master key. It is referenced from the `envSecrets` block in both
+   `environment/staging.yaml` and `environment/production.yaml`:
+
+   ```yaml
+   envSecrets:
+     ...
+     QE_MASTER_KEY: smart-grid
+   ```
+
+   Provision the value in the namespace secret (the key must match the one used
+   to encrypt the data — see `backend/qe_masterkey.txt` on the machine that ran
+   the setup):
+
+   ```bash
+   kubectl -n <namespace> create secret generic smart-grid \
+     --from-literal=QE_MASTER_KEY="$(cat backend/qe_masterkey.txt)" \
+     --dry-run=client -o yaml | kubectl apply -f -
+   ```
+
+2. **The encrypted collection.** One-time setup against the target cluster,
+   from `backend/`:
+
+   ```bash
+   uv run scripts/setup_qe.py --uri "<uri>" --db "<db>"
+   ```
+
+   This builds `metering_points` (plaintext) and `metering_points_encrypted`,
+   creates the DEK in `encryption.__keyVault`, and writes
+   `backend/qe_encrypted_fields.json` (copied to
+   `frontend/lib/const/qeEncryptedFields.json`). Never run it against a cluster
+   holding real customer PII.
+
+`CRYPT_SHARED_PATH` is baked into the frontend image (`Dockerfile.frontend`), so
+it needs no secret. If `QE_MASTER_KEY` is missing, steps 1–2 still work and
+steps 3–6 show a setup notice instead of failing.
+
 ### Cloud Provider Setup
 
 #### AWS Configuration (Default)
