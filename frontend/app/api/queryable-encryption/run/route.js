@@ -105,9 +105,20 @@ export async function POST(request) {
     return NextResponse.json({ rows: rows.slice(0, 200) });
   } catch (error) {
     console.error("Queryable encryption explorer error:", error);
-    return NextResponse.json(
-      { error: error.message || "Operation failed" },
-      { status: 500 }
-    );
+    const message = error.message || "Operation failed";
+    // libmongocrypt refuses operations QE can't perform on encrypted fields
+    // (e.g. $sort on an encrypted key → code 51201). Explain it plainly rather
+    // than leaking the raw "csfle analyze_query" text to the UI.
+    if (/not allowed due to encryption/i.test(message)) {
+      return NextResponse.json(
+        {
+          error:
+            "That operation isn't supported on an encrypted field. Queryable " +
+            "Encryption allows equality and range matches, but not sorting.",
+        },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
