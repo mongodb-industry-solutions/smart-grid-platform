@@ -244,6 +244,14 @@ things beyond the base config:
 it needs no secret. If `QE_MASTER_KEY` is missing, steps 1–2 still work and
 steps 3–6 show a setup notice instead of failing.
 
+**`QE_CONFIG_VARIANT` (env).** Each cluster's key vault holds its own DEKs, so
+the client's `encryptedFieldsMap` (keyIds) must match the cluster the app
+queries. `frontend/lib/const/qeEncryptedFields.json` matches the shared/staging
+cluster; `qeEncryptedFields.prod.json` matches `ist-prod`. Set
+`QE_CONFIG_VARIANT: prod` (already in `environment/production.yaml`) to select
+the prod config. Re-running `setup_qe.py` against a cluster regenerates its DEKs,
+so the matching config file must be refreshed and committed afterwards.
+
 ### Cloud Provider Setup
 
 #### AWS Configuration (Default)

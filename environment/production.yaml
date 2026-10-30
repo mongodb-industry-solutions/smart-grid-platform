@@ -9,6 +9,10 @@ ownership:
 # --- Main container: the frontend (Next.js) ---
 env:
   NODE_ENV: prod
+  # Queryable Encryption: prod and staging query different clusters whose key
+  # vaults hold different DEKs, so the encryptedFieldsMap must match. Selects
+  # qeEncryptedFields.prod.json (ist-prod) instead of the default (ist-shared).
+  QE_CONFIG_VARIANT: prod
   # AWS region for IRSA (no credentials needed)
   AWS_REGION: us-east-1
   # The backend runs as a sidecar in this same pod (shared network namespace), so
