@@ -87,12 +87,11 @@ export const QE_STEPS = [
       {
         $match: { consumption_kwh: { $gte: 200 } },
       },
-      { $sort: { consumption_kwh: -1 } },
       { $limit: 10 },
     ],
     prevStepId: "equality",
     description:
-      "Queryable Encryption supports range queries on encrypted numeric fields. The server evaluates $gte, $lte, $gt, $lt against ciphertext using special encrypted index structures — without ever learning the values. Grid use: load profiling and capacity planning across the fleet, with no per-meter consumption exposed.",
+      "Queryable Encryption supports range queries on encrypted numeric fields. The server evaluates $gte, $lte, $gt, $lt against ciphertext using special encrypted index structures — without ever learning the values. Sorting is the one operation it withholds: MongoDB can compare ciphertext for a range match, but it cannot order it, so results come back unsorted. Grid use: load profiling and capacity planning across the fleet, with no per-meter consumption exposed.",
   },
   {
     id: "why",
