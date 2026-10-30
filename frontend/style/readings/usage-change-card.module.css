@@ -140,3 +140,38 @@
   color: #db3030;
   font-size: 13px;
 }
+
+/* ── Info affordance (explains the criteria) ── */
+.info {
+  font-size: 15px;
+  line-height: 1;
+  color: #889397;
+  cursor: help;
+  margin-top: 2px;
+}
+
+/* Shown in place of the trend sentence when the % is withheld. */
+.reasonText {
+  color: #5c6970;
+  font-style: italic;
+}
+
+/* ── Meta row: fleet coverage + window span ── */
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #89979b;
+}
+
+.metaItem {
+  white-space: nowrap;
+}
+
+.metaSep {
+  width: 1px;
+  height: 10px;
+  background: #e8edeb;
+}

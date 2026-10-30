@@ -6,6 +6,14 @@ const readingsCollectionName = process.env.READINGS_COLLECTION_NAME || "readings
 const WINDOW_MS = { "1h": 3_600_000, "6h": 21_600_000, "24h": 86_400_000 };
 const WINDOW_LABELS = { "1h": "last hour", "6h": "last 6 hours", "24h": "last 24 hours" };
 
+// A percentage change is only meaningful when the baseline window carries a
+// real sample of the fleet. Below these bounds the denominator is too small or
+// too sparse and the ratio explodes — e.g. a single low-consumption meter
+// compared against the whole fleet reads as hundreds of thousands of percent.
+const MIN_BASELINE_KWH = 1; // kWh consumed in the previous window
+const MIN_BASELINE_METERS = 5; // meters that reported in the previous window
+const MIN_COVERAGE_RATIO = 0.5; // previous/current meter count
+
 // Latest distinct reading period at or before `beforeTs` (exclusive when
 // beforeTs is null → the newest period overall). The voltage guard skips
 // partial "heartbeat" docs that carry no real reading.
@@ -23,9 +31,10 @@ async function latestPeriod(collection, beforeTs = null) {
 // Total energy consumed by the fleet between two reading periods. `energy` is a
 // cumulative per-meter register, so consumption is the difference of a meter's
 // reading at each endpoint, summed across every meter present at both (kWh).
-// Non-positive deltas (meter resets/gaps) are ignored.
-async function windowUsageKwh(collection, fromTs, toTs) {
-  if (!fromTs || !toTs) return null;
+// Non-positive deltas (meter resets/gaps) are ignored. Also returns how many
+// meters contributed, so callers can judge whether the window is representative.
+async function windowUsage(collection, fromTs, toTs) {
+  if (!fromTs || !toTs) return { total: null, meters: 0 };
   const [agg] = await collection
     .aggregate([
       { $match: { timestamp: { $in: [fromTs, toTs] }, energy: { $ne: null } } },
@@ -52,11 +61,12 @@ async function windowUsageKwh(collection, fromTs, toTs) {
               },
             },
           },
+          meters: { $sum: 1 },
         },
       },
     ])
     .toArray();
-  return agg?.total ?? 0;
+  return { total: agg?.total ?? 0, meters: agg?.meters ?? 0 };
 }
 
 export async function GET(request) {
@@ -110,25 +120,68 @@ export async function GET(request) {
         )
       : null;
 
-    // Energy consumed (kWh) in the current window and the prior one.
+    // Energy consumed (kWh) in the current window and the prior one, plus how
+    // many meters reported in each.
     const [current, previous] = await Promise.all([
-      windowUsageKwh(collection, t1, t0),
-      windowUsageKwh(collection, t2, t1),
+      windowUsage(collection, t1, t0),
+      windowUsage(collection, t2, t1),
     ]);
 
-    const currentKwh  = current  ?? 0;
-    const previousKwh = previous ?? 0;
-    const pctChange =
-      previousKwh !== 0 ? ((currentKwh - previousKwh) / previousKwh) * 100 : 0;
+    const currentKwh  = current.total  ?? 0;
+    const previousKwh = previous.total ?? 0;
+
+    // The spans actually compared, in minutes. These differ from the requested
+    // window when we fell back to the immediately-previous reading period.
+    const currentWindowMinutes = t1
+      ? Math.round((new Date(t0).getTime() - new Date(t1).getTime()) / 60000)
+      : null;
+    const previousWindowMinutes = t2
+      ? Math.round((new Date(t1).getTime() - new Date(t2).getTime()) / 60000)
+      : null;
+
+    // Only show a percentage when the baseline is a fair comparison: enough
+    // consumption, enough meters, and comparable fleet coverage. Otherwise the
+    // ratio is noise, so we withhold it and explain why.
+    const coverageRatio =
+      current.meters > 0 ? previous.meters / current.meters : 0;
+    const comparable =
+      previousKwh >= MIN_BASELINE_KWH &&
+      previous.meters >= MIN_BASELINE_METERS &&
+      coverageRatio >= MIN_COVERAGE_RATIO;
+
+    let reason = null;
+    if (!comparable) {
+      if (previous.meters < MIN_BASELINE_METERS) {
+        reason = `Only ${previous.meters} meter${
+          previous.meters === 1 ? "" : "s"
+        } reported in the previous window.`;
+      } else if (previousKwh < MIN_BASELINE_KWH) {
+        reason = "Previous window consumption was too low to compare.";
+      } else if (coverageRatio < MIN_COVERAGE_RATIO) {
+        reason = "The previous window covered far fewer meters than the current one.";
+      } else {
+        reason = "Not enough comparable history.";
+      }
+    }
+
+    const pctChange = comparable
+      ? ((currentKwh - previousKwh) / previousKwh) * 100
+      : null;
 
     return new Response(
       JSON.stringify({
         current:           parseFloat(currentKwh.toFixed(2)),
         previous:          parseFloat(previousKwh.toFixed(2)),
-        pctChange:         parseFloat(pctChange.toFixed(1)),
+        pctChange:         pctChange === null ? null : parseFloat(pctChange.toFixed(1)),
+        comparable,
+        reason,
         unit:              "kWh",
         windowLabel:       WINDOW_LABELS[windowKey] ?? WINDOW_LABELS["1h"],
-        usedFallback:      usedFallback || previous == null,
+        currentMeters:     current.meters,
+        previousMeters:    previous.meters,
+        currentWindowMinutes,
+        previousWindowMinutes,
+        usedFallback:      usedFallback || previous.total == null,
         latestTimestamp:   t0,
         previousTimestamp: t1,
         priorTimestamp:    t2,
