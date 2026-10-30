@@ -12,6 +12,10 @@ export const QE_STEPS = [
       "One CIM-conformant metering point — the shared record a DSO and a TSO exchange.",
     collection: "metering_points",
     pipeline: [{ $limit: 1 }],
+    // Diagram elements this step lights up (see QeFlowDiagram targets).
+    focus: ["app"],
+    focusNote:
+      "Plaintext — the record as the application holds it. Anyone with database access reads every field in the clear.",
     description:
       "Grid interoperability rests on a common information model (IEC 61968/61970). Every metering point is exchanged as the same shape: a stable metering point id, the consumption it measured, the service address and its customer segment. Here that record sits in plaintext — anyone with database access reads every field in the clear.",
   },
@@ -34,6 +38,9 @@ export const QE_STEPS = [
       { $limit: 10 },
     ],
     prevStepId: "metering_point",
+    focus: ["server", "stored"],
+    focusNote:
+      "The stored data the server must decrypt in order to filter or sort it — the plaintext is live in memory for every query.",
     description:
       "Interoperability means the same metering data is consumed by DSOs, TSOs, market operators and third-party analytics — often in someone else's cloud. Disk-level encryption (TDE) doesn't help: the database must decrypt a field to filter or sort on it, so the plaintext is live in memory for every query. A compromised admin, an over-broad role, or a leaked backup exposes every metering point. National critical-infrastructure rules (e.g. NIS2) increasingly demand that even the operator cannot read the sensitive fields. That is the gap Queryable Encryption closes.",
   },
@@ -50,8 +57,11 @@ export const QE_STEPS = [
     options: { limit: 1 },
     pipeline: [{ $limit: 1 }],
     prevStepId: "exposure",
+    focus: ["app", "stored"],
+    focusNote:
+      "The same record, encrypted client-side before it is stored — the server only ever receives ciphertext.",
     description:
-      "With Queryable Encryption, the sensitive CIM fields — the metering point id and its consumption — are encrypted client-side and stored as Binary ciphertext. The server never sees the plaintext: not in memory, not in logs, not in backups. Non-sensitive context (segment, region, address) stays plaintext so operational dashboards keep working.",
+      "With Queryable Encryption, the sensitive CIM fields — the metering point id and its consumption — are encrypted client-side and stored as Binary ciphertext. The server never sees the plaintext: not in memory, not in logs, not in backups. Non-sensitive context (segment, region, address) stays plaintext so operational dashboards keep working. The driver also adds an internal __safeContent__ array — HMAC integrity digests, not data — so the server can detect a tampered document without decrypting it (see the before/after panel below).",
   },
   {
     id: "equality",
@@ -70,6 +80,10 @@ export const QE_STEPS = [
       { $limit: 1 },
     ],
     prevStepId: "encrypted",
+    focus: ["indexes"],
+    focusIndex: "equality",
+    focusNote:
+      "The equality index: the encrypted id is matched against encrypted index entries — no decryption on the server.",
     description:
       "A TSO asking for one metering point sends its CIM id; the client encrypts it before it leaves the application. MongoDB matches the encrypted query token against encrypted index entries — no decryption on the server — and the result is decrypted client-side. The operator and the cloud only ever see ciphertext.",
   },
@@ -90,6 +104,10 @@ export const QE_STEPS = [
       { $limit: 10 },
     ],
     prevStepId: "equality",
+    focus: ["indexes"],
+    focusIndex: "range",
+    focusNote:
+      "The range index: the server compares ciphertext against encrypted range structures without learning the values.",
     description:
       "Queryable Encryption supports range queries on encrypted numeric fields. The server evaluates $gte, $lte, $gt, $lt against ciphertext using special encrypted index structures — without ever learning the values. Sorting is the one operation it withholds: MongoDB can compare ciphertext for a range match, but it cannot order it, so results come back unsorted. Grid use: load profiling and capacity planning across the fleet, with no per-meter consumption exposed.",
   },
@@ -114,6 +132,9 @@ export const QE_STEPS = [
       { $limit: 5 },
     ],
     prevStepId: "range",
+    focus: ["app", "wire", "server", "stored", "indexes", "keys"],
+    focusNote:
+      "The full round-trip: plaintext stays on the left, only ciphertext crosses, and the keys never reach the server.",
     description:
       "Queryable Encryption gives national grid infrastructure defense-in-depth: data is encrypted in transit, at rest, in memory, in logs and in backups, while staying equality- and range-queryable. DSOs, TSOs, market operators and cloud analytics all speak the same CIM shape — and none of them has to be trusted with the plaintext. That is the difference between 'trust the operator' and 'don't have to.'",
   },

@@ -1,0 +1,181 @@
+.wrap {
+  border: 1px solid #e8edeb;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 18px 20px 16px;
+  margin-top: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 128px 1fr;
+  gap: 0;
+  align-items: stretch;
+}
+
+/* ── Cards ── */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border: 1px solid #e8edeb;
+  border-radius: 8px;
+  padding: 14px;
+}
+
+.cardPlain {
+  background: #f7fbff;
+  border-color: #cfe0f5;
+}
+
+.cardEnc {
+  background: #fbf7f7;
+  border-color: #f0d5d5;
+}
+
+.cardHead {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.cardTag {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #016bf8;
+}
+
+.tagEnc {
+  color: #8a1f1f;
+}
+
+.cardTitle {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  font-weight: 600;
+  color: #001e2b;
+}
+
+/* ── Field rows ── */
+.field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 3px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.fieldKey {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  color: #3d4f58;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  word-break: break-all;
+}
+
+.keyEnc {
+  color: #8a1f1f;
+  font-weight: 600;
+}
+
+.keySafe {
+  color: #6b4a1f;
+}
+
+.lock {
+  font-size: 9px;
+}
+
+.fieldVal {
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 11px;
+  color: #001e2b;
+  word-break: break-all;
+}
+
+.valEnc {
+  color: #8a1f1f;
+  background: #fdecec;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+.valSafe {
+  color: #6b4a1f;
+  background: #fdf6e8;
+  border-radius: 3px;
+  padding: 0 3px;
+}
+
+/* ── Transform arrow ── */
+.arrow {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+}
+
+.arrowIcon {
+  font-size: 20px;
+  font-weight: 700;
+  color: #016bf8;
+}
+
+.arrowCap {
+  font-size: 9.5px;
+  color: #5c6970;
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ── Explanation notes ── */
+.notes {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.note {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #3d4f58;
+  background: #f9faf9;
+  border: 1px solid #e8edeb;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.noteHead {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #001e2b;
+  margin-bottom: 4px;
+}
+
+.note em {
+  font-style: italic;
+  color: #001e2b;
+}
+
+@media (max-width: 720px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .arrow {
+    flex-direction: row;
+    padding: 10px 0;
+  }
+  .notes {
+    grid-template-columns: 1fr;
+  }
+}
