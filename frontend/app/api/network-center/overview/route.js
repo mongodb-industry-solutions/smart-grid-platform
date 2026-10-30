@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { getNetworkCenterOverview } from "@/lib/db/networkCenter";
+import { cached } from "@/lib/cache/ttlCache";
 
 const dbName = process.env.DATABASE_NAME;
+const LIVE_TTL_MS = 5_000;
 
 export async function GET(request) {
   try {
@@ -11,7 +13,11 @@ export async function GET(request) {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const overview = await getNetworkCenterOverview(db, { scope });
+    const overview = await cached(
+      `network-center-overview:${scope}`,
+      LIVE_TTL_MS,
+      () => getNetworkCenterOverview(db, { scope })
+    );
 
     return NextResponse.json(overview);
   } catch (error) {

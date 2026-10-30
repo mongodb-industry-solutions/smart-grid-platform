@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { getAnomalies } from "@/lib/db/anomalies";
+import { cached } from "@/lib/cache/ttlCache";
 
 const dbName = process.env.DATABASE_NAME;
+// Polled by every viewer; a few seconds of sharing removes the duplicate work.
+const LIVE_TTL_MS = 5_000;
 
 export async function GET(request) {
   try {
@@ -14,7 +17,9 @@ export async function GET(request) {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const anomalies = await getAnomalies(db, { threshold });
+    const anomalies = await cached(`anomalies:${threshold}`, LIVE_TTL_MS, () =>
+      getAnomalies(db, { threshold })
+    );
 
     return NextResponse.json({ anomalies, threshold });
   } catch (error) {

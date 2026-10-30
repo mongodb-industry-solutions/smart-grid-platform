@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import getMongoClientPromise from "@/lib/mongodb";
 import { getOutagesSummary } from "@/lib/db/outages";
 import { sameOriginOk } from "@/lib/http/sameOrigin";
+import { cached, invalidate } from "@/lib/cache/ttlCache";
 
 const dbName = process.env.DATABASE_NAME;
 const READINGS = process.env.READINGS_COLLECTION_NAME || "readings";
+const LIVE_TTL_MS = 5_000;
 
 export async function GET() {
   try {
     const client = await getMongoClientPromise();
     const db = client.db(dbName);
 
-    const summary = await getOutagesSummary(db);
+    const summary = await cached("outages-summary", LIVE_TTL_MS, () =>
+      getOutagesSummary(db)
+    );
 
     return NextResponse.json({ summary });
   } catch (error) {
@@ -91,6 +95,9 @@ export async function POST(request) {
       grid_event_id: `MANUAL-${Date.now()}`,
       grid_event_label: "manual_outage",
     });
+
+    // Drop the cached summary so the injected outage shows on the next poll.
+    invalidate("outages-summary");
 
     return NextResponse.json({
       ok: true,
