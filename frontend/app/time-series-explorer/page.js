@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from "react";
 import StepIndicator from "@/components/time-series-explorer/StepIndicator";
 import PipelineViewer from "@/components/time-series-explorer/PipelineViewer";
+import QueryRouting from "@/components/time-series-explorer/QueryRouting";
 import { TIME_SERIES_STEPS } from "@/lib/const/timeSeriesSteps";
 import styles from "@/style/time-series-explorer/explorer.module.css";
 
@@ -11,6 +12,7 @@ export default function TimeSeriesExplorerPage() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showRouting, setShowRouting] = useState(true);
 
   const step = TIME_SERIES_STEPS[currentStep];
   const prevStep = step.prevStepId
@@ -87,6 +89,19 @@ export default function TimeSeriesExplorerPage() {
       {/* Body */}
       <div className={styles.body}>
         <div className={styles.description}>{step.description}</div>
+
+        <div className={styles.diagramBar}>
+          <button
+            type="button"
+            className={styles.diagramToggle}
+            onClick={() => setShowRouting((v) => !v)}
+            aria-expanded={showRouting}
+          >
+            <span className={styles.diagramCaret}>{showRouting ? "▾" : "▸"}</span>
+            Query routing
+          </button>
+        </div>
+        {showRouting && <QueryRouting step={step} result={result} />}
 
         <PipelineViewer
           pipeline={step.pipeline}
